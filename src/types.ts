@@ -34,6 +34,7 @@ export interface Exercicio {
     dica?: string;
     respostaTexto?: string;
     respostaAutomato?: AutomatoData;
+    nivel: 'facil' | 'medio' | 'dificil';
 }
 
 export interface Topic {
@@ -53,10 +54,13 @@ export interface SimulationStep {
 // --- Tipos para o Material Didático Rico ---
 
 export interface ContentBlock {
-    type: 'text' | 'definition' | 'theorem' | 'example' | 'list' | 'note' | 'algorithm';
+    // Tipos estendidos para suportar didática avançada
+    type: 'text' | 'definition' | 'theorem' | 'example' | 'list' | 'note' | 'algorithm' | 'warning' | 'math-tip';
     content: string | string[];
     title?: string;
-    automatoRef?: AutomatoData; // Referência para carregar no simulador
+    // Suporte para "Antes e Depois" (ex: Minimização)
+    automatoRef?: AutomatoData;
+    automatoRef2?: AutomatoData;
 }
 
 export interface Lesson {

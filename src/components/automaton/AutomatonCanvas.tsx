@@ -2,7 +2,7 @@ import React, { useRef, useState, useMemo, useEffect } from 'react';
 import type { Estado, Transicao, AutomatoData, Tool } from '../../types';
 import { calculatePath, getLabelPosition, getMousePos } from '../../utils/geometry';
 import { ContextMenu } from '../ui/ContextMenu';
-import { Trash2, Edit, Plus, RotateCcw, Check, Flag } from 'lucide-react';
+import { Trash2, Plus, RotateCcw, Check, Flag } from 'lucide-react';
 
 interface CanvasProps {
     data: AutomatoData;
@@ -49,11 +49,6 @@ export const AutomatonCanvas: React.FC<CanvasProps> = ({
     // Auto-center on load
     useEffect(() => {
         if (data.estados.length > 0 && svgRef.current) {
-            const minX = Math.min(...data.estados.map(s => s.x));
-            const maxX = Math.max(...data.estados.map(s => s.x));
-            const minY = Math.min(...data.estados.map(s => s.y));
-            const maxY = Math.max(...data.estados.map(s => s.y));
-
             // Simple centering logic if needed
             if (pan.x === 0 && pan.y === 0) {
                 // Placeholder for auto-center logic

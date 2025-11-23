@@ -106,7 +106,7 @@ export const AutomatonEditor: React.FC<EditorProps> = ({ data, onChange, activeS
             </div>
 
             {/* Canvas Area */}
-            <div className="flex-1 overflow-hidden relative rounded-[24px] border border-gray-200 dark:border-white/10 bg-white dark:bg-black">
+            <div className="flex-1 overflow-hidden relative rounded-[24px] border border-gray-200 dark:border-white/10 bg-transparent">
                 {!readOnly && data.estados.length === 0 && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none opacity-40">
                         <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center mb-4">

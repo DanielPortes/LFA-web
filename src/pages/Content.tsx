@@ -12,7 +12,10 @@ import {
     GraduationCap,
     Lightbulb,
     ListOrdered,
-    Quote
+    Quote,
+    AlertTriangle,
+    Calculator,
+    ArrowDown
 } from 'lucide-react';
 import { courseModules } from '../data/theoryData';
 import type { ContentBlock, AutomatoData } from '../types';
@@ -22,12 +25,11 @@ interface ContentProps {
     onSimulate?: (data: AutomatoData) => void;
 }
 
-// --- Renderizador de Conteúdo Rico ---
 const ContentBlockRenderer = ({ block, onSimulate }: { block: ContentBlock, onSimulate?: (data: AutomatoData) => void }) => {
     switch (block.type) {
         case 'definition':
             return (
-                <div className="my-8 p-6 bg-blue-50/50 dark:bg-blue-900/10 border-l-[6px] border-ios-blue rounded-r-2xl animate-fade-in transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                <div className="my-8 p-6 glass-card border-l-[6px] border-ios-blue rounded-r-2xl animate-fade-in transition-all hover:bg-white/40 dark:hover:bg-white/10">
                     <h4 className="text-xs font-black text-ios-blue uppercase tracking-widest mb-3 flex items-center gap-2">
                         <BookOpen size={16} />
                         Definição Formal
@@ -40,7 +42,7 @@ const ContentBlockRenderer = ({ block, onSimulate }: { block: ContentBlock, onSi
             );
         case 'theorem':
             return (
-                <div className="my-8 relative overflow-hidden rounded-2xl border border-purple-100 dark:border-purple-500/30 bg-gradient-to-br from-purple-50/50 to-transparent dark:from-purple-900/10 dark:to-transparent p-8 shadow-sm animate-fade-in">
+                <div className="my-8 relative overflow-hidden rounded-2xl border border-purple-100 dark:border-purple-500/30 glass-card p-8 shadow-sm animate-fade-in">
                     <div className="absolute top-0 left-0 w-1 h-full bg-ios-purple/50"></div>
                     <h4 className="text-xs font-black text-ios-purple uppercase tracking-widest mb-3 flex items-center gap-2">
                         <CheckCircle size={16} />
@@ -54,7 +56,7 @@ const ContentBlockRenderer = ({ block, onSimulate }: { block: ContentBlock, onSi
             );
         case 'note':
             return (
-                <div className="my-6 p-5 bg-yellow-50 dark:bg-yellow-900/10 rounded-xl border border-yellow-200 dark:border-yellow-700/30 flex gap-4 animate-fade-in">
+                <div className="my-6 p-5 glass-card rounded-xl border border-yellow-200 dark:border-yellow-700/30 flex gap-4 animate-fade-in">
                     <div className="flex-shrink-0 mt-1">
                         <Lightbulb className="text-yellow-600 dark:text-yellow-400" size={24} />
                     </div>
@@ -64,9 +66,39 @@ const ContentBlockRenderer = ({ block, onSimulate }: { block: ContentBlock, onSi
                     </div>
                 </div>
             );
+        case 'warning':
+            return (
+                <div className="my-6 p-5 rounded-xl border border-red-200 bg-red-50/50 dark:bg-red-900/10 dark:border-red-500/30 flex gap-4 animate-fade-in">
+                    <div className="flex-shrink-0 mt-1 text-red-500">
+                        <AlertTriangle size={24} />
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-red-700 dark:text-red-400 text-sm uppercase tracking-wider mb-1">
+                            {block.title || 'Atenção!'}
+                        </h4>
+                        <p className="text-red-800 dark:text-red-200 leading-relaxed">{block.content}</p>
+                    </div>
+                </div>
+            );
+        case 'math-tip':
+            return (
+                <div className="my-6 p-5 rounded-xl border border-indigo-200 bg-indigo-50/50 dark:bg-indigo-900/10 dark:border-indigo-500/30 flex gap-4 animate-fade-in">
+                    <div className="flex-shrink-0 mt-1 text-indigo-500">
+                        <Calculator size={24} />
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-indigo-700 dark:text-indigo-400 text-sm uppercase tracking-wider mb-1">
+                            {block.title || 'Matematiquês'}
+                        </h4>
+                        <p className="text-indigo-900 dark:text-indigo-200 font-mono text-sm leading-relaxed whitespace-pre-line">
+                            {block.content}
+                        </p>
+                    </div>
+                </div>
+            );
         case 'algorithm':
             return (
-                <div className="my-8 bg-gray-50 dark:bg-white/5 rounded-2xl p-6 border border-gray-200 dark:border-white/10 animate-fade-in">
+                <div className="my-8 glass-card rounded-2xl p-6 border border-[var(--border-color)] animate-fade-in">
                     <h4 className="font-bold text-xl mb-6 flex items-center gap-3 text-[var(--text-primary)]">
                         <div className="p-2 bg-ios-green/10 rounded-lg text-ios-green">
                             <ListOrdered size={20} />
@@ -113,18 +145,36 @@ const ContentBlockRenderer = ({ block, onSimulate }: { block: ContentBlock, onSi
                                 {block.content}
                             </div>
 
-                            {block.automatoRef && (
-                                <div className="h-72 bg-[var(--canvas-bg)] rounded-2xl border border-[var(--border-color)] overflow-hidden relative shadow-inner cursor-default group-hover:shadow-md transition-shadow">
-                                    <div className="absolute top-3 right-3 z-10 px-2 py-1 bg-black/10 dark:bg-white/10 backdrop-blur rounded text-[10px] font-mono text-gray-500">
-                                        Visualização Estática
+                            <div className={`grid gap-6 ${block.automatoRef2 ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
+                                {block.automatoRef && (
+                                    <div className="flex flex-col gap-3">
+                                        {block.automatoRef2 && <div className="text-center font-bold text-gray-400 text-xs uppercase tracking-widest">Antes</div>}
+                                        <div className="h-72 bg-[var(--canvas-bg)] rounded-2xl border border-[var(--border-color)] overflow-hidden relative shadow-inner cursor-default group-hover:shadow-md transition-shadow">
+                                            <AutomatonEditor
+                                                data={block.automatoRef}
+                                                onChange={() => { }}
+                                                readOnly={true}
+                                            />
+                                        </div>
                                     </div>
-                                    <AutomatonEditor
-                                        data={block.automatoRef}
-                                        onChange={() => {}}
-                                        readOnly={true}
-                                    />
-                                </div>
-                            )}
+                                )}
+
+                                {block.automatoRef2 && (
+                                    <>
+                                        <div className="md:hidden flex justify-center text-gray-300"><ArrowDown /></div>
+                                        <div className="flex flex-col gap-3">
+                                            <div className="text-center font-bold text-ios-green text-xs uppercase tracking-widest">Depois</div>
+                                            <div className="h-72 bg-[var(--canvas-bg)] rounded-2xl border-2 border-ios-green/20 overflow-hidden relative shadow-inner cursor-default group-hover:shadow-md transition-shadow">
+                                                <AutomatonEditor
+                                                    data={block.automatoRef2}
+                                                    onChange={() => { }}
+                                                    readOnly={true}
+                                                />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -135,7 +185,7 @@ const ContentBlockRenderer = ({ block, onSimulate }: { block: ContentBlock, onSi
                     {block.title && <h4 className="font-bold text-xl mb-4 text-[var(--text-primary)]">{block.title}</h4>}
                     <ul className="grid gap-3">
                         {(block.content as string[]).map((item, idx) => (
-                            <li key={idx} className="flex items-start gap-4 text-[var(--text-secondary)] bg-white dark:bg-white/5 p-4 rounded-xl border border-[var(--border-color)] hover:border-ios-blue/30 transition-colors">
+                            <li key={idx} className="flex items-start gap-4 text-[var(--text-secondary)] glass-card p-4 rounded-xl border border-[var(--border-color)] hover:border-ios-blue/30 transition-colors">
                                 <div className="w-1.5 h-1.5 mt-2.5 rounded-full bg-ios-blue flex-shrink-0" />
                                 <span className="leading-relaxed font-medium text-lg">{item}</span>
                             </li>
@@ -165,12 +215,10 @@ export const ConteudoSection = ({ onSimulate }: ContentProps) => {
             activeModule.lessons.find(l => l.id === activeLessonId)!,
         [activeModule, activeLessonId]);
 
-    // Scroll to top when lesson changes
     useEffect(() => {
         document.getElementById('main-content-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
     }, [activeLessonId]);
 
-    // Lógica de Navegação
     const navigationState = useMemo(() => {
         const modIndex = courseModules.findIndex(m => m.id === activeModuleId);
         const lessonIndex = activeModule.lessons.findIndex(l => l.id === activeLessonId);
@@ -203,8 +251,6 @@ export const ConteudoSection = ({ onSimulate }: ContentProps) => {
 
     return (
         <div className="flex h-[calc(100vh-8rem)] relative overflow-hidden">
-
-            {/* Mobile Toggle */}
             <div className="md:hidden fixed bottom-6 right-6 z-50">
                 <button
                     onClick={() => setSidebarOpen(!isSidebarOpen)}
@@ -214,7 +260,6 @@ export const ConteudoSection = ({ onSimulate }: ContentProps) => {
                 </button>
             </div>
 
-            {/* Sidebar Navigation */}
             <aside className={`
                 fixed md:relative inset-y-0 left-0 z-40 w-80 
                 bg-[var(--bg-card)]/95 backdrop-blur-2xl md:bg-transparent md:backdrop-blur-none
@@ -223,24 +268,21 @@ export const ConteudoSection = ({ onSimulate }: ContentProps) => {
                 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
                 flex flex-col h-full shadow-2xl md:shadow-none
             `}>
-                <div className="md:glass-panel md:rounded-3xl h-full flex flex-col overflow-hidden shadow-sm md:mr-4 bg-white/50 dark:bg-black/20">
-                    {/* Sidebar Header */}
-                    <div className="p-6 border-b border-[var(--border-color)] bg-white/80 dark:bg-black/40 backdrop-blur-md sticky top-0 z-10">
+                <div className="md:glass-panel md:rounded-3xl h-full flex flex-col overflow-hidden shadow-sm md:mr-4 bg-white/30 dark:bg-black/20">
+                    <div className="p-6 border-b border-[var(--border-color)] bg-white/50 dark:bg-black/40 backdrop-blur-md sticky top-0 z-10">
                         <div className="flex items-center gap-2 mb-3">
                             <div className="w-2 h-2 rounded-full bg-ios-green animate-pulse" />
                             <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">DCC063 • LFA</h2>
                         </div>
                         <div className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-3">
-                            <GraduationCap size={28} className="text-ios-blue"/>
+                            <GraduationCap size={28} className="text-ios-blue" />
                             Material P1
                         </div>
                     </div>
 
-                    {/* Sidebar Content List */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-2 pb-20">
                         {courseModules.map((module, modIdx) => (
                             <div key={module.id} className="mb-6 last:mb-0">
-                                {/* Module Title */}
                                 <div className="px-4 py-3 flex items-center gap-3 sticky top-0 bg-[var(--bg-card)]/95 backdrop-blur z-10 border-b border-transparent rounded-t-xl">
                                     <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-gray-200 dark:bg-white/10 flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300 font-mono">
                                         {modIdx}
@@ -250,9 +292,7 @@ export const ConteudoSection = ({ onSimulate }: ContentProps) => {
                                     </h3>
                                 </div>
 
-                                {/* Lessons List */}
                                 <div className="mt-1 space-y-1 px-2 relative">
-                                    {/* Guide Line */}
                                     <div className="absolute left-7 top-2 bottom-2 w-px bg-gray-200 dark:bg-white/5 -z-10"></div>
 
                                     {module.lessons.map(lesson => {
@@ -263,8 +303,8 @@ export const ConteudoSection = ({ onSimulate }: ContentProps) => {
                                                 onClick={() => handleNavigate(module.id, lesson.id)}
                                                 className={`group w-full text-left pl-10 pr-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 relative overflow-hidden
                                                     ${isActive
-                                                    ? 'text-ios-blue bg-blue-50 dark:bg-blue-900/20 font-bold shadow-sm'
-                                                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-white/5'
+                                                    ? 'text-ios-blue bg-blue-50/50 dark:bg-blue-900/20 font-bold shadow-sm'
+                                                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/40 dark:hover:bg-white/5'
                                                 }`}
                                             >
                                                 {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-ios-blue"></div>}
@@ -279,13 +319,11 @@ export const ConteudoSection = ({ onSimulate }: ContentProps) => {
                 </div>
             </aside>
 
-            {/* Main Content Area */}
             <main
                 id="main-content-scroll"
-                className="flex-1 overflow-y-auto custom-scrollbar scroll-smooth rounded-3xl bg-white/50 dark:bg-black/20 border border-transparent md:border-[var(--border-color)]"
+                className="flex-1 overflow-y-auto custom-scrollbar scroll-smooth rounded-3xl glass-panel border border-transparent md:border-[var(--border-color)]"
             >
                 <div className="max-w-4xl mx-auto py-10 px-6 md:px-12 pb-32">
-                    {/* Header */}
                     <header className="mb-12 animate-fade-in">
                         <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-gray-400 mb-6 uppercase tracking-wider">
                             <span className="bg-gray-100 dark:bg-white/10 px-2 py-1 rounded-md">Módulo {courseModules.findIndex(m => m.id === activeModuleId)}</span>
@@ -297,20 +335,18 @@ export const ConteudoSection = ({ onSimulate }: ContentProps) => {
                             {activeLesson.title}
                         </h1>
 
-                        <div className="flex items-start gap-4 text-xl text-[var(--text-secondary)] leading-relaxed border-l-4 border-ios-blue/30 pl-6 py-2 font-medium italic bg-gray-50 dark:bg-white/5 rounded-r-xl p-4">
+                        <div className="flex items-start gap-4 text-xl text-[var(--text-secondary)] leading-relaxed border-l-4 border-ios-blue/30 pl-6 py-2 font-medium italic glass-card rounded-r-xl p-4">
                             <Quote className="text-gray-300 flex-shrink-0" size={24} />
                             {activeLesson.description}
                         </div>
                     </header>
 
-                    {/* Content Blocks */}
                     <div className="space-y-2">
                         {activeLesson.content.map((block, idx) => (
                             <ContentBlockRenderer key={idx} block={block} onSimulate={onSimulate} />
                         ))}
                     </div>
 
-                    {/* Navigation Footer */}
                     <div className="mt-24 pt-8 border-t border-[var(--border-color)] flex justify-between items-center">
                         <button
                             onClick={() => navigationState.prev && handleNavigate(navigationState.prev.modId, navigationState.prev.lessonId)}

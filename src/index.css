@@ -17,45 +17,65 @@
     --color-ios-yellow: #FFCC00;
     --color-ios-gray: #8E8E93;
 
-    /* Backgrounds & Surfaces */
-    --color-ios-bg-light: #F2F2F7;
-    --color-ios-bg-dark: #000000;
-
     /* Shadows */
-    --shadow-apple-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-    --shadow-apple-md: 0 8px 24px rgba(0, 0, 0, 0.08);
-    --shadow-apple-lg: 0 16px 32px rgba(0, 0, 0, 0.12);
-    --shadow-apple-xl: 0 24px 48px rgba(0, 0, 0, 0.18);
+    --shadow-apple-sm: 0 4px 12px rgba(0, 0, 0, 0.03);
+    --shadow-apple-md: 0 12px 32px rgba(0, 0, 0, 0.06);
+    --shadow-apple-lg: 0 20px 48px rgba(0, 0, 0, 0.08);
+    --shadow-apple-xl: 0 32px 64px rgba(0, 0, 0, 0.12);
 }
 
 @layer base {
     :root {
-        /* Light Mode - Premium Apple Style */
-        --bg-primary: #F5F5F7;
-        /* Increased transparency for glass effect */
-        --bg-card: rgba(255, 255, 255, 0.65);
-        --bg-overlay: rgba(255, 255, 255, 0.75);
-        --text-primary: #1D1D1F;
-        --text-secondary: #86868B;
-        --border-color: rgba(0, 0, 0, 0.08);
-        --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-        --grid-color: rgba(0, 0, 0, 0.05);
-        --canvas-bg: rgba(255, 255, 255, 0.5);
-        --stroke-idle: #8E8E93;
-        --stroke-hover: #1D1D1F;
+        /* Light Mode - Premium Apple Glass */
+        --bg-primary: #FFFFFF; /* Pure white base for gradients */
+        
+        /* Glass Surfaces - Ultra Translucent */
+        --bg-card: rgba(255, 255, 255, 0.4);
+        --bg-overlay: rgba(255, 255, 255, 0.5);
+        --bg-dock: rgba(255, 255, 255, 0.35);
+        
+        /* Typography - High Contrast */
+        --text-primary: #000000;
+        --text-secondary: #6e6e73;
+        
+        /* Borders & Details */
+        --border-color: rgba(255, 255, 255, 0.4);
+        --border-highlight: rgba(255, 255, 255, 0.8);
+        
+        /* Effects */
+        --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+        --glass-blur: blur(20px);
+        
+        /* Canvas */
+        --canvas-bg: transparent;
+        --grid-color: rgba(0, 0, 0, 0.03);
+        --stroke-idle: #86868b;
+        --stroke-hover: #1d1d1f;
     }
 
     .dark {
-        /* Dark Mode - Deep & Rich */
+        /* Dark Mode - Deep Space */
         --bg-primary: #000000;
-        --bg-card: rgba(28, 28, 30, 0.65);
-        --bg-overlay: rgba(44, 44, 46, 0.75);
+        
+        /* Glass Surfaces */
+        --bg-card: rgba(30, 30, 35, 0.5);
+        --bg-overlay: rgba(40, 40, 45, 0.6);
+        --bg-dock: rgba(20, 20, 25, 0.5);
+        
+        /* Typography */
         --text-primary: #F5F5F7;
-        --text-secondary: #98989D;
-        --border-color: rgba(255, 255, 255, 0.12);
+        --text-secondary: #86868b;
+        
+        /* Borders */
+        --border-color: rgba(255, 255, 255, 0.1);
+        --border-highlight: rgba(255, 255, 255, 0.2);
+        
+        /* Effects */
         --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-        --grid-color: rgba(255, 255, 255, 0.08);
+        
+        /* Canvas */
         --canvas-bg: #000000;
+        --grid-color: rgba(255, 255, 255, 0.08);
         --stroke-idle: #636366;
         --stroke-hover: #AEAEB2;
     }
@@ -66,137 +86,144 @@
         font-family: var(--font-sans);
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        transition: background-color 0.5s cubic-bezier(0.32, 0, 0.67, 0), color 0.5s ease;
+        transition: color 0.5s ease;
         overflow-x: hidden;
         min-height: 100vh;
+        position: relative;
     }
 
-    /* Light Mode Animated Background - Subtle Aurora */
-    body::before {
+    /* 
+       PREMIUM ANIMATED BACKGROUNDS 
+    */
+
+    /* Light Mode: Vibrant Aurora Mesh */
+    body::before, body::after {
         content: '';
         position: fixed;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle at center, rgba(0, 122, 255, 0.08), transparent 25%),
-            radial-gradient(circle at top left, rgba(52, 199, 89, 0.08), transparent 25%),
-            radial-gradient(circle at bottom right, rgba(175, 82, 222, 0.08), transparent 25%);
-        filter: blur(80px);
-        z-index: -2;
-        pointer-events: none;
-        animation: rotateBackground 20s linear infinite;
-    }
-
-    @keyframes rotateBackground {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-
-    /* Enhanced Dark Mode Background - "Aurora" style */
-    .dark body {
-        background: radial-gradient(circle at 50% -20%, #1a1a2e 0%, #000000 60%);
-    }
-
-    .dark body::before {
-        background: radial-gradient(circle, rgba(0, 122, 255, 0.15) 0%, transparent 60%);
-        filter: blur(100px);
-        top: -40%;
-        right: -20%;
-        left: auto;
-        width: 80vw;
-        height: 80vw;
-        animation: breathe 10s ease-in-out infinite alternate;
-    }
-
-    .dark body::after {
-        content: '';
-        position: fixed;
-        bottom: -40%;
-        left: -20%;
-        width: 80vw;
-        height: 80vw;
-        background: radial-gradient(circle, rgba(175, 82, 222, 0.12) 0%, transparent 60%);
-        filter: blur(120px);
         z-index: -1;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.6;
+        animation: float 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Orb 1: Blue/Teal */
+    body::before {
+        width: 60vw;
+        height: 60vw;
+        background: radial-gradient(circle, rgba(0, 122, 255, 0.15), rgba(90, 200, 250, 0.1));
+        top: -10%;
+        left: -10%;
+        animation-delay: -5s;
+    }
+
+    /* Orb 2: Purple/Pink */
+    body::after {
+        width: 70vw;
+        height: 70vw;
+        background: radial-gradient(circle, rgba(175, 82, 222, 0.15), rgba(255, 45, 85, 0.1));
+        bottom: -10%;
+        right: -10%;
+    }
+
+    /* Additional floating accent for depth */
+    .bg-accent-orb {
+        position: fixed;
+        top: 40%;
+        left: 40%;
+        width: 40vw;
+        height: 40vw;
+        background: radial-gradient(circle, rgba(255, 204, 0, 0.1), rgba(255, 149, 0, 0.05));
+        filter: blur(100px);
+        z-index: -2;
+        opacity: 0.5;
+        animation: float-reverse 25s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
         pointer-events: none;
-        animation: breathe 15s ease-in-out infinite alternate-reverse;
     }
 
-    @keyframes breathe {
-        0% {
-            transform: scale(1);
-            opacity: 0.8;
-        }
-
-        100% {
-            transform: scale(1.1);
-            opacity: 1;
-        }
+    @keyframes float {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        100% { transform: translate(10%, 10%) rotate(10deg); }
     }
 
-    /* Custom Scrollbar - macOS/iOS Style */
+    @keyframes float-reverse {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        100% { transform: translate(-10%, -10%) rotate(-10deg); }
+    }
+
+    /* Dark Mode Background Override */
+    .dark body::before {
+        background: radial-gradient(circle, rgba(10, 132, 255, 0.15), transparent 60%);
+        opacity: 0.4;
+    }
+    .dark body::after {
+        background: radial-gradient(circle, rgba(191, 90, 242, 0.15), transparent 60%);
+        opacity: 0.4;
+    }
+    .dark .bg-accent-orb {
+        background: radial-gradient(circle, rgba(100, 210, 255, 0.05), transparent);
+    }
+
+    /* Scrollbar */
     ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-        background-color: transparent;
+        width: 6px;
+        height: 6px;
     }
-
     ::-webkit-scrollbar-track {
-        background-color: transparent;
+        background: transparent;
     }
-
     ::-webkit-scrollbar-thumb {
-        background-color: rgba(0, 0, 0, 0.1);
+        background: rgba(0, 0, 0, 0.1);
         border-radius: 10px;
-        border: 2px solid transparent;
-        background-clip: content-box;
-        transition: background-color 0.2s ease;
     }
-
     ::-webkit-scrollbar-thumb:hover {
-        background-color: rgba(0, 0, 0, 0.25);
+        background: rgba(0, 0, 0, 0.2);
     }
-
     .dark ::-webkit-scrollbar-thumb {
-        background-color: rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.15);
     }
-
     .dark ::-webkit-scrollbar-thumb:hover {
-        background-color: rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.3);
     }
 }
 
 @layer utilities {
+    /* 
+       GLASSMORPHISM UTILITIES 
+       Using backdrop-filter for the frosted glass effect
+    */
+    
     .glass-panel {
-        @apply backdrop-blur-2xl border border-[var(--border-color)];
+        @apply backdrop-blur-2xl border shadow-apple-sm;
         background-color: var(--bg-card);
-        box-shadow: var(--glass-shadow);
+        border-color: var(--border-color);
+        border-top-color: var(--border-highlight); /* Top highlight for 3D feel */
     }
 
     .glass-card {
-        @apply backdrop-blur-2xl border border-[var(--border-color)] rounded-[24px] transition-all duration-500;
+        @apply backdrop-blur-3xl border rounded-[24px] transition-all duration-500 shadow-apple-md;
         background-color: var(--bg-overlay);
-        box-shadow: var(--glass-shadow);
+        border-color: var(--border-color);
+        border-top-color: var(--border-highlight);
     }
 
     .glass-dock {
-        @apply backdrop-blur-3xl border border-[var(--border-color)] shadow-apple-xl;
-        background-color: rgba(255, 255, 255, 0.75);
-        /* More translucent in light mode */
+        @apply backdrop-blur-3xl border rounded-full shadow-apple-xl;
+        background-color: var(--bg-dock);
+        border-color: var(--border-color);
+        border-top-color: var(--border-highlight);
     }
 
-    .dark .glass-dock {
-        background-color: rgba(30, 30, 30, 0.6);
-    }
-
+    /* Interactive Elements */
     .btn-icon {
-        @apply p-3 rounded-full transition-all duration-200 active:scale-90 flex items-center justify-center;
+        @apply p-3 rounded-full transition-all duration-300 active:scale-90 flex items-center justify-center;
+        background-color: rgba(255, 255, 255, 0.0);
+    }
+    .btn-icon:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    .dark .btn-icon:hover {
+        background-color: rgba(255, 255, 255, 0.1);
     }
 
     /* Input Reset */
@@ -211,20 +238,8 @@
     background-image:
         linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
         linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
-    mask-image: radial-gradient(ellipse at center, black 40%, transparent 100%);
-    /* Fade edges */
+    mask-image: radial-gradient(ellipse at center, black 50%, transparent 100%);
 }
 
-/* Hide default cursor when custom cursor is active */
-.cursor-none,
-.cursor-none * {
-    cursor: none !important;
-}
-
-/* Ensure canvas hides cursor but allows custom cursor to be seen */
-svg.cursor-default,
-svg.cursor-crosshair,
-svg.cursor-grab,
-svg.cursor-grabbing {
-    cursor: none !important;
-}
+.cursor-none, .cursor-none * { cursor: none !important; }
+svg.cursor-default, svg.cursor-crosshair, svg.cursor-grab, svg.cursor-grabbing { cursor: none !important; }
