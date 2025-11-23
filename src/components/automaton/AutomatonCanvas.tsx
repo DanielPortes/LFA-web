@@ -1,6 +1,8 @@
 import React, { useRef, useState, useMemo, useEffect } from 'react';
 import type { Estado, Transicao, AutomatoData, Tool } from '../../types';
 import { calculatePath, getLabelPosition, getMousePos } from '../../utils/geometry';
+import { ContextMenu } from '../ui/ContextMenu';
+import { Trash2, Edit, Plus, RotateCcw, Check, Flag } from 'lucide-react';
 
 interface CanvasProps {
     data: AutomatoData;
@@ -9,18 +11,20 @@ interface CanvasProps {
     activeStates?: string[];
     readOnly?: boolean;
     zoom?: number;
+    onZoomChange?: (newZoom: number) => void;
     onInteract?: () => void;
 }
 
 export const AutomatonCanvas: React.FC<CanvasProps> = ({
-                                                           data,
-                                                           tool,
-                                                           onChange,
-                                                           activeStates = [],
-                                                           readOnly = false,
-                                                           zoom = 1,
-                                                           onInteract
-                                                       }) => {
+    data,
+    tool,
+    onChange,
+    activeStates = [],
+    readOnly = false,
+    zoom = 1,
+    onZoomChange,
+    onInteract
+}) => {
     const svgRef = useRef<SVGSVGElement>(null);
 
     // Interaction State
@@ -39,10 +43,29 @@ export const AutomatonCanvas: React.FC<CanvasProps> = ({
     const [selectionEnd, setSelectionEnd] = useState({ x: 0, y: 0 });
     const [selectedStateIds, setSelectedStateIds] = useState<string[]>([]);
 
-    // Shortcuts for Delete
+    // Context Menu State
+    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, type: 'canvas' | 'state' | 'transition', targetId?: string } | null>(null);
+
+    // Auto-center on load
+    useEffect(() => {
+        if (data.estados.length > 0 && svgRef.current) {
+            const minX = Math.min(...data.estados.map(s => s.x));
+            const maxX = Math.max(...data.estados.map(s => s.x));
+            const minY = Math.min(...data.estados.map(s => s.y));
+            const maxY = Math.max(...data.estados.map(s => s.y));
+
+            // Simple centering logic if needed
+            if (pan.x === 0 && pan.y === 0) {
+                // Placeholder for auto-center logic
+            }
+        }
+    }, []);
+
+    // Shortcuts for Delete and Select All
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (readOnly) return;
+
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 if (selection?.type === 'state') {
                     deleteState(selection.id);
@@ -56,10 +79,23 @@ export const AutomatonCanvas: React.FC<CanvasProps> = ({
                     setSelection(null);
                 }
             }
+
+            // Select All (Ctrl+A)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+                e.preventDefault();
+                setSelectedStateIds(data.estados.map(s => s.id));
+            }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selection, selectedStateIds, data, readOnly]);
+
+    // Close menu on interaction
+    useEffect(() => {
+        const closeMenu = () => setContextMenu(null);
+        window.addEventListener('click', closeMenu);
+        return () => window.removeEventListener('click', closeMenu);
+    }, []);
 
     const deleteState = (id: string) => {
         onChange({
@@ -84,15 +120,59 @@ export const AutomatonCanvas: React.FC<CanvasProps> = ({
         };
     };
 
+    const handleWheel = (e: React.WheelEvent) => {
+        if (onZoomChange) {
+            const newZoom = Math.max(0.1, Math.min(2, zoom - e.deltaY * 0.001));
+            onZoomChange(newZoom);
+        }
+    };
+
+    // Space key for panning
+    const isSpacePressed = useRef(false);
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.code === 'Space' && !e.repeat && !readOnly) {
+                isSpacePressed.current = true;
+            }
+        };
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (e.code === 'Space') {
+                isSpacePressed.current = false;
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, [readOnly]);
+
+    const handleDoubleClick = (e: React.MouseEvent) => {
+        if (readOnly) return;
+        if (e.target === svgRef.current) {
+            const pos = getAdjustedMousePos(e);
+            const newState: Estado = {
+                id: `q${Date.now()}`,
+                label: `q${data.estados.length}`,
+                x: pos.x,
+                y: pos.y,
+                isFinal: false,
+                isInicial: data.estados.length === 0
+            };
+            onChange({ ...data, estados: [...data.estados, newState] });
+        }
+    };
+
     const handleMouseDown = (e: React.MouseEvent) => {
         if (onInteract) onInteract();
 
-        if ((e.button === 1 || e.shiftKey) || (tool === 'pointer' && e.target === svgRef.current && !e.ctrlKey)) {
-            if (e.button === 1 || e.shiftKey) {
-                setIsPanning(true);
-                setLastMousePos({ x: e.clientX, y: e.clientY });
-                return;
-            }
+        // Middle mouse or Space+Click for panning
+        if (e.button === 1 || (e.button === 0 && isSpacePressed.current)) {
+            setIsPanning(true);
+            setLastMousePos({ x: e.clientX, y: e.clientY });
+            e.preventDefault();
+            return;
         }
 
         if (readOnly) return;
@@ -110,12 +190,16 @@ export const AutomatonCanvas: React.FC<CanvasProps> = ({
                 };
                 onChange({ ...data, estados: [...data.estados, newState] });
             } else if (tool === 'pointer') {
+                // If clicking on empty space without Shift/Ctrl, clear selection
+                if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                    setSelection(null);
+                    setSelectedStateIds([]);
+                }
+
                 const pos = getAdjustedMousePos(e);
                 setIsSelecting(true);
                 setSelectionStart(pos);
                 setSelectionEnd(pos);
-                setSelection(null);
-                setSelectedStateIds([]);
             } else {
                 setSelection(null);
             }
@@ -138,9 +222,22 @@ export const AutomatonCanvas: React.FC<CanvasProps> = ({
         if (tool === 'transition') {
             setCreatingTransition({ from: stateId, toPoint: { x: pos.x, y: pos.y } });
         } else {
-            if (!selectedStateIds.includes(stateId)) {
-                setSelection({ type: 'state', id: stateId });
-                setSelectedStateIds([stateId]);
+            // Multi-selection logic
+            if (e.shiftKey || e.ctrlKey || e.metaKey) {
+                if (selectedStateIds.includes(stateId)) {
+                    setSelectedStateIds(selectedStateIds.filter(id => id !== stateId));
+                    if (selection?.id === stateId) setSelection(null);
+                } else {
+                    setSelectedStateIds([...selectedStateIds, stateId]);
+                    setSelection({ type: 'state', id: stateId });
+                }
+            } else {
+                // If clicking an unselected state without modifiers, select only it
+                if (!selectedStateIds.includes(stateId)) {
+                    setSelection({ type: 'state', id: stateId });
+                    setSelectedStateIds([stateId]);
+                }
+                // If clicking a selected state, keep selection (for dragging)
             }
 
             if (currentState) {
@@ -172,23 +269,32 @@ export const AutomatonCanvas: React.FC<CanvasProps> = ({
         }
 
         if (draggingStateId) {
-            if (selectedStateIds.includes(draggingStateId) && selectedStateIds.length > 1) {
-                // Simplificação: move apenas o clicado por enquanto para evitar bugs complexos sem cálculo de delta
-                // Idealmente: calcular delta e aplicar a todos.
+            const draggedState = data.estados.find(s => s.id === draggingStateId);
+            if (!draggedState) return;
+
+            // Calculate delta movement
+            const newX = pos.x - dragOffset.x;
+            const newY = pos.y - dragOffset.y;
+            const dx = newX - draggedState.x;
+            const dy = newY - draggedState.y;
+
+            if (selectedStateIds.includes(draggingStateId)) {
+                // Move all selected states
                 onChange({
                     ...data,
                     estados: data.estados.map(st =>
-                        st.id === draggingStateId
-                            ? { ...st, x: pos.x - dragOffset.x, y: pos.y - dragOffset.y }
+                        selectedStateIds.includes(st.id)
+                            ? { ...st, x: st.x + dx, y: st.y + dy }
                             : st
                     )
                 });
             } else {
+                // Move only the dragged state (shouldn't happen often with logic above, but safe fallback)
                 onChange({
                     ...data,
                     estados: data.estados.map(st =>
                         st.id === draggingStateId
-                            ? { ...st, x: pos.x - dragOffset.x, y: pos.y - dragOffset.y }
+                            ? { ...st, x: newX, y: newY }
                             : st
                     )
                 });
@@ -213,7 +319,7 @@ export const AutomatonCanvas: React.FC<CanvasProps> = ({
             if (selected.length === 1) {
                 setSelection({ type: 'state', id: selected[0] });
             } else if (selected.length > 0) {
-                setSelection(null);
+                setSelection(null); // Multiple selected, no single primary selection for properties yet
             }
             setIsSelecting(false);
         }
@@ -242,6 +348,41 @@ export const AutomatonCanvas: React.FC<CanvasProps> = ({
             }
             setCreatingTransition(null);
         }
+    };
+
+    const handleContextMenu = (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (readOnly) return;
+
+        const pos = getAdjustedMousePos(e);
+
+        // Check if clicked on state
+        const clickedState = [...data.estados].reverse().find(s => {
+            const dx = s.x - pos.x;
+            const dy = s.y - pos.y;
+            return dx * dx + dy * dy <= 28 * 28; // 28 is radius
+        });
+
+        if (clickedState) {
+            setContextMenu({ x: e.clientX, y: e.clientY, type: 'state', targetId: clickedState.id });
+            return;
+        }
+
+        setContextMenu({ x: e.clientX, y: e.clientY, type: 'canvas' });
+    };
+
+    const handleStateContextMenu = (e: React.MouseEvent, stateId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (readOnly) return;
+        setContextMenu({ x: e.clientX, y: e.clientY, type: 'state', targetId: stateId });
+    };
+
+    const handleTransitionContextMenu = (e: React.MouseEvent, transId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (readOnly) return;
+        setContextMenu({ x: e.clientX, y: e.clientY, type: 'transition', targetId: transId });
     };
 
     const renderTransitions = useMemo(() => {
@@ -288,15 +429,20 @@ export const AutomatonCanvas: React.FC<CanvasProps> = ({
                 const isActive = activeStates.includes(t.de) && activeStates.includes(t.para);
 
                 elements.push(
-                    <g key={t.id} onClick={(e) => { e.stopPropagation(); setSelection({ type: 'transition', id: t.id }); }} className="group/trans cursor-pointer">
+                    <g
+                        key={t.id}
+                        onClick={(e) => { e.stopPropagation(); setSelection({ type: 'transition', id: t.id }); }}
+                        onContextMenu={(e) => handleTransitionContextMenu(e, t.id)}
+                        className="group/trans cursor-pointer"
+                    >
                         <path d={pathD} stroke="transparent" strokeWidth="20" fill="none" />
                         <path
                             d={pathD}
                             className={`transition-colors duration-300 fill-none 
                                 ${isSelected ? 'stroke-ios-blue stroke-[2.5px] filter drop-shadow-md' :
-                                isActive ? 'stroke-ios-green stroke-[2.5px]' :
-                                    'stroke-[var(--stroke-idle)] stroke-2 group-hover/trans:stroke-[var(--stroke-hover)]'
-                            }`}
+                                    isActive ? 'stroke-ios-green stroke-[2.5px]' :
+                                        'stroke-[var(--stroke-idle)] stroke-2 group-hover/trans:stroke-[var(--stroke-hover)]'
+                                }`}
                             markerEnd={`url(#${isSelected ? 'arrow-selected' : (isActive ? 'arrow-active' : 'arrow')})`}
                         />
                         <g transform={`translate(${labelPos.x}, ${labelPos.y})`}>
@@ -304,12 +450,12 @@ export const AutomatonCanvas: React.FC<CanvasProps> = ({
                                 x="-14" y="-12" width="28" height="24" rx="8"
                                 className={`transition-all duration-200 ${isSelected ? 'fill-ios-blue shadow-lg' :
                                     'fill-[var(--bg-card)] stroke-[var(--border-color)] stroke-1'
-                                }`}
+                                    }`}
                             />
                             <text
                                 dy="5" textAnchor="middle"
                                 className={`text-[11px] font-mono font-bold select-none pointer-events-none ${isSelected ? 'fill-white' : 'fill-[var(--text-primary)]'
-                                }`}
+                                    }`}
                             >
                                 {t.simbolo}
                             </text>
@@ -332,6 +478,9 @@ export const AutomatonCanvas: React.FC<CanvasProps> = ({
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
+                onWheel={handleWheel}
+                onDoubleClick={handleDoubleClick}
+                onContextMenu={handleContextMenu}
             >
                 <defs>
                     <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse">
@@ -382,6 +531,7 @@ export const AutomatonCanvas: React.FC<CanvasProps> = ({
                                 transform={`translate(${s.x}, ${s.y})`}
                                 onMouseDown={(e) => handleStateMouseDown(e, s.id)}
                                 onMouseUp={(e) => handleStateMouseUp(e, s.id)}
+                                onContextMenu={(e) => handleStateContextMenu(e, s.id)}
                                 className={`${draggingStateId === s.id ? 'cursor-grabbing' : 'cursor-grab'}`}
                             >
                                 {s.isInicial && (
@@ -394,8 +544,8 @@ export const AutomatonCanvas: React.FC<CanvasProps> = ({
                                     r={isSelected || isActive ? 28 : 26}
                                     className={`transition-all duration-200
                                         ${isActive ? 'fill-ios-green stroke-ios-green shadow-[0_0_15px_rgba(52,199,89,0.5)]' :
-                                        (isSelected ? 'fill-ios-blue stroke-ios-blue shadow-[0_0_15px_rgba(0,122,255,0.4)]' :
-                                            'fill-[var(--bg-card)] stroke-[var(--stroke-idle)] hover:stroke-[var(--stroke-hover)]')}`}
+                                            (isSelected ? 'fill-ios-blue stroke-ios-blue shadow-[0_0_15px_rgba(0,122,255,0.4)]' :
+                                                'fill-[var(--bg-card)] stroke-[var(--stroke-idle)] hover:stroke-[var(--stroke-hover)]')}`}
                                     strokeWidth={isSelected || isActive ? 2.5 : 2}
                                 />
 
@@ -412,7 +562,88 @@ export const AutomatonCanvas: React.FC<CanvasProps> = ({
                 </g>
             </svg>
 
-            {!readOnly && selection && (
+            {/* Context Menu */}
+            {contextMenu && (
+                <ContextMenu
+                    x={contextMenu.x}
+                    y={contextMenu.y}
+                    onClose={() => setContextMenu(null)}
+                    options={
+                        contextMenu.type === 'state' ? [
+                            {
+                                label: 'Inicial',
+                                icon: <Flag size={14} />,
+                                action: () => {
+                                    if (contextMenu.targetId) {
+                                        onChange({ ...data, estados: data.estados.map(s => s.id === contextMenu.targetId ? { ...s, isInicial: !s.isInicial } : s) });
+                                    }
+                                }
+                            },
+                            {
+                                label: 'Final',
+                                icon: <Check size={14} />,
+                                action: () => {
+                                    if (contextMenu.targetId) {
+                                        onChange({ ...data, estados: data.estados.map(s => s.id === contextMenu.targetId ? { ...s, isFinal: !s.isFinal } : s) });
+                                    }
+                                }
+                            },
+                            { separator: true, label: '', action: () => { } },
+                            {
+                                label: 'Excluir',
+                                icon: <Trash2 size={14} />,
+                                danger: true,
+                                action: () => {
+                                    if (contextMenu.targetId) deleteState(contextMenu.targetId);
+                                }
+                            }
+                        ] : contextMenu.type === 'transition' ? [
+                            {
+                                label: 'Excluir',
+                                icon: <Trash2 size={14} />,
+                                danger: true,
+                                action: () => {
+                                    if (contextMenu.targetId) deleteTransition(contextMenu.targetId);
+                                }
+                            }
+                        ] : [
+                            {
+                                label: 'Novo Estado',
+                                icon: <Plus size={14} />,
+                                action: () => {
+                                    const rect = svgRef.current?.getBoundingClientRect();
+                                    if (rect) {
+                                        // Calculate position relative to canvas, adjusted for pan/zoom
+                                        const mouseX = contextMenu.x - rect.left;
+                                        const mouseY = contextMenu.y - rect.top;
+                                        const x = (mouseX - pan.x) / zoom;
+                                        const y = (mouseY - pan.y) / zoom;
+
+                                        const newState: Estado = {
+                                            id: `q${Date.now()}`,
+                                            label: `q${data.estados.length}`,
+                                            x, y,
+                                            isFinal: false,
+                                            isInicial: data.estados.length === 0
+                                        };
+                                        onChange({ ...data, estados: [...data.estados, newState] });
+                                    }
+                                }
+                            },
+                            {
+                                label: 'Resetar Zoom',
+                                icon: <RotateCcw size={14} />,
+                                action: () => {
+                                    if (onZoomChange) onZoomChange(1);
+                                    setPan({ x: 0, y: 0 });
+                                }
+                            }
+                        ]
+                    }
+                />
+            )}
+
+            {!readOnly && selection && !contextMenu && (
                 <div className="absolute top-20 left-1/2 -translate-x-1/2 glass-dock px-6 py-3 rounded-2xl flex items-center gap-5 animate-scale-in z-50">
                     {selection.type === 'state' ? (
                         <>

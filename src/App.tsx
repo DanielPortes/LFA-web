@@ -84,7 +84,9 @@ function MainApp() {
                 <div className={`transition-opacity duration-300 ${activeTab === 'home' ? 'block' : 'hidden'}`}>
                     <HomeSection onNavigate={setActiveTab} />
                 </div>
-                {activeTab === 'conteudo' && <ConteudoSection />}
+
+                {activeTab === 'conteudo' && <ConteudoSection onSimulate={handleSimulationRequest} />}
+
                 {activeTab === 'exercicios' && <ExerciciosSection onSimulate={handleSimulationRequest} />}
                 {activeTab === 'simulador' && <SimulatorPage initialData={simuladorData} />}
             </main>

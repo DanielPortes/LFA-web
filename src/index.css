@@ -30,18 +30,19 @@
 
 @layer base {
     :root {
-        /* Light Mode - High Contrast & Clean */
-        --bg-primary: #F5F5F7; /* Apple Light Gray Background */
-        --bg-card: rgba(255, 255, 255, 0.85);
-        --bg-overlay: rgba(255, 255, 255, 0.95);
-        --text-primary: #1C1C1E;
-        --text-secondary: #6C6C70;
-        --border-color: rgba(0, 0, 0, 0.1);
-        --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-        --grid-color: rgba(0, 0, 0, 0.08); /* Darker grid for visibility */
-        --canvas-bg: #FFFFFF;
+        /* Light Mode - Premium Apple Style */
+        --bg-primary: #F5F5F7;
+        /* Increased transparency for glass effect */
+        --bg-card: rgba(255, 255, 255, 0.65);
+        --bg-overlay: rgba(255, 255, 255, 0.75);
+        --text-primary: #1D1D1F;
+        --text-secondary: #86868B;
+        --border-color: rgba(0, 0, 0, 0.08);
+        --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        --grid-color: rgba(0, 0, 0, 0.05);
+        --canvas-bg: rgba(255, 255, 255, 0.5);
         --stroke-idle: #8E8E93;
-        --stroke-hover: #3A3A3C;
+        --stroke-hover: #1D1D1F;
     }
 
     .dark {
@@ -70,22 +71,46 @@
         min-height: 100vh;
     }
 
+    /* Light Mode Animated Background - Subtle Aurora */
+    body::before {
+        content: '';
+        position: fixed;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle at center, rgba(0, 122, 255, 0.08), transparent 25%),
+            radial-gradient(circle at top left, rgba(52, 199, 89, 0.08), transparent 25%),
+            radial-gradient(circle at bottom right, rgba(175, 82, 222, 0.08), transparent 25%);
+        filter: blur(80px);
+        z-index: -2;
+        pointer-events: none;
+        animation: rotateBackground 20s linear infinite;
+    }
+
+    @keyframes rotateBackground {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
     /* Enhanced Dark Mode Background - "Aurora" style */
     .dark body {
         background: radial-gradient(circle at 50% -20%, #1a1a2e 0%, #000000 60%);
     }
 
     .dark body::before {
-        content: '';
-        position: fixed;
-        top: -40%;
-        right: -20%;
-        width: 80vw;
-        height: 80vw;
         background: radial-gradient(circle, rgba(0, 122, 255, 0.15) 0%, transparent 60%);
         filter: blur(100px);
-        z-index: -2;
-        pointer-events: none;
+        top: -40%;
+        right: -20%;
+        left: auto;
+        width: 80vw;
+        height: 80vw;
         animation: breathe 10s ease-in-out infinite alternate;
     }
 
@@ -104,28 +129,68 @@
     }
 
     @keyframes breathe {
-        0% { transform: scale(1); opacity: 0.8; }
-        100% { transform: scale(1.1); opacity: 1; }
+        0% {
+            transform: scale(1);
+            opacity: 0.8;
+        }
+
+        100% {
+            transform: scale(1.1);
+            opacity: 1;
+        }
+    }
+
+    /* Custom Scrollbar - macOS/iOS Style */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+        background-color: transparent;
+    }
+
+    ::-webkit-scrollbar-track {
+        background-color: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+        transition: background-color 0.2s ease;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(0, 0, 0, 0.25);
+    }
+
+    .dark ::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .dark ::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(255, 255, 255, 0.3);
     }
 }
 
 @layer utilities {
     .glass-panel {
-        @apply backdrop-blur-xl border border-[var(--border-color)];
+        @apply backdrop-blur-2xl border border-[var(--border-color)];
         background-color: var(--bg-card);
         box-shadow: var(--glass-shadow);
     }
 
     .glass-card {
-        @apply backdrop-blur-xl border border-[var(--border-color)] rounded-[24px] transition-all duration-500;
+        @apply backdrop-blur-2xl border border-[var(--border-color)] rounded-[24px] transition-all duration-500;
         background-color: var(--bg-overlay);
         box-shadow: var(--glass-shadow);
     }
 
     .glass-dock {
-        @apply backdrop-blur-2xl border border-[var(--border-color)] shadow-apple-xl;
-        background-color: rgba(245, 245, 247, 0.7); /* Light mode distinct dock */
+        @apply backdrop-blur-3xl border border-[var(--border-color)] shadow-apple-xl;
+        background-color: rgba(255, 255, 255, 0.75);
+        /* More translucent in light mode */
     }
+
     .dark .glass-dock {
         background-color: rgba(30, 30, 30, 0.6);
     }
@@ -144,7 +209,22 @@
 .bg-grid-pattern {
     background-size: 40px 40px;
     background-image:
-            linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
-            linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
-    mask-image: radial-gradient(ellipse at center, black 40%, transparent 100%); /* Fade edges */
+        linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 100%);
+    /* Fade edges */
+}
+
+/* Hide default cursor when custom cursor is active */
+.cursor-none,
+.cursor-none * {
+    cursor: none !important;
+}
+
+/* Ensure canvas hides cursor but allows custom cursor to be seen */
+svg.cursor-default,
+svg.cursor-crosshair,
+svg.cursor-grab,
+svg.cursor-grabbing {
+    cursor: none !important;
 }

@@ -22,7 +22,7 @@ export interface Transicao {
 }
 
 export interface AutomatoData {
-    tipo: 'AFD' | 'AFN' | 'GR' | 'ER'; // Added GR and ER types
+    tipo: 'AFD' | 'AFN' | 'GR' | 'ER';
     estados: Estado[];
     transicoes: Transicao[];
     descricao?: string;
@@ -48,4 +48,26 @@ export interface SimulationStep {
     remainingInput: string;
     processedInput: string;
     status: 'running' | 'accepted' | 'rejected';
+}
+
+// --- Tipos para o Material Didático Rico ---
+
+export interface ContentBlock {
+    type: 'text' | 'definition' | 'theorem' | 'example' | 'list' | 'note' | 'algorithm';
+    content: string | string[];
+    title?: string;
+    automatoRef?: AutomatoData; // Referência para carregar no simulador
+}
+
+export interface Lesson {
+    id: string;
+    title: string;
+    description: string;
+    content: ContentBlock[];
+}
+
+export interface CourseModule {
+    id: string;
+    title: string;
+    lessons: Lesson[];
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AutomatonEditor } from '../components/automaton/AutomatonEditor';
 import type { AutomatoData, SimulationStep } from '../types';
 import { Play, Pause, SkipForward, RotateCcw, CheckCircle2, XCircle, X, Zap, Keyboard } from 'lucide-react';
+import { getEpsilonClosure, performStep } from '../utils/automatonLogic';
 
 interface SimulatorProps {
     initialData?: AutomatoData;
@@ -39,8 +40,11 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({ initialData }) => {
             setInputString('');
         } else {
             const initialStates = data.estados.filter(e => e.isInicial).map(e => e.id);
+            // Calculate epsilon closure for initial states
+            const activeStates = getEpsilonClosure(initialStates, data.transicoes);
+
             setSimulationState({
-                activeStates: initialStates,
+                activeStates,
                 remainingInput: inputString,
                 processedInput: '',
                 status: 'running'
@@ -66,8 +70,10 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({ initialData }) => {
 
         if (!currentState) {
             const initialStates = data.estados.filter(e => e.isInicial).map(e => e.id);
+            const activeStates = getEpsilonClosure(initialStates, data.transicoes);
+
             currentState = {
-                activeStates: initialStates,
+                activeStates,
                 remainingInput: inputString,
                 processedInput: '',
                 status: 'running'
@@ -79,29 +85,14 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({ initialData }) => {
         if (currentState.status !== 'running') return;
 
         const currentSymbol = currentState.remainingInput[0];
-        const nextActiveStates = new Set<string>();
 
-        currentState.activeStates.forEach(stateId => {
-            const transicoes = data.transicoes.filter(t => t.de === stateId);
-            transicoes.forEach(t => {
-                const simbolos = t.simbolo.split(',').map(s => s.trim());
-                const match = simbolos.some(s => {
-                    if (s === 'λ' || s === '') return false;
-                    if (s === currentSymbol) return true;
-                    if (s.includes('..') && currentSymbol) {
-                        const [min, max] = s.split('..');
-                        return currentSymbol >= min && currentSymbol <= max;
-                    }
-                    return false;
-                });
-                if (match) nextActiveStates.add(t.para);
-            });
-        });
+        // Use the new logic to calculate next states including epsilon closures
+        const nextStatesArray = performStep(currentState.activeStates, currentSymbol, data.transicoes);
 
-        const nextStatesArray = Array.from(nextActiveStates);
         const nextRemaining = currentState.remainingInput.slice(1);
         let status: 'running' | 'accepted' | 'rejected' = 'running';
 
+        // Check acceptance conditions
         if (currentState.remainingInput.length === 0) {
             const hasFinal = currentState.activeStates.some(id => data.estados.find(e => e.id === id)?.isFinal);
             status = hasFinal ? 'accepted' : 'rejected';
@@ -121,6 +112,7 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({ initialData }) => {
             status
         };
 
+        // If we just consumed the last character, check if we landed on a final state
         if (nextRemaining.length === 0 && status === 'running') {
             const hasFinal = nextStatesArray.some(id => data.estados.find(e => e.id === id)?.isFinal);
             newStep.status = hasFinal ? 'accepted' : 'rejected';
@@ -194,8 +186,8 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({ initialData }) => {
                     <div className="flex items-center justify-between mb-2 px-2">
                         <span className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5
                              ${simulationState?.status === 'accepted' ? 'text-ios-green' :
-                            simulationState?.status === 'rejected' ? 'text-ios-red' : 'text-gray-400'}`}>
-                             {simulationState?.status === 'accepted' && <CheckCircle2 size={12} />}
+                                simulationState?.status === 'rejected' ? 'text-ios-red' : 'text-gray-400'}`}>
+                            {simulationState?.status === 'accepted' && <CheckCircle2 size={12} />}
                             {simulationState?.status === 'rejected' && <XCircle size={12} />}
                             {simulationState?.status === 'accepted' ? 'Aceito' : simulationState?.status === 'rejected' ? 'Rejeitado' : 'Fita de Leitura'}
                         </span>
@@ -220,11 +212,11 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({ initialData }) => {
                                         key={i}
                                         className={`w-8 h-10 rounded-lg flex items-center justify-center font-mono font-bold text-lg transition-all duration-300
                                             ${isCurrent
-                                            ? 'bg-ios-blue text-white scale-110 shadow-lg z-20'
-                                            : (isProcessed
-                                                ? 'text-[var(--text-secondary)] opacity-40 scale-95 blur-[0.5px]'
-                                                : 'text-[var(--text-primary)] bg-white dark:bg-white/10 border border-[var(--border-color)]')
-                                        }`}
+                                                ? 'bg-ios-blue text-white scale-110 shadow-lg z-20'
+                                                : (isProcessed
+                                                    ? 'text-[var(--text-secondary)] opacity-40 scale-95 blur-[0.5px]'
+                                                    : 'text-[var(--text-primary)] bg-white dark:bg-white/10 border border-[var(--border-color)]')
+                                            }`}
                                     >
                                         {char}
                                     </div>
@@ -268,8 +260,8 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({ initialData }) => {
                                     onClick={() => setSpeed(s)}
                                     className={`w-8 h-8 flex items-center justify-center rounded-lg text-[10px] font-bold transition-all 
                                         ${speed === s
-                                        ? 'bg-white dark:bg-gray-700 shadow-sm text-ios-blue'
-                                        : 'text-gray-400 hover:text-[var(--text-primary)]'}`}
+                                            ? 'bg-white dark:bg-gray-700 shadow-sm text-ios-blue'
+                                            : 'text-gray-400 hover:text-[var(--text-primary)]'}`}
                                 >
                                     {s === 1000 ? '1x' : s === 500 ? '2x' : <Zap size={12} />}
                                 </button>

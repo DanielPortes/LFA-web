@@ -52,13 +52,14 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (t: Tab) => void }) =>
                         <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-ios-blue">
                             <Info size={20} />
                         </div>
-                        Informações
+                        DCC063 - Turma A
                     </h3>
                     <ul className="space-y-4">
                         {[
-                            { icon: MapPin, t: "Sala 308", s: "Bloco C" },
-                            { icon: Clock, t: "Seg/Qua 14h", s: "Teoria" },
-                            { icon: Calendar, t: "Qui 14h", s: "Prática" }
+                            { icon: MapPin, t: "Sala 308", s: "ICE - Depto Comp." },
+                            { icon: Clock, t: "Seg: 14h-16h", s: "Aula Teórica" },
+                            { icon: Clock, t: "Qua: 16h-18h", s: "Aula Teórica" },
+                            { icon: Calendar, t: "Qui (5as): 14h-16h", s: "Atendimento (Sala 432)" }
                         ].map((item, i) => (
                             <li key={i} className="flex items-center gap-4 group p-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
                                 <div className="text-gray-400 group-hover:text-ios-blue transition-colors">
@@ -82,18 +83,18 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (t: Tab) => void }) =>
                     <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-ios-purple">
                         <Move size={20} />
                     </div>
-                    Cronograma
+                    Cronograma de Avaliações
                 </h3>
 
-                <div className="relative flex justify-between items-center px-8">
+                <div className="relative flex justify-between items-center px-4 md:px-8">
                     <div className="absolute left-12 right-12 h-0.5 bg-gray-200 dark:bg-white/10 top-[18px] -z-10" />
                     {[
-                        { l: 'Intro', d: 'Concluído', s: 'done' },
-                        { l: 'Prova 1', d: '24/11', s: 'active' },
-                        { l: 'Prova 2', d: '12/01', s: 'next' },
-                        { l: 'Final', d: '20/01', s: 'next' }
+                        { l: 'Prova 1', d: '24/11', s: 'active', desc: 'AFD, AFN, Min, ER' },
+                        { l: 'Prova 2', d: '12/01', s: 'next', desc: 'GLC, APN, Propriedades' },
+                        { l: 'Trabalho', d: '21/01', s: 'next', desc: 'Opcional' },
+                        { l: '2ª Cham.', d: '19/01', s: 'next', desc: 'Matéria Toda' }
                     ].map((item, i) => (
-                        <div key={i} className="flex flex-col items-center gap-4 relative group">
+                        <div key={i} className="flex flex-col items-center gap-4 relative group w-1/4">
                             <div className={`w-10 h-10 rounded-full border-[3px] flex items-center justify-center shadow-lg transition-all duration-300 z-10 ${
                                 item.s === 'done' ? 'bg-ios-green border-ios-bg-light dark:border-ios-bg-dark text-white scale-100' :
                                     item.s === 'active' ? 'bg-ios-blue border-ios-bg-light dark:border-ios-bg-dark text-white ring-4 ring-blue-500/20 scale-110' :
@@ -102,9 +103,10 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (t: Tab) => void }) =>
                                 {item.s === 'done' && <ChevronRight size={16} strokeWidth={4} />}
                                 {item.s !== 'done' && <div className={`w-2 h-2 rounded-full ${item.s === 'active' ? 'bg-white animate-pulse' : 'bg-gray-300 dark:bg-gray-600'}`} />}
                             </div>
-                            <div className="text-center">
+                            <div className="text-center w-full">
                                 <span className={`block text-sm font-bold mb-1 ${item.s === 'active' ? 'text-ios-blue' : 'text-gray-500'}`}>{item.l}</span>
-                                <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider bg-gray-100 dark:bg-white/5 px-2 py-1 rounded-md">{item.d}</span>
+                                <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider bg-gray-100 dark:bg-white/5 px-2 py-1 rounded-md inline-block mb-1">{item.d}</span>
+                                <p className="text-[9px] text-gray-400 hidden md:block leading-tight">{item.desc}</p>
                             </div>
                         </div>
                     ))}

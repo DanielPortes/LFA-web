@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { AutomatoData, Tool } from '../../types';
 import { AutomatonCanvas } from './AutomatonCanvas';
 import { MousePointer2, Plus, ArrowUpRight, Trash2, Download, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { CustomCursor } from '../ui/CustomCursor';
 
 interface EditorProps {
     data: AutomatoData;
@@ -56,6 +57,8 @@ export const AutomatonEditor: React.FC<EditorProps> = ({ data, onChange, activeS
 
     return (
         <div className="flex flex-col h-full relative group">
+            <CustomCursor />
+
             {/* Toolbar - macOS Style Floating Palette */}
             {!readOnly && (
                 <div className="absolute left-6 top-6 z-20 flex flex-col gap-4">
@@ -65,8 +68,8 @@ export const AutomatonEditor: React.FC<EditorProps> = ({ data, onChange, activeS
                                 key={t.id}
                                 onClick={() => setTool(t.id as Tool)}
                                 className={`p-3 rounded-xl transition-all duration-200 relative group/tooltip ${tool === t.id
-                                        ? 'bg-ios-blue text-white shadow-md'
-                                        : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-600 dark:hover:text-gray-200'
+                                    ? 'bg-ios-blue text-white shadow-md'
+                                    : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-600 dark:hover:text-gray-200'
                                     }`}
                             >
                                 <t.icon size={20} strokeWidth={2.5} />
@@ -120,6 +123,7 @@ export const AutomatonEditor: React.FC<EditorProps> = ({ data, onChange, activeS
                     activeStates={activeStates}
                     readOnly={readOnly}
                     zoom={zoom}
+                    onZoomChange={setZoom}
                     onInteract={onInteract}
                 />
             </div>
