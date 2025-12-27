@@ -26,58 +26,78 @@
 
 @layer base {
     :root {
-        /* Light Mode - Premium Apple Glass */
-        --bg-primary: #FFFFFF; /* Pure white base for gradients */
-        
-        /* Glass Surfaces - Ultra Translucent */
-        --bg-card: rgba(255, 255, 255, 0.4);
-        --bg-overlay: rgba(255, 255, 255, 0.5);
-        --bg-dock: rgba(255, 255, 255, 0.35);
-        
+        /* Light Mode - Premium Apple Glass - High Contrast Update */
+        --bg-primary: #F2F2F7; /* Slightly darker than pure white for depth */
+
+        /* Glass Surfaces - More Opaque & Distinct */
+        --bg-card: rgba(255, 255, 255, 0.75);
+        --bg-overlay: rgba(255, 255, 255, 0.85);
+        --bg-dock: rgba(255, 255, 255, 0.8);
+
         /* Typography - High Contrast */
         --text-primary: #000000;
-        --text-secondary: #6e6e73;
-        
+        --text-secondary: #48484a; /* Darker gray for better readability */
+
         /* Borders & Details */
-        --border-color: rgba(255, 255, 255, 0.4);
-        --border-highlight: rgba(255, 255, 255, 0.8);
-        
+        --border-color: rgba(0, 0, 0, 0.1);
+        --border-highlight: rgba(255, 255, 255, 0.5);
+
         /* Effects */
-        --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-        --glass-blur: blur(20px);
-        
+        --glass-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.08);
+        --glass-blur: blur(24px);
+
         /* Canvas */
-        --canvas-bg: transparent;
-        --grid-color: rgba(0, 0, 0, 0.03);
-        --stroke-idle: #86868b;
-        --stroke-hover: #1d1d1f;
+        --canvas-bg: transparent; /* Transparent to show background orbs/gradient */
+        --grid-color: rgba(0, 0, 0, 0.1); /* More visible grid */
+        --grid-color-active: rgba(0, 0, 0, 0.2);
+        --stroke-idle: #555559; /* Darker stroke for states */
+        --stroke-hover: #000000;
     }
 
     .dark {
-        /* Dark Mode - Deep Space */
-        --bg-primary: #000000;
-        
-        /* Glass Surfaces */
-        --bg-card: rgba(30, 30, 35, 0.5);
-        --bg-overlay: rgba(40, 40, 45, 0.6);
-        --bg-dock: rgba(20, 20, 25, 0.5);
-        
-        /* Typography */
+        /* Dark Mode - Graphite */
+        --bg-primary: #1c1c1e;
+
+        /* Glass Surfaces - Warmer graphite tones */
+        --bg-card: rgba(44, 44, 48, 0.7);
+        --bg-overlay: rgba(54, 54, 58, 0.75);
+        --bg-dock: rgba(38, 38, 42, 0.8);
+
+        /* Typography - Better contrast */
         --text-primary: #F5F5F7;
-        --text-secondary: #86868b;
-        
-        /* Borders */
-        --border-color: rgba(255, 255, 255, 0.1);
-        --border-highlight: rgba(255, 255, 255, 0.2);
-        
+        --text-secondary: #a1a1a6;
+
+        /* Borders - More visible */
+        --border-color: rgba(255, 255, 255, 0.12);
+        --border-highlight: rgba(255, 255, 255, 0.18);
+
         /* Effects */
-        --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-        
-        /* Canvas */
-        --canvas-bg: #000000;
-        --grid-color: rgba(255, 255, 255, 0.08);
-        --stroke-idle: #636366;
-        --stroke-hover: #AEAEB2;
+        --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+
+        /* Canvas - Graphite instead of pure black */
+        --canvas-bg: #1c1c1e;
+        --grid-color: rgba(255, 255, 255, 0.06);
+        --grid-color-active: rgba(255, 255, 255, 0.15);
+        --stroke-idle: #7c7c80;
+        --stroke-hover: #c7c7cc;
+    }
+
+    .focus-mode {
+        --bg-card: rgba(255, 255, 255, 0.85);
+        --bg-overlay: rgba(255, 255, 255, 0.9);
+        --bg-dock: rgba(255, 255, 255, 0.85);
+        --border-color: rgba(0, 0, 0, 0.08);
+        --border-highlight: rgba(0, 0, 0, 0.12);
+        --grid-color: rgba(0, 0, 0, 0.06);
+    }
+
+    .dark.focus-mode {
+        --bg-card: rgba(20, 20, 25, 0.9);
+        --bg-overlay: rgba(20, 20, 25, 0.92);
+        --bg-dock: rgba(20, 20, 25, 0.9);
+        --border-color: rgba(255, 255, 255, 0.18);
+        --border-highlight: rgba(255, 255, 255, 0.25);
+        --grid-color: rgba(255, 255, 255, 0.12);
     }
 
     body {
@@ -86,10 +106,23 @@
         font-family: var(--font-sans);
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        transition: color 0.5s ease;
+        transition: background-color 0.4s ease, color 0.4s ease;
         overflow-x: hidden;
         min-height: 100vh;
         position: relative;
+    }
+
+    /* Smooth transitions for all themed elements */
+    *, *::before, *::after {
+        transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow;
+        transition-duration: 0.3s;
+        transition-timing-function: ease;
+    }
+
+    /* Disable transitions for animations and transforms */
+    .animate-fade-in, .animate-scale-in, .animate-slide-in-right, .animate-slide-in-up,
+    [class*="animate-"] {
+        transition-property: none;
     }
 
     /* 
@@ -97,7 +130,8 @@
     */
 
     /* Light Mode: Vibrant Aurora Mesh */
-    body::before, body::after {
+    body::before,
+    body::after {
         content: '';
         position: fixed;
         z-index: -1;
@@ -126,6 +160,12 @@
         right: -10%;
     }
 
+    .focus-mode body::before,
+    .focus-mode body::after,
+    .focus-mode .bg-accent-orb {
+        display: none;
+    }
+
     /* Additional floating accent for depth */
     .bg-accent-orb {
         position: fixed;
@@ -142,13 +182,23 @@
     }
 
     @keyframes float {
-        0% { transform: translate(0, 0) rotate(0deg); }
-        100% { transform: translate(10%, 10%) rotate(10deg); }
+        0% {
+            transform: translate(0, 0) rotate(0deg);
+        }
+
+        100% {
+            transform: translate(10%, 10%) rotate(10deg);
+        }
     }
 
     @keyframes float-reverse {
-        0% { transform: translate(0, 0) rotate(0deg); }
-        100% { transform: translate(-10%, -10%) rotate(-10deg); }
+        0% {
+            transform: translate(0, 0) rotate(0deg);
+        }
+
+        100% {
+            transform: translate(-10%, -10%) rotate(-10deg);
+        }
     }
 
     /* Dark Mode Background Override */
@@ -156,12 +206,27 @@
         background: radial-gradient(circle, rgba(10, 132, 255, 0.15), transparent 60%);
         opacity: 0.4;
     }
+
     .dark body::after {
         background: radial-gradient(circle, rgba(191, 90, 242, 0.15), transparent 60%);
         opacity: 0.4;
     }
+
     .dark .bg-accent-orb {
         background: radial-gradient(circle, rgba(100, 210, 255, 0.05), transparent);
+    }
+
+    .reduce-motion * {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .reduce-motion body::before,
+    .reduce-motion body::after,
+    .reduce-motion .bg-accent-orb {
+        animation: none !important;
     }
 
     /* Scrollbar */
@@ -169,19 +234,24 @@
         width: 6px;
         height: 6px;
     }
+
     ::-webkit-scrollbar-track {
         background: transparent;
     }
+
     ::-webkit-scrollbar-thumb {
         background: rgba(0, 0, 0, 0.1);
         border-radius: 10px;
     }
+
     ::-webkit-scrollbar-thumb:hover {
         background: rgba(0, 0, 0, 0.2);
     }
+
     .dark ::-webkit-scrollbar-thumb {
         background: rgba(255, 255, 255, 0.15);
     }
+
     .dark ::-webkit-scrollbar-thumb:hover {
         background: rgba(255, 255, 255, 0.3);
     }
@@ -192,12 +262,12 @@
        GLASSMORPHISM UTILITIES 
        Using backdrop-filter for the frosted glass effect
     */
-    
+
     .glass-panel {
         @apply backdrop-blur-2xl border shadow-apple-sm;
         background-color: var(--bg-card);
         border-color: var(--border-color);
-        border-top-color: var(--border-highlight); /* Top highlight for 3D feel */
+        /* border-top-color: var(--border-highlight); removed for cleaner look in light mode */
     }
 
     .glass-card {
@@ -219,9 +289,11 @@
         @apply p-3 rounded-full transition-all duration-300 active:scale-90 flex items-center justify-center;
         background-color: rgba(255, 255, 255, 0.0);
     }
+
     .btn-icon:hover {
         background-color: rgba(0, 0, 0, 0.05);
     }
+
     .dark .btn-icon:hover {
         background-color: rgba(255, 255, 255, 0.1);
     }
@@ -238,8 +310,182 @@
     background-image:
         linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
         linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
-    mask-image: radial-gradient(ellipse at center, black 50%, transparent 100%);
+    mask-image: radial-gradient(ellipse at center, black 60%, transparent 100%);
+    transition: background-image 0.3s ease, opacity 0.3s ease;
 }
 
-.cursor-none, .cursor-none * { cursor: none !important; }
-svg.cursor-default, svg.cursor-crosshair, svg.cursor-grab, svg.cursor-grabbing { cursor: none !important; }
+/* Grid with snap active - more visible */
+.bg-grid-pattern.grid-active {
+    background-image:
+        linear-gradient(to right, var(--grid-color-active) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-color-active) 1px, transparent 1px);
+    opacity: 1 !important;
+}
+
+.cursor-none,
+.cursor-none * {
+    cursor: none !important;
+}
+
+/* Global cursor hide when custom cursor is active */
+body.custom-cursor-active,
+body.custom-cursor-active * {
+    cursor: none !important;
+}
+
+/* Animation Utilities */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes slide-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slide-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse-soft {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+@keyframes bounce-subtle {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.4s ease-out forwards;
+}
+
+.animate-scale-in {
+    animation: scale-in 0.3s ease-out forwards;
+}
+
+.animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out forwards;
+}
+
+.animate-slide-in-up {
+    animation: slide-in-up 0.4s ease-out forwards;
+}
+
+.animate-pulse-soft {
+    animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-bounce-subtle {
+    animation: bounce-subtle 1s ease-in-out infinite;
+}
+
+/* Staggered animation delays */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+
+/* Tooltip styles */
+.tooltip {
+    @apply invisible opacity-0 absolute z-50 px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-lg transition-all duration-200;
+}
+
+.tooltip-trigger:hover .tooltip {
+    @apply visible opacity-100;
+}
+
+/* Custom scrollbar for lists */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Transition highlight for active states during simulation */
+.transition-highlight {
+    stroke: #34C759 !important;
+    stroke-width: 3px !important;
+    filter: drop-shadow(0 0 8px rgba(52, 199, 89, 0.6));
+}
+
+/* Grid snap indicator */
+.snap-indicator {
+    stroke: rgba(0, 122, 255, 0.3);
+    stroke-dasharray: 4 4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    body::before,
+    body::after,
+    .bg-accent-orb {
+        animation: none !important;
+    }
+}
