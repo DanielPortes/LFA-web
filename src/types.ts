@@ -19,6 +19,7 @@ export interface Transicao {
     para: string;
     simbolo: string;
     curvatura: number;
+    controlPoint?: { x: number; y: number } | null;
 }
 
 export interface AutomatoData {
@@ -28,12 +29,18 @@ export interface AutomatoData {
     descricao?: string;
 }
 
+export interface TestCase {
+    input: string;
+    expected: 'accept' | 'reject';
+}
+
 export interface Exercicio {
     id: number;
     pergunta: string;
     dica?: string;
     respostaTexto?: string;
     respostaAutomato?: AutomatoData;
+    testes?: TestCase[];
     nivel: 'facil' | 'medio' | 'dificil';
 }
 
@@ -49,6 +56,9 @@ export interface SimulationStep {
     remainingInput: string;
     processedInput: string;
     status: 'running' | 'accepted' | 'rejected';
+    symbol?: string;
+    fromStates?: string[];
+    usedTransitions?: string[];
 }
 
 // --- Tipos para o Material Didático Rico ---

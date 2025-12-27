@@ -1,4 +1,5 @@
 import type { Transicao } from '../types';
+import { hasEpsilonToken, matchesSymbol } from './symbols';
 
 /**
  * Calculates the epsilon closure for a set of states.
@@ -17,8 +18,7 @@ export const getEpsilonClosure = (
 
         // Find all states reachable from currentId via epsilon
         const epsilonTransitions = transitions.filter(t =>
-            t.de === currentId &&
-            (t.simbolo === 'λ' || t.simbolo === '')
+            t.de === currentId && hasEpsilonToken(t.simbolo)
         );
 
         for (const t of epsilonTransitions) {
@@ -48,19 +48,7 @@ export const performStep = (
         const relevantTransitions = transitions.filter(t => t.de === stateId);
 
         for (const t of relevantTransitions) {
-            const symbols = t.simbolo.split(',').map(s => s.trim());
-
-            const matches = symbols.some(s => {
-                if (s === 'λ' || s === '') return false; // Epsilon handled separately
-                if (s === symbol) return true;
-                if (s.includes('..')) {
-                    const [min, max] = s.split('..');
-                    return symbol >= min && symbol <= max;
-                }
-                return false;
-            });
-
-            if (matches) {
+            if (matchesSymbol(t.simbolo, symbol)) {
                 directTargets.add(t.para);
             }
         }

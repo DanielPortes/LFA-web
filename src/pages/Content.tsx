@@ -15,17 +15,27 @@ import {
     Quote,
     AlertTriangle,
     Calculator,
-    ArrowDown
+    ArrowDown,
+    Maximize2,
+    CircleCheck,
+    Circle,
+    RotateCcw
 } from 'lucide-react';
 import { courseModules } from '../data/theoryData';
 import type { ContentBlock, AutomatoData } from '../types';
 import { AutomatonEditor } from '../components/automaton/AutomatonEditor';
+import { AutomatonPreview } from '../components/automaton/AutomatonPreview';
+import { Modal } from '../components/ui/Modal';
+import { useProgress } from '../hooks/useProgress';
 
 interface ContentProps {
     onSimulate?: (data: AutomatoData) => void;
+    initialModuleId?: string;
+    initialLessonId?: string;
+    onSelectionChange?: (moduleId: string, lessonId: string) => void;
 }
 
-const ContentBlockRenderer = ({ block, onSimulate }: { block: ContentBlock, onSimulate?: (data: AutomatoData) => void }) => {
+const ContentBlockRenderer = ({ block, onSimulate, onExpand }: { block: ContentBlock, onSimulate?: (data: AutomatoData) => void, onExpand: (data: AutomatoData) => void }) => {
     switch (block.type) {
         case 'definition':
             return (
@@ -149,12 +159,17 @@ const ContentBlockRenderer = ({ block, onSimulate }: { block: ContentBlock, onSi
                                 {block.automatoRef && (
                                     <div className="flex flex-col gap-3">
                                         {block.automatoRef2 && <div className="text-center font-bold text-gray-400 text-xs uppercase tracking-widest">Antes</div>}
-                                        <div className="h-72 bg-[var(--canvas-bg)] rounded-2xl border border-[var(--border-color)] overflow-hidden relative shadow-inner cursor-default group-hover:shadow-md transition-shadow">
-                                            <AutomatonEditor
-                                                data={block.automatoRef}
-                                                onChange={() => { }}
-                                                readOnly={true}
-                                            />
+                                        <div className="h-72 bg-[var(--canvas-bg)] rounded-2xl border border-[var(--border-color)] overflow-hidden relative shadow-inner group-hover:shadow-md transition-shadow">
+                                            <div className="absolute top-2 right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => onExpand(block.automatoRef!)}
+                                                    className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-lg backdrop-blur-sm transition-colors"
+                                                    title="Expandir visualização"
+                                                >
+                                                    <Maximize2 size={16} />
+                                                </button>
+                                            </div>
+                                            <AutomatonPreview data={block.automatoRef} />
                                         </div>
                                     </div>
                                 )}
@@ -164,12 +179,17 @@ const ContentBlockRenderer = ({ block, onSimulate }: { block: ContentBlock, onSi
                                         <div className="md:hidden flex justify-center text-gray-300"><ArrowDown /></div>
                                         <div className="flex flex-col gap-3">
                                             <div className="text-center font-bold text-ios-green text-xs uppercase tracking-widest">Depois</div>
-                                            <div className="h-72 bg-[var(--canvas-bg)] rounded-2xl border-2 border-ios-green/20 overflow-hidden relative shadow-inner cursor-default group-hover:shadow-md transition-shadow">
-                                                <AutomatonEditor
-                                                    data={block.automatoRef2}
-                                                    onChange={() => { }}
-                                                    readOnly={true}
-                                                />
+                                            <div className="h-72 bg-[var(--canvas-bg)] rounded-2xl border-2 border-ios-green/20 overflow-hidden relative shadow-inner group-hover:shadow-md transition-shadow">
+                                            <div className="absolute top-2 right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => onExpand(block.automatoRef2!)}
+                                                        className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-lg backdrop-blur-sm transition-colors"
+                                                        title="Expandir visualização"
+                                                    >
+                                                        <Maximize2 size={16} />
+                                                    </button>
+                                                </div>
+                                                <AutomatonPreview data={block.automatoRef2} />
                                             </div>
                                         </div>
                                     </>
@@ -202,22 +222,60 @@ const ContentBlockRenderer = ({ block, onSimulate }: { block: ContentBlock, onSi
     }
 };
 
-export const ConteudoSection = ({ onSimulate }: ContentProps) => {
-    const [activeModuleId, setActiveModuleId] = useState(courseModules[0].id);
-    const [activeLessonId, setActiveLessonId] = useState(courseModules[0].lessons[0].id);
+export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, onSelectionChange }: ContentProps) => {
+    const getModuleById = (moduleId?: string) =>
+        courseModules.find(m => m.id === moduleId) ?? courseModules[0];
+    const getLessonById = (moduleId?: string, lessonId?: string) => {
+        const mod = getModuleById(moduleId);
+        return mod.lessons.find(l => l.id === lessonId) ?? mod.lessons[0];
+    };
+
+    const initialModule = getModuleById(initialModuleId);
+    const initialLesson = getLessonById(initialModule.id, initialLessonId);
+
+    const [activeModuleId, setActiveModuleId] = useState(initialModule.id);
+    const [activeLessonId, setActiveLessonId] = useState(initialLesson.id);
     const [isSidebarOpen, setSidebarOpen] = useState(false);
+    const [selectedAutomaton, setSelectedAutomaton] = useState<AutomatoData | null>(null);
+
+    const {
+        progress,
+        isLessonCompleted,
+        markLessonVisited,
+        markLessonCompleted,
+        getProgressPercentage,
+        resetProgress
+    } = useProgress();
+
+    // Calculate total lessons count
+    const totalLessons = useMemo(() =>
+        courseModules.reduce((sum, mod) => sum + mod.lessons.length, 0),
+        []
+    );
 
     const activeModule = useMemo(() =>
-            courseModules.find(m => m.id === activeModuleId)!,
+        courseModules.find(m => m.id === activeModuleId) ?? courseModules[0],
         [activeModuleId]);
 
     const activeLesson = useMemo(() =>
-            activeModule.lessons.find(l => l.id === activeLessonId)!,
+        activeModule.lessons.find(l => l.id === activeLessonId) ?? activeModule.lessons[0],
         [activeModule, activeLessonId]);
 
     useEffect(() => {
         document.getElementById('main-content-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
     }, [activeLessonId]);
+
+    useEffect(() => {
+        const nextModule = getModuleById(initialModuleId);
+        const nextLesson = getLessonById(nextModule.id, initialLessonId);
+        setActiveModuleId(nextModule.id);
+        setActiveLessonId(nextLesson.id);
+    }, [initialModuleId, initialLessonId]);
+
+    useEffect(() => {
+        markLessonVisited(activeLessonId);
+        onSelectionChange?.(activeModuleId, activeLessonId);
+    }, [activeLessonId, activeModuleId, markLessonVisited, onSelectionChange]);
 
     const navigationState = useMemo(() => {
         const modIndex = courseModules.findIndex(m => m.id === activeModuleId);
@@ -249,6 +307,12 @@ export const ConteudoSection = ({ onSimulate }: ContentProps) => {
         setSidebarOpen(false);
     };
 
+    const lastVisitedLesson = progress.lastVisited
+        ? courseModules
+            .flatMap(m => m.lessons.map(l => ({ moduleId: m.id, lesson: l })))
+            .find(({ lesson }) => lesson.id === progress.lastVisited)
+        : null;
+
     return (
         <div className="flex h-[calc(100vh-8rem)] relative overflow-hidden">
             <div className="md:hidden fixed bottom-6 right-6 z-50">
@@ -278,6 +342,38 @@ export const ConteudoSection = ({ onSimulate }: ContentProps) => {
                             <GraduationCap size={28} className="text-ios-blue" />
                             Material P1
                         </div>
+
+                        {/* Progress Bar */}
+                        <div className="mt-4">
+                            <div className="flex items-center justify-between text-xs mb-2">
+                                <span className="text-gray-500 font-medium">Progresso</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-ios-green font-bold">{getProgressPercentage(totalLessons)}%</span>
+                                    <button
+                                        onClick={resetProgress}
+                                        className="p-1 text-gray-400 hover:text-ios-red transition-colors"
+                                        title="Resetar progresso"
+                                    >
+                                        <RotateCcw size={12} />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="h-2 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-ios-green to-ios-teal rounded-full transition-all duration-500"
+                                    style={{ width: `${getProgressPercentage(totalLessons)}%` }}
+                                />
+                            </div>
+                        </div>
+
+                        {lastVisitedLesson && lastVisitedLesson.lesson.id !== activeLessonId && (
+                            <button
+                                onClick={() => handleNavigate(lastVisitedLesson.moduleId, lastVisitedLesson.lesson.id)}
+                                className="mt-4 w-full py-2 rounded-xl text-xs font-bold text-ios-blue bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                            >
+                                Continuar de onde parei
+                            </button>
+                        )}
                     </div>
 
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-2 pb-20">
@@ -285,7 +381,7 @@ export const ConteudoSection = ({ onSimulate }: ContentProps) => {
                             <div key={module.id} className="mb-6 last:mb-0">
                                 <div className="px-4 py-3 flex items-center gap-3 sticky top-0 bg-[var(--bg-card)]/95 backdrop-blur z-10 border-b border-transparent rounded-t-xl">
                                     <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-gray-200 dark:bg-white/10 flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300 font-mono">
-                                        {modIdx}
+                                        {modIdx + 1}
                                     </span>
                                     <h3 className="text-sm font-bold text-[var(--text-primary)] leading-tight">
                                         {module.title.replace(/^Módulo \d+: /, '')}
@@ -297,18 +393,24 @@ export const ConteudoSection = ({ onSimulate }: ContentProps) => {
 
                                     {module.lessons.map(lesson => {
                                         const isActive = lesson.id === activeLessonId;
+                                        const isCompleted = isLessonCompleted(lesson.id);
                                         return (
                                             <button
                                                 key={lesson.id}
                                                 onClick={() => handleNavigate(module.id, lesson.id)}
-                                                className={`group w-full text-left pl-10 pr-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 relative overflow-hidden
+                                                className={`group w-full text-left pl-10 pr-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 relative overflow-hidden flex items-center gap-2
                                                     ${isActive
-                                                    ? 'text-ios-blue bg-blue-50/50 dark:bg-blue-900/20 font-bold shadow-sm'
-                                                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/40 dark:hover:bg-white/5'
-                                                }`}
+                                                        ? 'text-ios-blue bg-blue-50/50 dark:bg-blue-900/20 font-bold shadow-sm'
+                                                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/40 dark:hover:bg-white/5'
+                                                    }`}
                                             >
                                                 {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-ios-blue"></div>}
-                                                <span className="truncate block">{lesson.title}</span>
+                                                <span className="truncate flex-1">{lesson.title}</span>
+                                                {isCompleted ? (
+                                                    <CircleCheck size={14} className="text-ios-green flex-shrink-0" />
+                                                ) : (
+                                                    <Circle size={14} className="text-gray-300 dark:text-gray-600 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                )}
                                             </button>
                                         );
                                     })}
@@ -326,7 +428,7 @@ export const ConteudoSection = ({ onSimulate }: ContentProps) => {
                 <div className="max-w-4xl mx-auto py-10 px-6 md:px-12 pb-32">
                     <header className="mb-12 animate-fade-in">
                         <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-gray-400 mb-6 uppercase tracking-wider">
-                            <span className="bg-gray-100 dark:bg-white/10 px-2 py-1 rounded-md">Módulo {courseModules.findIndex(m => m.id === activeModuleId)}</span>
+                            <span className="bg-gray-100 dark:bg-white/10 px-2 py-1 rounded-md">Módulo {courseModules.findIndex(m => m.id === activeModuleId) + 1}</span>
                             <ChevronRight size={10} />
                             <span className="text-ios-blue">{activeModule.title}</span>
                         </div>
@@ -343,37 +445,87 @@ export const ConteudoSection = ({ onSimulate }: ContentProps) => {
 
                     <div className="space-y-2">
                         {activeLesson.content.map((block, idx) => (
-                            <ContentBlockRenderer key={idx} block={block} onSimulate={onSimulate} />
+                            <ContentBlockRenderer
+                                key={idx}
+                                block={block}
+                                onSimulate={onSimulate}
+                                onExpand={setSelectedAutomaton}
+                            />
                         ))}
                     </div>
 
-                    <div className="mt-24 pt-8 border-t border-[var(--border-color)] flex justify-between items-center">
-                        <button
-                            onClick={() => navigationState.prev && handleNavigate(navigationState.prev.modId, navigationState.prev.lessonId)}
-                            disabled={!navigationState.prev}
-                            className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all
-                                ${navigationState.prev
-                                ? 'text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-white/10 cursor-pointer'
-                                : 'text-gray-300 dark:text-gray-700 cursor-not-allowed'}`}
-                        >
-                            <ArrowLeft size={20} />
-                            <span className="font-bold hidden sm:inline">Anterior</span>
-                        </button>
+                    <div className="mt-24 pt-8 border-t border-[var(--border-color)]">
+                        {/* Mark as Complete button */}
+                        <div className="flex justify-center mb-8">
+                            <button
+                                onClick={() => markLessonCompleted(activeLessonId)}
+                                disabled={isLessonCompleted(activeLessonId)}
+                                className={`flex items-center gap-3 px-8 py-4 rounded-2xl transition-all font-bold text-sm
+                                    ${isLessonCompleted(activeLessonId)
+                                        ? 'bg-ios-green/10 text-ios-green cursor-default'
+                                        : 'bg-ios-green text-white hover:bg-green-600 shadow-lg shadow-green-500/30 hover:scale-105 active:scale-95'
+                                    }`}
+                            >
+                                {isLessonCompleted(activeLessonId) ? (
+                                    <>
+                                        <CircleCheck size={20} />
+                                        Lição Concluída
+                                    </>
+                                ) : (
+                                    <>
+                                        <Circle size={20} />
+                                        Marcar como Concluída
+                                    </>
+                                )}
+                            </button>
+                        </div>
 
-                        <button
-                            onClick={() => navigationState.next && handleNavigate(navigationState.next.modId, navigationState.next.lessonId)}
-                            disabled={!navigationState.next}
-                            className={`flex items-center gap-3 px-8 py-4 rounded-full transition-all shadow-lg
-                                ${navigationState.next
-                                ? 'bg-ios-blue hover:bg-blue-600 text-white cursor-pointer hover:scale-105 active:scale-95'
-                                : 'bg-gray-100 dark:bg-white/10 text-gray-300 dark:text-gray-600 cursor-not-allowed'}`}
-                        >
-                            <span className="font-bold">Próxima Lição</span>
-                            <ArrowRight size={20} />
-                        </button>
+                        {/* Navigation */}
+                        <div className="flex justify-between items-center">
+                            <button
+                                onClick={() => navigationState.prev && handleNavigate(navigationState.prev.modId, navigationState.prev.lessonId)}
+                                disabled={!navigationState.prev}
+                                className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all
+                                    ${navigationState.prev
+                                        ? 'text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-white/10 cursor-pointer'
+                                        : 'text-gray-300 dark:text-gray-700 cursor-not-allowed'}`}
+                            >
+                                <ArrowLeft size={20} />
+                                <span className="font-bold hidden sm:inline">Anterior</span>
+                            </button>
+
+                            <button
+                                onClick={() => navigationState.next && handleNavigate(navigationState.next.modId, navigationState.next.lessonId)}
+                                disabled={!navigationState.next}
+                                className={`flex items-center gap-3 px-8 py-4 rounded-full transition-all shadow-lg
+                                    ${navigationState.next
+                                        ? 'bg-ios-blue hover:bg-blue-600 text-white cursor-pointer hover:scale-105 active:scale-95'
+                                        : 'bg-gray-100 dark:bg-white/10 text-gray-300 dark:text-gray-600 cursor-not-allowed'}`}
+                            >
+                                <span className="font-bold">Próxima Lição</span>
+                                <ArrowRight size={20} />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </main>
+
+            <Modal
+                isOpen={!!selectedAutomaton}
+                onClose={() => setSelectedAutomaton(null)}
+                title={selectedAutomaton?.tipo || 'Visualização do Autômato'}
+                className="h-[80vh]"
+            >
+                {selectedAutomaton && (
+                    <div className="h-full w-full bg-[var(--canvas-bg)] rounded-xl border border-[var(--border-color)] overflow-hidden relative shadow-inner">
+                        <AutomatonEditor
+                            data={selectedAutomaton}
+                            onChange={() => { }}
+                            readOnly={true}
+                        />
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 };

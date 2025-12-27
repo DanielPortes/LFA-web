@@ -76,13 +76,13 @@ const afne_blocos: AutomatoData = {
     ],
     transicoes: [
         { id: 't1', de: 'q0', para: 'qa', simbolo: 'a', curvatura: 0 },
-        { id: 't2', de: 'q0', para: 'qb1', simbolo: 'λ', curvatura: 0 },
+        { id: 't2', de: 'q0', para: 'qb1', simbolo: 'ε', curvatura: 0 },
         { id: 't3', de: 'qb1', para: 'qb2', simbolo: 'b', curvatura: 0 },
         { id: 't4', de: 'qb1', para: 'qb1', simbolo: 'b', curvatura: -20 }, // Erro proposital no desenho para o aluno corrigir? Não, vamos fazer certo. B deve ser bb.
         // Corrigindo para ser exatamente bb:
         // q0 -eps-> qb_start -b-> qb_mid -b-> qb_end.
         // Mas o exemplo acima simplificado serve para ilustrar ramificação.
-        { id: 't5', de: 'q0', para: 'qc1', simbolo: 'λ', curvatura: 0 },
+        { id: 't5', de: 'q0', para: 'qc1', simbolo: 'ε', curvatura: 0 },
         { id: 't6', de: 'qc1', para: 'qc2', simbolo: 'c', curvatura: 0 },
         { id: 't7', de: 'qc2', para: 'qc3', simbolo: 'c', curvatura: 0 }
     ]
@@ -144,12 +144,12 @@ const er_thompson_a_ou_b: AutomatoData = {
         { id: 'f', label: 'f', x: 550, y: 200, isFinal: true, isInicial: false }
     ],
     transicoes: [
-        { id: 't1', de: 'i', para: 'q1', simbolo: 'λ', curvatura: 0 },
+        { id: 't1', de: 'i', para: 'q1', simbolo: 'ε', curvatura: 0 },
         { id: 't2', de: 'q1', para: 'q2', simbolo: 'a', curvatura: 0 },
-        { id: 't3', de: 'q2', para: 'f', simbolo: 'λ', curvatura: 0 },
-        { id: 't4', de: 'i', para: 'q3', simbolo: 'λ', curvatura: 0 },
+        { id: 't3', de: 'q2', para: 'f', simbolo: 'ε', curvatura: 0 },
+        { id: 't4', de: 'i', para: 'q3', simbolo: 'ε', curvatura: 0 },
         { id: 't5', de: 'q3', para: 'q4', simbolo: 'b', curvatura: 0 },
-        { id: 't6', de: 'q4', para: 'f', simbolo: 'λ', curvatura: 0 }
+        { id: 't6', de: 'q4', para: 'f', simbolo: 'ε', curvatura: 0 }
     ]
 };
 
@@ -163,11 +163,11 @@ const er_thompson_fecho: AutomatoData = {
         { id: 'f', label: 'f', x: 600, y: 200, isFinal: true, isInicial: false }
     ],
     transicoes: [
-        { id: 't1', de: 'i', para: 'q1', simbolo: 'λ', curvatura: 0 },
+        { id: 't1', de: 'i', para: 'q1', simbolo: 'ε', curvatura: 0 },
         { id: 't2', de: 'q1', para: 'q2', simbolo: 'a', curvatura: 0 },
-        { id: 't3', de: 'q2', para: 'q1', simbolo: 'λ', curvatura: -30 }, // Loop back
-        { id: 't4', de: 'q2', para: 'f', simbolo: 'λ', curvatura: 0 },
-        { id: 't5', de: 'i', para: 'f', simbolo: 'λ', curvatura: 40 } // Skip
+        { id: 't3', de: 'q2', para: 'q1', simbolo: 'ε', curvatura: -30 }, // Loop back
+        { id: 't4', de: 'q2', para: 'f', simbolo: 'ε', curvatura: 0 },
+        { id: 't5', de: 'i', para: 'f', simbolo: 'ε', curvatura: 40 } // Skip
     ]
 };
 
@@ -283,7 +283,7 @@ export const courseModules: CourseModule[] = [
                     {
                         type: 'definition',
                         title: 'Fecho-ε (Epsilon Closure)',
-                        content: 'É o conjunto de estados que você alcança a partir de um estado Q apenas seguindo setas λ (ou ε). Fundamental para converter para AFD.'
+                        content: 'É o conjunto de estados que você alcança a partir de um estado Q apenas seguindo setas ε (ou λ). Fundamental para converter para AFD.'
                     },
                     {
                         type: 'example',
