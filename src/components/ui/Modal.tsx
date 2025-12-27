@@ -50,8 +50,8 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, 
                 tabIndex={-1}
                 className={`
                     relative w-full max-w-5xl max-h-[90vh] flex flex-col
-                    bg-white/80 dark:bg-[#1a1a1a]/80 backdrop-blur-xl 
-                    border border-white/20 dark:border-white/10 shadow-2xl rounded-3xl
+                    bg-[var(--bg-overlay)] backdrop-blur-xl 
+                    border border-[var(--border-color)] shadow-2xl rounded-3xl
                     transform transition-all duration-300 ease-out
                     ${isAnimating ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-4'}
                     ${className}

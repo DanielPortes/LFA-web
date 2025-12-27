@@ -57,7 +57,7 @@ export const AutomatonPreview: React.FC<AutomatonPreviewProps> = ({ data, classN
                         <g transform={`translate(${labelPos.x}, ${labelPos.y})`}>
                             <rect
                                 x="-14" y="-12" width="28" height="24" rx="8"
-                                className="fill-[var(--bg-card)] stroke-[var(--border-color)] stroke-1"
+                                className="fill-white stroke-[var(--border-color)] stroke-1"
                             />
                             <text
                                 dy="5" textAnchor="middle"
@@ -76,7 +76,7 @@ export const AutomatonPreview: React.FC<AutomatonPreviewProps> = ({ data, classN
                         <path d="M -50 0 L -32 0" stroke="currentColor" strokeWidth="2" markerEnd="url(#preview-arrow)" className="text-[var(--stroke-idle)] opacity-70" />
                     )}
 
-                    <circle r="26" className="fill-[var(--bg-card)] stroke-[var(--stroke-idle)] stroke-2" />
+                    <circle r="26" className="fill-white stroke-[var(--stroke-idle)] stroke-2" />
 
                     {s.isFinal && (
                         <circle r="22" fill="none" className="stroke-[var(--stroke-idle)]" strokeWidth="1.5" />

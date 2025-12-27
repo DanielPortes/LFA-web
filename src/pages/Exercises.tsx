@@ -321,7 +321,7 @@ export const ExerciciosSection = ({
             {/* Sidebar Navigation */}
             <div className="md:w-64 flex-shrink-0">
                 <div className="glass-panel p-2 rounded-3xl sticky top-28">
-                    <div className="flex items-center gap-2 px-4 py-3 text-gray-400 mb-1">
+                    <div className="flex items-center gap-2 px-4 py-3 text-gray-600 mb-1">
                         <ListFilter size={14} />
                         <span className="text-[10px] font-bold uppercase tracking-widest">Tópicos</span>
                     </div>
@@ -336,7 +336,7 @@ export const ExerciciosSection = ({
                                     className={`w-full text-left px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 flex justify-between items-center group relative overflow-hidden
                                         ${isActive
                                         ? 'text-white font-bold shadow-lg shadow-blue-500/20'
-                                        : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10'
+                                        : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-white/10'
                                     }`}
                                 >
                                     {isActive && (
@@ -345,10 +345,10 @@ export const ExerciciosSection = ({
                                     <span className="flex-1">{cat.label}</span>
                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                                         count === 0
-                                            ? 'bg-gray-200 dark:bg-white/10 text-gray-400'
+                                            ? 'bg-gray-200 dark:bg-white/10 text-gray-600'
                                             : isActive
                                                 ? 'bg-white/20 text-white'
-                                                : 'bg-gray-100 dark:bg-white/10 text-gray-400'
+                                                : 'bg-gray-100 dark:bg-white/10 text-gray-600'
                                     }`}>
                                         {count}
                                     </span>
@@ -367,14 +367,14 @@ export const ExerciciosSection = ({
                         <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-1">{categories.find(c => c.id === activeCategory)?.label}</h2>
                         <p className="text-[var(--text-secondary)] text-sm">Lista de exercícios práticos</p>
                     </div>
-                    <span className="px-3 py-1 rounded-full bg-gray-100 dark:bg-white/10 text-xs font-bold text-gray-500">{exercicios.length} Questões</span>
+                    <span className="px-3 py-1 rounded-full bg-gray-100 dark:bg-white/10 text-xs font-bold text-gray-600">{exercicios.length} Questões</span>
                 </div>
 
                 {exercicios.map((ex) => (
                     <div key={ex.id} className="glass-card overflow-hidden group hover:shadow-apple-md">
                         <div className="p-8">
                             <div className="flex gap-5 items-start">
-                                <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-gray-50 dark:bg-white/5 text-gray-400 font-mono font-bold text-lg flex items-center justify-center border border-gray-100 dark:border-white/5">
+                                <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-gray-50 dark:bg-white/5 text-gray-600 font-mono font-bold text-lg flex items-center justify-center border border-gray-100 dark:border-white/5">
                                     {ex.id}
                                 </span>
                                 <h3 className="text-lg font-medium text-[var(--text-primary)] leading-relaxed pt-1">{ex.pergunta}</h3>
@@ -408,7 +408,7 @@ export const ExerciciosSection = ({
                                         className={`btn-icon px-4 rounded-xl text-xs font-bold gap-2 ${
                                             revealedHints[ex.id]
                                                 ? 'bg-orange-50 text-orange-500 dark:bg-orange-500/10'
-                                                : 'bg-gray-100 dark:bg-white/5 text-gray-500 hover:bg-gray-200 dark:hover:bg-white/10'
+                                                : 'bg-gray-100 dark:bg-white/5 text-gray-600 hover:bg-gray-200 dark:hover:bg-white/10'
                                         }`}
                                     >
                                         <Lightbulb size={14} className={revealedHints[ex.id] ? 'fill-current' : ''} />
@@ -420,7 +420,7 @@ export const ExerciciosSection = ({
                                     className={`btn-icon px-4 rounded-xl text-xs font-bold gap-2 ${
                                         revealedAnswers[ex.id]
                                             ? 'bg-blue-50 text-ios-blue dark:bg-blue-500/10'
-                                            : 'bg-gray-100 dark:bg-white/5 text-gray-500 hover:bg-gray-200 dark:hover:bg-white/10'
+                                            : 'bg-gray-100 dark:bg-white/5 text-gray-600 hover:bg-gray-200 dark:hover:bg-white/10'
                                     }`}
                                 >
                                     {revealedAnswers[ex.id] ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -442,7 +442,7 @@ export const ExerciciosSection = ({
                                 <div className="ml-14">
                                     <div className="flex items-center gap-2 mb-4">
                                         <CheckCircle2 size={16} className="text-ios-green" />
-                                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Solução</span>
+                                        <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">Solução</span>
                                     </div>
 
                                     {ex.respostaTexto && (
@@ -456,7 +456,7 @@ export const ExerciciosSection = ({
                                             <div className="flex justify-between items-center mb-4">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-2 h-2 rounded-full bg-ios-green animate-pulse"></div>
-                                                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Gabarito Visual</span>
+                                                    <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">Gabarito Visual</span>
                                                 </div>
                                                 <button
                                                     onClick={() => onSimulate(ex.respostaAutomato!)}
@@ -501,7 +501,7 @@ export const ExerciciosSection = ({
                                 {solverMode === 'automaton' && (
                                     <button
                                         onClick={resetAutomaton}
-                                        className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                                        className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                                         title="Resetar"
                                     >
                                         <RotateCcw size={18} />
@@ -509,7 +509,7 @@ export const ExerciciosSection = ({
                                 )}
                                 <button
                                     onClick={stopSolving}
-                                    className="p-2 rounded-lg text-gray-500 hover:text-ios-red hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                    className="p-2 rounded-lg text-gray-600 hover:text-ios-red hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                                     title="Fechar"
                                 >
                                     <X size={20} />
@@ -531,7 +531,7 @@ export const ExerciciosSection = ({
 
                                 {solverMode === 'regex' && (
                                     <div className="p-6 md:p-8 h-full overflow-y-auto">
-                                        <div className="flex items-center gap-2 text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">
+                                        <div className="flex items-center gap-2 text-gray-600 text-xs font-bold uppercase tracking-widest mb-4">
                                             <Braces size={14} />
                                             Expressão Regular
                                         </div>
@@ -555,7 +555,7 @@ export const ExerciciosSection = ({
 
                                 {solverMode === 'text' && (
                                     <div className="p-6 md:p-8 h-full overflow-y-auto">
-                                        <div className="flex items-center gap-2 text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">
+                                        <div className="flex items-center gap-2 text-gray-600 text-xs font-bold uppercase tracking-widest mb-4">
                                             <FileText size={14} />
                                             Resposta aberta
                                         </div>
@@ -588,14 +588,14 @@ export const ExerciciosSection = ({
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <h4 className="font-bold text-sm text-[var(--text-primary)] mb-1">Casos de Teste</h4>
-                                            <p className="text-xs text-gray-500">
+                                            <p className="text-xs text-gray-600">
                                                 {hasTests ? 'Seu resultado será verificado com estas entradas' : 'Sem verificação automática'}
                                             </p>
                                         </div>
                                         {hasTests && (
                                             <button
                                                 onClick={() => setShowExpected(s => !s)}
-                                                className="text-xs font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                                className="text-xs font-bold text-gray-600 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                                             >
                                                 {showExpected ? 'Ocultar' : 'Mostrar'} esperado
                                             </button>
@@ -634,13 +634,13 @@ export const ExerciciosSection = ({
                                             <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
                                                 showExpected
                                                     ? (tc.expected === 'accept' ? 'bg-green-100 dark:bg-green-900/30 text-ios-green' : 'bg-red-100 dark:bg-red-900/30 text-ios-red')
-                                                    : 'bg-gray-100 dark:bg-white/10 text-gray-400'
+                                                    : 'bg-gray-100 dark:bg-white/10 text-gray-600'
                                             }`}>
                                                 {showExpected ? (tc.expected === 'accept' ? 'Aceita' : 'Rejeita') : 'Oculto'}
                                             </span>
                                         </div>
                                     )) : (
-                                        <div className="p-4 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 text-sm text-gray-400">
+                                        <div className="p-4 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 text-sm text-gray-600">
                                             Este exercício é conceitual. Compare sua solução com o gabarito quando terminar.
                                         </div>
                                     )}
@@ -648,7 +648,7 @@ export const ExerciciosSection = ({
 
                                 {lastFailure && (
                                     <div className="p-4 border-t border-[var(--border-color)] bg-gray-50 dark:bg-black/30">
-                                        <div className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">Primeiro erro</div>
+                                        <div className="text-xs text-gray-600 font-bold uppercase tracking-wider mb-2">Primeiro erro</div>
                                         <div className="text-xs text-gray-600 dark:text-gray-300">
                                             Entrada: <code className="font-mono">{lastFailure.input}</code> · Esperado: {lastFailure.expected} · Obtido: {lastFailure.received}
                                         </div>

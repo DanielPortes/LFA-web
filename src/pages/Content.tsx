@@ -133,7 +133,7 @@ const ContentBlockRenderer = ({ block, onSimulate, onExpand }: { block: ContentB
                     <div className="glass-card overflow-hidden border-2 border-transparent hover:border-ios-blue/20 transition-all duration-300">
                         <div className="p-6 md:p-8 bg-gradient-to-b from-white/50 to-transparent dark:from-white/5">
                             <div className="flex justify-between items-start mb-6">
-                                <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                <h4 className="text-sm font-black text-gray-600 uppercase tracking-widest flex items-center gap-2">
                                     <LayoutList size={18} />
                                     Exemplo Prático
                                 </h4>
@@ -158,7 +158,7 @@ const ContentBlockRenderer = ({ block, onSimulate, onExpand }: { block: ContentB
                             <div className={`grid gap-6 ${block.automatoRef2 ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
                                 {block.automatoRef && (
                                     <div className="flex flex-col gap-3">
-                                        {block.automatoRef2 && <div className="text-center font-bold text-gray-400 text-xs uppercase tracking-widest">Antes</div>}
+                                        {block.automatoRef2 && <div className="text-center font-bold text-gray-600 text-xs uppercase tracking-widest">Antes</div>}
                                         <div className="h-72 bg-[var(--canvas-bg)] rounded-2xl border border-[var(--border-color)] overflow-hidden relative shadow-inner group-hover:shadow-md transition-shadow">
                                             <div className="absolute top-2 right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                                 <button
@@ -332,11 +332,11 @@ export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, 
                 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
                 flex flex-col h-full shadow-2xl md:shadow-none
             `}>
-                <div className="md:glass-panel md:rounded-3xl h-full flex flex-col overflow-hidden shadow-sm md:mr-4 bg-white/30 dark:bg-black/20">
+                <div className="md:glass-panel md:rounded-3xl h-full flex flex-col overflow-hidden shadow-sm md:mr-4 bg-white/70 dark:bg-black/20">
                     <div className="p-6 border-b border-[var(--border-color)] bg-white/50 dark:bg-black/40 backdrop-blur-md sticky top-0 z-10">
                         <div className="flex items-center gap-2 mb-3">
                             <div className="w-2 h-2 rounded-full bg-ios-green animate-pulse" />
-                            <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">DCC063 • LFA</h2>
+                            <h2 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em]">DCC063 • LFA</h2>
                         </div>
                         <div className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-3">
                             <GraduationCap size={28} className="text-ios-blue" />
@@ -346,12 +346,12 @@ export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, 
                         {/* Progress Bar */}
                         <div className="mt-4">
                             <div className="flex items-center justify-between text-xs mb-2">
-                                <span className="text-gray-500 font-medium">Progresso</span>
+                                <span className="text-gray-600 font-medium">Progresso</span>
                                 <div className="flex items-center gap-2">
                                     <span className="text-ios-green font-bold">{getProgressPercentage(totalLessons)}%</span>
                                     <button
                                         onClick={resetProgress}
-                                        className="p-1 text-gray-400 hover:text-ios-red transition-colors"
+                                        className="p-1 text-gray-600 hover:text-ios-red transition-colors"
                                         title="Resetar progresso"
                                     >
                                         <RotateCcw size={12} />
@@ -401,7 +401,7 @@ export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, 
                                                 className={`group w-full text-left pl-10 pr-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 relative overflow-hidden flex items-center gap-2
                                                     ${isActive
                                                         ? 'text-ios-blue bg-blue-50/50 dark:bg-blue-900/20 font-bold shadow-sm'
-                                                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/40 dark:hover:bg-white/5'
+                                                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5'
                                                     }`}
                                             >
                                                 {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-ios-blue"></div>}
@@ -409,7 +409,7 @@ export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, 
                                                 {isCompleted ? (
                                                     <CircleCheck size={14} className="text-ios-green flex-shrink-0" />
                                                 ) : (
-                                                    <Circle size={14} className="text-gray-300 dark:text-gray-600 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    <Circle size={14} className="text-gray-600 dark:text-gray-600 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                 )}
                                             </button>
                                         );
@@ -427,7 +427,7 @@ export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, 
             >
                 <div className="max-w-4xl mx-auto py-10 px-6 md:px-12 pb-32">
                     <header className="mb-12 animate-fade-in">
-                        <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-gray-400 mb-6 uppercase tracking-wider">
+                        <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-gray-600 mb-6 uppercase tracking-wider">
                             <span className="bg-gray-100 dark:bg-white/10 px-2 py-1 rounded-md">Módulo {courseModules.findIndex(m => m.id === activeModuleId) + 1}</span>
                             <ChevronRight size={10} />
                             <span className="text-ios-blue">{activeModule.title}</span>
@@ -488,7 +488,7 @@ export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, 
                                 className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all
                                     ${navigationState.prev
                                         ? 'text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-white/10 cursor-pointer'
-                                        : 'text-gray-300 dark:text-gray-700 cursor-not-allowed'}`}
+                                        : 'text-gray-600 dark:text-gray-600 cursor-not-allowed'}`}
                             >
                                 <ArrowLeft size={20} />
                                 <span className="font-bold hidden sm:inline">Anterior</span>
