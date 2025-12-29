@@ -1,12 +1,11 @@
-import React, { useState, useId } from 'react';
-import { X, Circle, Binary, Type, Zap, ChevronRight, Play } from 'lucide-react';
+import React, { useState } from 'react';
+import { Circle, Binary, Type, Zap, ChevronRight, Play } from 'lucide-react';
 import { automatonTemplates, templateCategories, type AutomatonTemplate } from '../../data/templates';
 import type { AutomatoData } from '../../types';
-import { useDialog } from '../../hooks/useDialog';
+import { Modal } from './Modal';
+import type { ModalBaseProps } from './types';
 
-interface TemplatesGalleryProps {
-    isOpen: boolean;
-    onClose: () => void;
+interface TemplatesGalleryProps extends ModalBaseProps {
     onSelect: (data: AutomatoData) => void;
 }
 
@@ -19,17 +18,6 @@ const categoryIcons: Record<string, React.ReactNode> = {
 
 export const TemplatesGallery: React.FC<TemplatesGalleryProps> = ({ isOpen, onClose, onSelect }) => {
     const [activeCategory, setActiveCategory] = useState<string>('basic');
-    const [isAnimating, setIsAnimating] = useState(false);
-    const titleId = useId();
-    const dialogRef = useDialog(isOpen, onClose);
-
-    React.useEffect(() => {
-        if (isOpen) {
-            setIsAnimating(true);
-        }
-    }, [isOpen]);
-
-    if (!isOpen) return null;
 
     const filteredTemplates = automatonTemplates.filter(t => t.category === activeCategory);
 
@@ -41,79 +29,49 @@ export const TemplatesGallery: React.FC<TemplatesGalleryProps> = ({ isOpen, onCl
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <div
-                className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300
-                    ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
-                onClick={onClose}
-            />
-
-            {/* Modal */}
-            <div
-                ref={dialogRef}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby={titleId}
-                tabIndex={-1}
-                className={`
-                relative w-full max-w-4xl max-h-[80vh] bg-white dark:bg-[#1a1a1a] rounded-3xl shadow-2xl
-                transform transition-all duration-300 ease-out overflow-hidden flex
-                ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}
-            `}>
+        <Modal isOpen={isOpen} onClose={onClose} title="Templates" className="max-w-4xl">
+            <div className="flex flex-col sm:flex-row gap-6 -m-2">
                 {/* Sidebar */}
-                <div className="w-56 bg-gray-50 dark:bg-black/30 border-r border-gray-200 dark:border-white/10 p-4 flex flex-col">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 id={titleId} className="text-lg font-bold text-[var(--text-primary)]">Templates</h3>
-                        <button
-                            onClick={onClose}
-                            className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 transition-colors"
-                        >
-                            <X size={18} />
-                        </button>
-                    </div>
-
-                    <nav className="space-y-1">
+                <div className="sm:w-48 flex-shrink-0">
+                    <nav className="flex sm:flex-col gap-1 overflow-x-auto sm:overflow-x-visible pb-2 sm:pb-0">
                         {templateCategories.map(cat => (
                             <button
                                 key={cat.id}
                                 onClick={() => setActiveCategory(cat.id)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all
+                                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap
                                     ${activeCategory === cat.id
                                         ? 'bg-ios-blue text-white shadow-lg shadow-blue-500/20'
-                                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
+                                        : 'text-secondary hover:bg-surface-muted'
                                     }`}
                             >
                                 {categoryIcons[cat.id]}
                                 {cat.name}
-                                {activeCategory === cat.id && <ChevronRight size={14} className="ml-auto" />}
+                                {activeCategory === cat.id && <ChevronRight size={14} className="ml-auto hidden sm:block" />}
                             </button>
                         ))}
                     </nav>
 
-                    <div className="mt-auto pt-4 border-t border-gray-200 dark:border-white/10">
-                        <p className="text-xs text-gray-400 leading-relaxed">
-                            Selecione um template para começar rapidamente. Você pode modificar depois.
-                        </p>
-                    </div>
+                    <p className="hidden sm:block text-xs text-muted leading-relaxed mt-4 pt-4 border-t border-default">
+                        Selecione um template para começar rapidamente.
+                    </p>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 p-6 overflow-y-auto">
-                    <div className="grid gap-4 md:grid-cols-2">
+                <div className="flex-1 min-w-0">
+                    <div className="grid gap-3 sm:grid-cols-2">
                         {filteredTemplates.map(template => (
                             <button
                                 key={template.id}
                                 onClick={() => handleSelect(template)}
-                                className="group text-left p-5 rounded-2xl border border-gray-200 dark:border-white/10
-                                    bg-white dark:bg-white/5 hover:border-ios-blue dark:hover:border-ios-blue/50
-                                    hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300"
+                                className="group text-left p-4 rounded-2xl border border-default
+                                    bg-surface-1 hover:border-ios-blue dark:hover:border-ios-blue/50
+                                    hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-200"
                             >
-                                <div className="flex items-start justify-between mb-3">
-                                    <h4 className="font-bold text-[var(--text-primary)] group-hover:text-ios-blue transition-colors">
+                                <div className="flex items-start justify-between mb-2">
+                                    <h4 className="font-bold text-sm text-primary group-hover:text-ios-blue transition-colors">
                                         {template.name}
                                     </h4>
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase flex-shrink-0
                                         ${template.data.tipo === 'AFD'
                                             ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
                                             : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
@@ -122,15 +80,15 @@ export const TemplatesGallery: React.FC<TemplatesGalleryProps> = ({ isOpen, onCl
                                     </span>
                                 </div>
 
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 leading-relaxed">
+                                <p className="text-xs text-muted mb-3 leading-relaxed line-clamp-2">
                                     {template.description}
                                 </p>
 
                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3 text-xs text-gray-400">
+                                    <div className="flex items-center gap-2 text-[10px] text-muted">
                                         <span>{template.data.estados.length} estados</span>
-                                        <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                                        <span>{template.data.transicoes.length} transições</span>
+                                        <span className="w-1 h-1 rounded-full bg-border"></span>
+                                        <span>{template.data.transicoes.length} trans.</span>
                                     </div>
 
                                     <div className="flex items-center gap-1 text-ios-blue text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
@@ -143,12 +101,12 @@ export const TemplatesGallery: React.FC<TemplatesGalleryProps> = ({ isOpen, onCl
                     </div>
 
                     {filteredTemplates.length === 0 && (
-                        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                        <div className="flex flex-col items-center justify-center h-48 text-muted">
                             <p>Nenhum template nesta categoria</p>
                         </div>
                     )}
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 };

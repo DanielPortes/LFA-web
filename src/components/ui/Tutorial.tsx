@@ -5,6 +5,7 @@ import {
     ZoomIn, Lightbulb
 } from 'lucide-react';
 import { useDialog } from '../../hooks/useDialog';
+import type { ModalBaseProps } from './types';
 
 interface TutorialStep {
     title: string;
@@ -63,9 +64,7 @@ const tutorialSteps: TutorialStep[] = [
     }
 ];
 
-interface TutorialProps {
-    isOpen: boolean;
-    onClose: () => void;
+interface TutorialProps extends ModalBaseProps {
     onComplete: () => void;
 }
 
@@ -159,16 +158,16 @@ export const Tutorial: React.FC<TutorialProps> = ({ isOpen, onClose, onComplete 
                 <div className="p-8">
                     <div className="flex items-center gap-2 mb-2">
                         <Lightbulb size={16} className="text-ios-orange" />
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                        <span className="ui-kicker text-muted">
                             Dica {currentStep + 1} de {tutorialSteps.length}
                         </span>
                     </div>
 
-                    <h3 id={titleId} className="text-2xl font-bold text-[var(--text-primary)] mb-3">
+                    <h3 id={titleId} className="text-2xl font-bold text-primary mb-3">
                         {step.title}
                     </h3>
 
-                    <p className="text-[var(--text-secondary)] leading-relaxed mb-8">
+                    <p className="text-secondary leading-relaxed mb-8">
                         {step.description}
                     </p>
 
@@ -183,7 +182,7 @@ export const Tutorial: React.FC<TutorialProps> = ({ isOpen, onClose, onComplete 
                                         ? 'w-6 bg-ios-blue'
                                         : idx < currentStep
                                             ? 'bg-ios-green'
-                                            : 'bg-gray-300 dark:bg-gray-600'
+                                            : 'bg-text-muted'
                                 }`}
                             />
                         ))}
@@ -196,8 +195,8 @@ export const Tutorial: React.FC<TutorialProps> = ({ isOpen, onClose, onComplete 
                             disabled={isFirst}
                             className={`flex-1 py-3 px-6 rounded-xl font-bold transition-all flex items-center justify-center gap-2
                                 ${isFirst
-                                    ? 'bg-gray-100 dark:bg-white/5 text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                                    : 'bg-gray-100 dark:bg-white/10 text-[var(--text-primary)] hover:bg-gray-200 dark:hover:bg-white/20'
+                                    ? 'bg-surface-muted text-muted opacity-70 cursor-not-allowed'
+                                    : 'bg-surface-muted text-primary hover:bg-surface-soft'
                                 }`}
                         >
                             <ChevronLeft size={18} />
@@ -216,7 +215,7 @@ export const Tutorial: React.FC<TutorialProps> = ({ isOpen, onClose, onComplete 
                     {/* Skip link */}
                     <button
                         onClick={handleSkip}
-                        className="w-full mt-4 py-2 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                        className="w-full mt-4 py-2 text-sm text-muted hover:text-secondary transition-colors"
                     >
                         Pular tutorial
                     </button>

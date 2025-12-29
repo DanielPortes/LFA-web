@@ -1,13 +1,10 @@
 import React, { useEffect, useId, useState } from 'react';
 import { X } from 'lucide-react';
 import { useDialog } from '../../hooks/useDialog';
+import type { BaseProps, ModalBaseProps, WithChildren } from './types';
 
-interface ModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    children: React.ReactNode;
+interface ModalProps extends ModalBaseProps, WithChildren, BaseProps {
     title?: string;
-    className?: string;
 }
 
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, className = '' }) => {
@@ -33,7 +30,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, 
     if (!isVisible) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
             {/* Backdrop */}
             <div
                 className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${isAnimating ? 'opacity-100' : 'opacity-0'
@@ -50,21 +47,20 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, 
                 tabIndex={-1}
                 className={`
                     relative w-full max-w-5xl max-h-[90vh] flex flex-col
-                    bg-[var(--bg-overlay)] backdrop-blur-xl 
-                    border border-[var(--border-color)] shadow-2xl rounded-3xl
+                    glass-card shadow-apple-xl
                     transform transition-all duration-300 ease-out
                     ${isAnimating ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-4'}
                     ${className}
                 `}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200/50 dark:border-white/5">
-                    <h3 id={titleId} className="text-xl font-bold text-[var(--text-primary)]">
+                <div className="flex items-center justify-between p-6 border-b border-default">
+                    <h3 id={titleId} className="text-xl font-bold text-primary">
                         {title}
                     </h3>
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 transition-colors"
+                        className="p-2 rounded-full hover:bg-surface-muted text-secondary transition-colors"
                     >
                         <X size={20} />
                     </button>

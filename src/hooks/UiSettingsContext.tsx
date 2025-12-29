@@ -6,10 +6,14 @@ type UiSettings = {
     reduceMotion: boolean;
     effectiveReduceMotion: boolean;
     snapToGrid: boolean;
+    inputTokenization: 'auto' | 'char' | 'separator';
+    inputSeparator: string;
     setFocusMode: (value: boolean) => void;
     setCursorEnabled: (value: boolean) => void;
     setReduceMotion: (value: boolean) => void;
     setSnapToGrid: (value: boolean) => void;
+    setInputTokenization: (value: 'auto' | 'char' | 'separator') => void;
+    setInputSeparator: (value: string) => void;
 };
 
 const STORAGE_KEY = 'lfa-ui-settings';
@@ -17,11 +21,47 @@ const STORAGE_KEY = 'lfa-ui-settings';
 const UiSettingsContext = createContext<UiSettings | null>(null);
 
 export const UiSettingsProvider = ({ children }: { children: React.ReactNode }) => {
-    const [focusMode, setFocusMode] = useState(false);
-    const [cursorEnabled, setCursorEnabled] = useState(true);
-    const [reduceMotion, setReduceMotion] = useState(false);
-    const [snapToGrid, setSnapToGrid] = useState(false);
+    // Lazy initialization to prevent overwriting storage with defaults on mount
+    const [settings, setSettings] = useState(() => {
+        try {
+            if (typeof window !== 'undefined') {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    return {
+                        focusMode: !!parsed.focusMode,
+                        cursorEnabled: parsed.cursorEnabled !== false, // default true
+                        reduceMotion: !!parsed.reduceMotion,
+                        snapToGrid: !!parsed.snapToGrid,
+                        inputTokenization: parsed.inputTokenization || 'auto',
+                        inputSeparator: typeof parsed.inputSeparator === 'string' ? parsed.inputSeparator : ' '
+                    };
+                }
+            }
+        } catch {
+            // ignore
+        }
+        return {
+            focusMode: false,
+            cursorEnabled: true,
+            reduceMotion: false,
+            snapToGrid: false,
+            inputTokenization: 'auto',
+            inputSeparator: ' '
+        };
+    });
+
     const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+    // Individual state setters for compatibility
+    const setFocusMode = (val: boolean) => setSettings(s => ({ ...s, focusMode: val }));
+    const setCursorEnabled = (val: boolean) => setSettings(s => ({ ...s, cursorEnabled: val }));
+    const setReduceMotion = (val: boolean) => setSettings(s => ({ ...s, reduceMotion: val }));
+    const setSnapToGrid = (val: boolean) => setSettings(s => ({ ...s, snapToGrid: val }));
+    const setInputTokenization = (val: 'auto' | 'char' | 'separator') => setSettings(s => ({ ...s, inputTokenization: val }));
+    const setInputSeparator = (val: string) => setSettings(s => ({ ...s, inputSeparator: val }));
+
+    const { focusMode, cursorEnabled, reduceMotion, snapToGrid, inputTokenization, inputSeparator } = settings;
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -32,38 +72,14 @@ export const UiSettingsProvider = ({ children }: { children: React.ReactNode }) 
         return () => media.removeEventListener('change', handler);
     }, []);
 
+    // Save changes
     useEffect(() => {
         try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                const parsed = JSON.parse(saved) as {
-                    focusMode?: boolean;
-                    cursorEnabled?: boolean;
-                    reduceMotion?: boolean;
-                    snapToGrid?: boolean;
-                };
-                setFocusMode(!!parsed.focusMode);
-                setCursorEnabled(parsed.cursorEnabled !== false);
-                setReduceMotion(!!parsed.reduceMotion);
-                setSnapToGrid(!!parsed.snapToGrid);
-            }
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
         } catch {
             // ignore
         }
-    }, []);
-
-    useEffect(() => {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                focusMode,
-                cursorEnabled,
-                reduceMotion,
-                snapToGrid
-            }));
-        } catch {
-            // ignore
-        }
-    }, [focusMode, cursorEnabled, reduceMotion, snapToGrid]);
+    }, [settings]);
 
     const effectiveReduceMotion = reduceMotion || prefersReducedMotion;
 
@@ -79,11 +95,15 @@ export const UiSettingsProvider = ({ children }: { children: React.ReactNode }) 
         reduceMotion,
         effectiveReduceMotion,
         snapToGrid,
+        inputTokenization,
+        inputSeparator,
         setFocusMode,
         setCursorEnabled,
         setReduceMotion,
-        setSnapToGrid
-    }), [focusMode, cursorEnabled, reduceMotion, effectiveReduceMotion, snapToGrid]);
+        setSnapToGrid,
+        setInputTokenization,
+        setInputSeparator
+    }), [focusMode, cursorEnabled, reduceMotion, effectiveReduceMotion, snapToGrid, inputTokenization, inputSeparator]);
 
     return (
         <UiSettingsContext.Provider value={value}>

@@ -25,7 +25,7 @@ export const useToast = () => {
 
 const ToastIcon = ({ type }: { type: ToastType }) => {
     const icons = {
-        success: <CheckCircle2 size={20} className="text-ios-green" />,
+        success: <CheckCircle2 size={20} strokeWidth={3} className="text-ios-green" />,
         error: <XCircle size={20} className="text-ios-red" />,
         warning: <AlertTriangle size={20} className="text-ios-orange" />,
         info: <Info size={20} className="text-ios-blue" />
@@ -61,14 +61,14 @@ const ToastItem = ({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
             `}
         >
             <ToastIcon type={toast.type} />
-            <span className="text-sm font-medium text-[var(--text-primary)] flex-1">
+            <span className="text-sm font-medium text-primary flex-1">
                 {toast.message}
             </span>
             <button
                 onClick={() => { setIsExiting(true); setTimeout(onRemove, 300); }}
-                className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                className="p-1 rounded-full hover:bg-surface-muted transition-colors"
             >
-                <X size={14} className="text-gray-400" />
+                <X size={14} className="text-muted" />
             </button>
         </div>
     );

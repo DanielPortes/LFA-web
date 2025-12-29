@@ -7,7 +7,7 @@
 
     /* Apple System Colors */
     --color-ios-blue: #007AFF;
-    --color-ios-green: #34C759;
+    --color-ios-green: var(--ios-green);
     --color-ios-indigo: #5856D6;
     --color-ios-orange: #FF9500;
     --color-ios-pink: #FF2D55;
@@ -26,87 +26,162 @@
 
 @layer base {
     :root {
-        /* Light Mode - Premium Apple Glass - High Contrast Update */
-        --bg-primary: #F2F2F7; /* Slightly darker than pure white for depth */
+        /* Brand */
+        --ios-green: #15803d;
+        --color-brand: var(--color-ios-blue);
+        --color-accent: var(--color-ios-purple);
+        --color-success: var(--color-ios-green);
+        --color-warning: var(--color-ios-orange);
+        --color-danger: var(--color-ios-red);
+        --color-info: var(--color-ios-blue);
 
-        /* Glass Surfaces - More Opaque & Distinct */
-        --bg-card: rgba(255, 255, 255, 0.75);
-        --bg-overlay: rgba(255, 255, 255, 0.85);
-        --bg-dock: rgba(255, 255, 255, 0.8);
+        /* Base Background */
+        --color-bg: #F2F2F7;
 
-        /* Typography - High Contrast */
-        --text-primary: #000000;
-        --text-secondary: #48484a; /* Darker gray for better readability */
+        /* Surface Scale */
+        --color-surface-1: rgba(255, 255, 255, 0.9);
+        --color-surface-2: rgba(255, 255, 255, 0.96);
+        --color-surface-3: rgba(255, 255, 255, 0.92);
+        --color-surface-muted: rgba(0, 0, 0, 0.06);
+        --color-surface-soft: rgba(0, 0, 0, 0.1);
+        --color-surface-strong: rgba(0, 0, 0, 0.16);
+        --color-surface-hover: rgba(0, 0, 0, 0.08);
 
-        /* Borders & Details */
-        --border-color: rgba(0, 0, 0, 0.1);
-        --border-highlight: rgba(255, 255, 255, 0.5);
+        /* Text */
+        --color-text-primary: #1a1a1a;
+        --color-text-secondary: #2f2f33;
+        --color-text-muted: #45454b;
+        --color-text-inverse: #ffffff;
+
+        /* Borders */
+        --color-border: rgba(0, 0, 0, 0.16);
+        --color-border-strong: rgba(0, 0, 0, 0.28);
+        --color-border-highlight: rgba(255, 255, 255, 0.5);
+
+        /* Canvas */
+        --color-canvas: #eef1f5;
+        --color-canvas-surface: rgba(255, 255, 255, 0.98);
+        --color-grid: rgba(0, 0, 0, 0.16);
+        --color-grid-active: rgba(0, 0, 0, 0.28);
+        --color-stroke-idle: #2a2a2e;
+        --color-stroke-hover: #101013;
+
+        /* Typography Scale */
+        --type-3xs: 0.5625rem;
+        --type-2xs: 0.625rem;
+        --type-xs: 0.75rem;
+        --type-sm: 0.875rem;
+        --type-md: 1rem;
+        --type-lg: 1.125rem;
+        --type-xl: 1.25rem;
+        --type-2xl: 1.5rem;
+        --type-3xl: 1.875rem;
+        --type-4xl: 2.25rem;
+        --type-5xl: 3rem;
+        --type-6xl: 3.75rem;
+        --type-7xl: 4.5rem;
+        --line-tight: 1.1;
+        --line-snug: 1.25;
+        --line-normal: 1.5;
+        --line-relaxed: 1.7;
+
+        /* Radius */
+        --radius-sm: 0.5rem;
+        --radius-md: 0.75rem;
+        --radius-lg: 1rem;
+        --radius-xl: 1.5rem;
+        --radius-2xl: 2rem;
+        --radius-pill: 999px;
+
+        /* Motion */
+        --motion-fast: 150ms;
+        --motion-base: 250ms;
+        --motion-slow: 400ms;
+        --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
 
         /* Effects */
         --glass-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.08);
         --glass-blur: blur(24px);
 
-        /* Canvas */
-        --canvas-bg: transparent; /* Transparent to show background orbs/gradient */
-        --grid-color: rgba(0, 0, 0, 0.1); /* More visible grid */
-        --grid-color-active: rgba(0, 0, 0, 0.2);
-        --stroke-idle: #555559; /* Darker stroke for states */
-        --stroke-hover: #000000;
+        /* Legacy Aliases */
+        --bg-primary: var(--color-bg);
+        --bg-card: var(--color-surface-1);
+        --bg-overlay: var(--color-surface-2);
+        --bg-dock: var(--color-surface-3);
+        --text-primary: var(--color-text-primary);
+        --text-secondary: var(--color-text-secondary);
+        --text-muted: var(--color-text-muted);
+        --border-color: var(--color-border);
+        --border-highlight: var(--color-border-highlight);
+        --surface-muted: var(--color-surface-muted);
+        --surface-soft: var(--color-surface-soft);
+        --surface-strong: var(--color-surface-strong);
+        --surface-hover: var(--color-surface-hover);
+        --canvas-bg: var(--color-canvas);
+        --canvas-surface: var(--color-canvas-surface);
+        --grid-color: var(--color-grid);
+        --grid-color-active: var(--color-grid-active);
+        --stroke-idle: var(--color-stroke-idle);
+        --stroke-hover: var(--color-stroke-hover);
     }
 
     .dark {
         /* Dark Mode - Graphite */
-        --bg-primary: #1c1c1e;
+        --ios-green: #34C759;
 
-        /* Glass Surfaces - Warmer graphite tones */
-        --bg-card: rgba(44, 44, 48, 0.7);
-        --bg-overlay: rgba(54, 54, 58, 0.75);
-        --bg-dock: rgba(38, 38, 42, 0.8);
+        --color-bg: #1c1c1e;
+        --color-surface-1: rgba(44, 44, 48, 0.7);
+        --color-surface-2: rgba(54, 54, 58, 0.75);
+        --color-surface-3: rgba(38, 38, 42, 0.8);
+        --color-surface-muted: rgba(255, 255, 255, 0.06);
+        --color-surface-soft: rgba(255, 255, 255, 0.1);
+        --color-surface-strong: rgba(255, 255, 255, 0.16);
+        --color-surface-hover: rgba(255, 255, 255, 0.08);
 
-        /* Typography - Better contrast */
-        --text-primary: #F5F5F7;
-        --text-secondary: #a1a1a6;
+        --color-text-primary: #F5F5F7;
+        --color-text-secondary: #a1a1a6;
+        --color-text-muted: #b0b0b5;
+        --color-text-inverse: #0b0b0d;
 
-        /* Borders - More visible */
-        --border-color: rgba(255, 255, 255, 0.12);
-        --border-highlight: rgba(255, 255, 255, 0.18);
+        --color-border: rgba(255, 255, 255, 0.12);
+        --color-border-strong: rgba(255, 255, 255, 0.2);
+        --color-border-highlight: rgba(255, 255, 255, 0.18);
 
-        /* Effects */
+        --color-canvas: #1c1c1e;
+        --color-canvas-surface: rgba(36, 36, 40, 0.92);
+        --color-grid: rgba(255, 255, 255, 0.06);
+        --color-grid-active: rgba(255, 255, 255, 0.15);
+        --color-stroke-idle: #7c7c80;
+        --color-stroke-hover: #c7c7cc;
+
         --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-
-        /* Canvas - Graphite instead of pure black */
-        --canvas-bg: #1c1c1e;
-        --grid-color: rgba(255, 255, 255, 0.06);
-        --grid-color-active: rgba(255, 255, 255, 0.15);
-        --stroke-idle: #7c7c80;
-        --stroke-hover: #c7c7cc;
     }
 
     .focus-mode {
-        --bg-card: rgba(255, 255, 255, 0.85);
-        --bg-overlay: rgba(255, 255, 255, 0.9);
-        --bg-dock: rgba(255, 255, 255, 0.85);
-        --border-color: rgba(0, 0, 0, 0.08);
-        --border-highlight: rgba(0, 0, 0, 0.12);
-        --grid-color: rgba(0, 0, 0, 0.06);
+        --color-surface-1: rgba(255, 255, 255, 0.85);
+        --color-surface-2: rgba(255, 255, 255, 0.9);
+        --color-surface-3: rgba(255, 255, 255, 0.85);
+        --color-border: rgba(0, 0, 0, 0.08);
+        --color-border-highlight: rgba(0, 0, 0, 0.12);
+        --color-grid: rgba(0, 0, 0, 0.06);
     }
 
     .dark.focus-mode {
-        --bg-card: rgba(20, 20, 25, 0.9);
-        --bg-overlay: rgba(20, 20, 25, 0.92);
-        --bg-dock: rgba(20, 20, 25, 0.9);
-        --border-color: rgba(255, 255, 255, 0.18);
-        --border-highlight: rgba(255, 255, 255, 0.25);
-        --grid-color: rgba(255, 255, 255, 0.12);
+        --color-surface-1: rgba(20, 20, 25, 0.9);
+        --color-surface-2: rgba(20, 20, 25, 0.92);
+        --color-surface-3: rgba(20, 20, 25, 0.9);
+        --color-border: rgba(255, 255, 255, 0.18);
+        --color-border-highlight: rgba(255, 255, 255, 0.25);
+        --color-grid: rgba(255, 255, 255, 0.12);
     }
 
     body {
-        background-color: var(--bg-primary);
-        color: var(--text-primary);
+        background-color: var(--color-bg);
+        color: var(--color-text-primary);
         font-family: var(--font-sans);
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        transition: background-color 0.4s ease, color 0.4s ease;
+        transition: background-color var(--motion-slow) var(--motion-ease), color var(--motion-slow) var(--motion-ease);
         overflow-x: hidden;
         min-height: 100vh;
         position: relative;
@@ -258,49 +333,229 @@
 }
 
 @layer utilities {
-    /* 
-       GLASSMORPHISM UTILITIES 
+    /*
+       GLASSMORPHISM UTILITIES
        Using backdrop-filter for the frosted glass effect
     */
 
+    /* Core Surface Tokens */
+    .bg-surface-1 { background-color: var(--color-surface-1); }
+    .bg-surface-2 { background-color: var(--color-surface-2); }
+    .bg-surface-3 { background-color: var(--color-surface-3); }
+    .bg-surface-1-95 { background-color: color-mix(in srgb, var(--color-surface-1) 95%, transparent); }
+    .bg-surface-1-90 { background-color: color-mix(in srgb, var(--color-surface-1) 90%, transparent); }
+    .bg-surface-muted { background-color: var(--color-surface-muted); }
+    .bg-surface-soft { background-color: var(--color-surface-soft); }
+    .bg-surface-strong { background-color: var(--color-surface-strong); }
+    .bg-surface-hover { background-color: var(--color-surface-hover); }
+    .bg-canvas { background-color: var(--color-canvas); }
+    .bg-canvas-surface { background-color: var(--color-canvas-surface); }
+    .bg-border { background-color: var(--color-border); }
+    .bg-border-strong { background-color: var(--color-border-strong); }
+    .bg-app { background-color: var(--color-bg); }
+    .bg-text-muted { background-color: var(--color-text-muted); }
+    .bg-text-secondary { background-color: var(--color-text-secondary); }
+    .bg-text-secondary-30 { background-color: color-mix(in srgb, var(--color-text-secondary) 30%, transparent); }
+
+    /* Stroke Tokens */
+    .text-stroke-idle { color: var(--color-stroke-idle); }
+    .text-stroke-hover { color: var(--color-stroke-hover); }
+
+    /* SVG Tokens */
+    .fill-surface-1 { fill: var(--color-surface-1); }
+    .fill-muted { fill: var(--color-text-muted); }
+    .stroke-muted { stroke: var(--color-text-muted); }
+
+    /* Core Border Tokens */
+    .border-default { border-color: var(--color-border); }
+    .border-strong { border-color: var(--color-border-strong); }
+    .border-highlight { border-color: var(--color-border-highlight); }
+
+    /* Typography Hierarchy */
+    .ui-kicker {
+        font-size: var(--type-xs);
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+    }
+
+    .ui-kicker-xs {
+        font-size: var(--type-2xs);
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+    }
+
+    .ui-kicker-2xs {
+        font-size: var(--type-3xs);
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+    }
+
+    .ui-title-hero {
+        font-size: clamp(2.75rem, 6vw, 4.5rem);
+        line-height: var(--line-tight);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+
+    .ui-title-1 {
+        font-size: clamp(2rem, 4vw, 3.25rem);
+        line-height: var(--line-tight);
+        font-weight: 700;
+    }
+
+    .ui-title-2 {
+        font-size: clamp(1.5rem, 2.5vw, 2.25rem);
+        line-height: var(--line-snug);
+        font-weight: 700;
+    }
+
+    .ui-title-3 {
+        font-size: var(--type-2xl);
+        line-height: var(--line-snug);
+        font-weight: 700;
+    }
+
+    .ui-title-4 {
+        font-size: var(--type-xl);
+        line-height: var(--line-normal);
+        font-weight: 700;
+    }
+
+    .ui-body-lg {
+        font-size: var(--type-lg);
+        line-height: var(--line-relaxed);
+    }
+
+    .ui-body {
+        font-size: var(--type-md);
+        line-height: var(--line-relaxed);
+    }
+
+    .ui-body-sm {
+        font-size: var(--type-sm);
+        line-height: var(--line-normal);
+    }
+
+    /* Core Text Tokens (after hierarchy to allow overrides) */
+    .text-primary { color: var(--color-text-primary); }
+    .text-secondary { color: var(--color-text-secondary); }
+    .text-muted { color: var(--color-text-muted); }
+    .text-inverse { color: var(--color-text-inverse); }
+
     .glass-panel {
         @apply backdrop-blur-2xl border shadow-apple-sm;
-        background-color: var(--bg-card);
-        border-color: var(--border-color);
-        /* border-top-color: var(--border-highlight); removed for cleaner look in light mode */
+        background-color: var(--color-surface-1);
+        border-color: var(--color-border);
     }
 
     .glass-card {
         @apply backdrop-blur-3xl border rounded-[24px] transition-all duration-500 shadow-apple-md;
-        background-color: var(--bg-overlay);
-        border-color: var(--border-color);
-        border-top-color: var(--border-highlight);
+        background-color: var(--color-surface-2);
+        border-color: var(--color-border);
+        border-top-color: var(--color-border-highlight);
     }
 
     .glass-dock {
         @apply backdrop-blur-3xl border rounded-full shadow-apple-xl;
-        background-color: var(--bg-dock);
-        border-color: var(--border-color);
-        border-top-color: var(--border-highlight);
+        background-color: var(--color-surface-3);
+        border-color: var(--color-border);
+        border-top-color: var(--color-border-highlight);
     }
 
     /* Interactive Elements */
     .btn-icon {
-        @apply p-3 rounded-full transition-all duration-300 active:scale-90 flex items-center justify-center;
-        background-color: rgba(255, 255, 255, 0.0);
+        @apply p-3 rounded-full transition-all duration-200 active:scale-95 flex items-center justify-center;
     }
 
     .btn-icon:hover {
-        background-color: rgba(0, 0, 0, 0.05);
+        background-color: var(--color-surface-hover);
     }
 
-    .dark .btn-icon:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+    .btn-icon:active {
+        background-color: var(--color-surface-soft);
+    }
+
+    /* Consistent interactive button */
+    .btn-interactive {
+        @apply transition-all duration-200 active:scale-95;
+    }
+
+    .btn-interactive:hover {
+        @apply shadow-md;
+        transform: translateY(-1px);
+    }
+
+    .btn-interactive:active {
+        transform: translateY(0);
+    }
+
+    /* Glass panel interactions */
+    .glass-panel-interactive {
+        @apply transition-all duration-200;
+    }
+
+    .glass-panel-interactive:hover {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        transform: translateY(-2px);
     }
 
     /* Input Reset */
     input {
         color-scheme: light dark;
+    }
+
+    /* Select styling for proper backgrounds */
+    select {
+        color-scheme: light dark;
+        background-color: var(--color-surface-2);
+    }
+
+    select option {
+        background-color: var(--color-bg);
+        color: var(--color-text-primary);
+        padding: 8px;
+    }
+
+    /* Standardized Hover States */
+    .hover-lift {
+        @apply transition-all duration-200;
+    }
+
+    .hover-lift:hover {
+        @apply -translate-y-0.5 shadow-lg;
+    }
+
+    .hover-scale {
+        @apply transition-transform duration-200;
+    }
+
+    .hover-scale:hover {
+        @apply scale-105;
+    }
+
+    .hover-glow {
+        @apply transition-shadow duration-200;
+    }
+
+    .hover-glow:hover {
+        box-shadow: 0 0 20px rgba(0, 122, 255, 0.15);
+    }
+
+    /* Surface hover for interactive elements */
+    .surface-hover {
+        @apply transition-colors duration-200;
+        background-color: transparent;
+    }
+
+    .surface-hover:hover {
+        background-color: var(--color-surface-muted);
+    }
+
+    .surface-hover:active {
+        background-color: var(--color-surface-soft);
     }
 }
 
@@ -308,8 +563,8 @@
 .bg-grid-pattern {
     background-size: 40px 40px;
     background-image:
-        linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
-        linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+        linear-gradient(to right, var(--color-grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--color-grid) 1px, transparent 1px);
     mask-image: radial-gradient(ellipse at center, black 60%, transparent 100%);
     transition: background-image 0.3s ease, opacity 0.3s ease;
 }
@@ -317,8 +572,8 @@
 /* Grid with snap active - more visible */
 .bg-grid-pattern.grid-active {
     background-image:
-        linear-gradient(to right, var(--grid-color-active) 1px, transparent 1px),
-        linear-gradient(to bottom, var(--grid-color-active) 1px, transparent 1px);
+        linear-gradient(to right, var(--color-grid-active) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--color-grid-active) 1px, transparent 1px);
     opacity: 1 !important;
 }
 
@@ -418,6 +673,36 @@ body.custom-cursor-active * {
 
 .animate-bounce-subtle {
     animation: bounce-subtle 1s ease-in-out infinite;
+}
+
+@keyframes slide-right-fade {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-slide-right-fade {
+    animation: slide-right-fade 0.25s ease-out forwards;
+}
+
+.animate-fade-in-up {
+    animation: fade-in-up 0.3s ease-out forwards;
 }
 
 /* Staggered animation delays */

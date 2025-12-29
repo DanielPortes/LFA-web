@@ -2,6 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { Play, Trash2, Plus, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import type { AutomatoData } from '../../types';
 import { getEpsilonClosure, performStep } from '../../utils/automatonLogic';
+import { tokenizeInput } from '../../utils/symbols';
+import type { BaseProps } from './types';
 
 interface TestCase {
     id: string;
@@ -10,12 +12,12 @@ interface TestCase {
     result?: 'accepted' | 'rejected' | 'running';
 }
 
-interface BatchTestPanelProps {
+interface BatchTestPanelProps extends BaseProps {
     automaton: AutomatoData;
     onClose: () => void;
 }
 
-export const BatchTestPanel: React.FC<BatchTestPanelProps> = ({ automaton, onClose }) => {
+export const BatchTestPanel: React.FC<BatchTestPanelProps> = ({ automaton, onClose, className = '' }) => {
     const [testCases, setTestCases] = useState<TestCase[]>([
         { id: '1', input: '', expected: 'accept' }
     ]);
@@ -45,7 +47,8 @@ export const BatchTestPanel: React.FC<BatchTestPanelProps> = ({ automaton, onClo
         const initialStates = automaton.estados.filter(e => e.isInicial).map(e => e.id);
         let currentStates = getEpsilonClosure(initialStates, automaton.transicoes);
 
-        for (const symbol of input) {
+        const tokens = tokenizeInput(input);
+        for (const symbol of tokens) {
             currentStates = performStep(currentStates, symbol, automaton.transicoes);
             if (currentStates.length === 0) {
                 return 'rejected';
@@ -99,13 +102,13 @@ export const BatchTestPanel: React.FC<BatchTestPanelProps> = ({ automaton, onClo
     const testedCount = testCases.filter(tc => tc.result && tc.result !== 'running').length;
 
     return (
-        <div className="glass-panel rounded-2xl overflow-hidden w-96">
+        <div className={`glass-panel rounded-2xl overflow-hidden w-full max-w-sm ${className}`}>
             {/* Header */}
-            <div className="px-4 py-3 border-b border-[var(--border-color)] flex items-center justify-between">
-                <h4 className="font-bold text-[var(--text-primary)]">Testes em Lote</h4>
+            <div className="px-4 py-3 border-b border-default flex items-center justify-between">
+                <h4 className="font-bold text-primary">Testes em Lote</h4>
                 <button
                     onClick={onClose}
-                    className="text-gray-600 hover:text-gray-600 dark:hover:text-gray-300"
+                    className="text-secondary hover:text-primary"
                 >
                     <XCircle size={18} />
                 </button>
@@ -113,14 +116,14 @@ export const BatchTestPanel: React.FC<BatchTestPanelProps> = ({ automaton, onClo
 
             {/* Stats */}
             {testedCount > 0 && (
-                <div className="px-4 py-2 bg-gray-50 dark:bg-black/20 flex items-center gap-4 text-xs font-bold border-b border-[var(--border-color)]">
+                <div className="px-4 py-2 bg-surface-muted flex items-center gap-4 text-xs font-bold border-b border-default">
                     <span className="text-ios-green flex items-center gap-1">
                         <CheckCircle2 size={14} /> {passedCount} passou
                     </span>
                     <span className="text-ios-red flex items-center gap-1">
                         <XCircle size={14} /> {failedCount} falhou
                     </span>
-                    <span className="text-gray-600 ml-auto">
+                    <span className="text-muted ml-auto">
                         {testedCount}/{testCases.length}
                     </span>
                 </div>
@@ -131,16 +134,16 @@ export const BatchTestPanel: React.FC<BatchTestPanelProps> = ({ automaton, onClo
                 {testCases.map((tc, idx) => (
                     <div
                         key={tc.id}
-                        className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5"
+                        className="flex items-center gap-2 px-4 py-2 border-b border-default hover:bg-surface-muted"
                     >
-                        <span className="w-6 text-xs text-gray-600 font-mono">{idx + 1}.</span>
+                        <span className="w-6 text-xs text-muted font-mono">{idx + 1}.</span>
 
                         <input
                             type="text"
                             value={tc.input}
                             onChange={(e) => updateTestCase(tc.id, { input: e.target.value })}
                             placeholder="entrada..."
-                            className="flex-1 bg-transparent border-none text-sm font-mono text-[var(--text-primary)] outline-none"
+                            className="flex-1 bg-transparent border-none text-sm font-mono text-primary outline-none"
                             disabled={isRunning}
                         />
 
@@ -171,7 +174,7 @@ export const BatchTestPanel: React.FC<BatchTestPanelProps> = ({ automaton, onClo
                         <button
                             onClick={() => removeTestCase(tc.id)}
                             disabled={isRunning}
-                            className="p-1 text-gray-600 hover:text-ios-red transition-colors disabled:opacity-30"
+                            className="p-1 text-muted hover:text-ios-red transition-colors disabled:opacity-30"
                         >
                             <Trash2 size={14} />
                         </button>
@@ -180,14 +183,14 @@ export const BatchTestPanel: React.FC<BatchTestPanelProps> = ({ automaton, onClo
             </div>
 
             {/* Add new test */}
-            <div className="px-4 py-2 border-b border-[var(--border-color)] flex items-center gap-2">
+            <div className="px-4 py-2 border-b border-default flex items-center gap-2">
                 <input
                     type="text"
                     value={newInput}
                     onChange={(e) => setNewInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && addTestCase()}
                     placeholder="Adicionar teste..."
-                    className="flex-1 bg-transparent border-none text-sm font-mono text-[var(--text-primary)] outline-none placeholder-gray-400"
+                    className="flex-1 bg-transparent border-none text-sm font-mono text-primary outline-none placeholder-gray-400"
                     disabled={isRunning}
                 />
                 <button
@@ -223,7 +226,7 @@ export const BatchTestPanel: React.FC<BatchTestPanelProps> = ({ automaton, onClo
                     <button
                         onClick={clearResults}
                         disabled={isRunning}
-                        className="py-2 px-4 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-600 font-bold text-sm hover:bg-gray-200 dark:hover:bg-white/20 transition-colors disabled:opacity-50"
+                        className="py-2 px-4 rounded-xl bg-surface-muted text-secondary font-bold text-sm hover:bg-surface-soft transition-colors disabled:opacity-50"
                     >
                         Limpar
                     </button>

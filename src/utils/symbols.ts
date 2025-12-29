@@ -1,6 +1,16 @@
-export const EPSILON_SYMBOL = 'ε';
+export const EPSILON_SYMBOL = 'eps';
 
-const EPSILON_ALIASES = new Set(['ε', 'λ', 'eps', 'epsilon']);
+const EPSILON_ALIASES = new Set([
+    'eps',
+    'epsilon',
+    'e',
+    '?',
+    'ε',
+    'Ić',
+    'IŻ',
+    'iAÝ',
+    'iŹ¬'
+]);
 
 export const normalizeToken = (token: string) => token.trim();
 
@@ -49,4 +59,41 @@ export const matchesSymbol = (transitionSymbol: string, inputSymbol: string): bo
         }
     }
     return false;
+};
+
+export type TokenizationMode = 'auto' | 'char' | 'separator';
+
+export interface TokenizationOptions {
+    mode?: TokenizationMode;
+    separator?: string;
+}
+
+export const tokenizeInput = (input: string, options: TokenizationOptions = {}): string[] => {
+    const trimmed = input.trim();
+    if (!trimmed) return [];
+
+    const mode = options.mode ?? 'auto';
+    if (mode === 'char') {
+        return trimmed.split('').map(normalizeToken).filter((token) => token.length > 0);
+    }
+
+    if (mode === 'separator') {
+        const sep = options.separator ?? ' ';
+        if (!sep) {
+            return trimmed.split('').map(normalizeToken).filter((token) => token.length > 0);
+        }
+        const escaped = sep.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return trimmed
+            .split(new RegExp(escaped, 'g'))
+            .map(normalizeToken)
+            .filter((token) => token.length > 0);
+    }
+
+    if (/\s/.test(trimmed)) {
+        return trimmed
+            .split(/\s+/)
+            .map(normalizeToken)
+            .filter((token) => token.length > 0);
+    }
+    return trimmed.split('').map(normalizeToken).filter((token) => token.length > 0);
 };

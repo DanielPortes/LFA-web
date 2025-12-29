@@ -9,15 +9,18 @@ export const CustomCursor: React.FC = () => {
 
     const [isHovering, setIsHovering] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
-    const [isCoarsePointer, setIsCoarsePointer] = useState(false);
-
-    // Use ref to track visibility without causing re-renders in event handlers
-    const isVisibleRef = useRef(false);
+    const isHoveringRef = useRef(isHovering);
+    const isVisibleRef = useRef(isVisible);
+    const [isCoarsePointer, setIsCoarsePointer] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return window.matchMedia('(pointer: coarse)').matches;
+        }
+        return false;
+    });
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
         const media = window.matchMedia('(pointer: coarse)');
-        setIsCoarsePointer(media.matches);
         const handler = (event: MediaQueryListEvent) => setIsCoarsePointer(event.matches);
         media.addEventListener('change', handler);
         return () => media.removeEventListener('change', handler);
@@ -28,11 +31,18 @@ export const CustomCursor: React.FC = () => {
         isVisibleRef.current = isVisible;
     }, [isVisible]);
 
+    useEffect(() => {
+        isHoveringRef.current = isHovering;
+    }, [isHovering]);
+
     const handleMouseLeave = useCallback((e: MouseEvent) => {
         // Only hide if actually leaving the window
         const relatedTarget = e.relatedTarget as Node | null;
         if (!relatedTarget || !document.body.contains(relatedTarget)) {
-            setIsVisible(false);
+            if (isVisibleRef.current) {
+                isVisibleRef.current = false;
+                setIsVisible(false);
+            }
         }
     }, []);
 
@@ -60,10 +70,13 @@ export const CustomCursor: React.FC = () => {
 
         const handleMouseEnter = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
-            if (target.closest('button') || target.closest('a') || target.closest('.cursor-pointer') || target.closest('[role="button"]')) {
-                setIsHovering(true);
-            } else {
-                setIsHovering(false);
+            const nextHovering = !!(target.closest('button')
+                || target.closest('a')
+                || target.closest('.cursor-pointer')
+                || target.closest('[role="button"]'));
+            if (nextHovering !== isHoveringRef.current) {
+                isHoveringRef.current = nextHovering;
+                setIsHovering(nextHovering);
             }
         };
 
