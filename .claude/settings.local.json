@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(node -e:*)",
+      "Bash(npx vite build)",
+      "Bash(tree:*)",
+      "Bash(wc -l \"D:\\\\Downloads\\\\LFA-web\\\\src\"/**/*.{ts,tsx})",
+      "Bash(find:*)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

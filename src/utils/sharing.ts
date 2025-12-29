@@ -30,8 +30,7 @@ export function decodeAutomaton(encoded: string): AutomatoData | null {
         }
         const json = decodeURIComponent(escape(atob(base64)));
         return JSON.parse(json);
-    } catch (e) {
-        console.error('Failed to decode automaton:', e);
+    } catch {
         return null;
     }
 }

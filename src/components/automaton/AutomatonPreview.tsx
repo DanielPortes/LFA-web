@@ -34,7 +34,7 @@ export const AutomatonPreview: React.FC<AutomatonPreviewProps> = ({ data, classN
             viewBox={viewBox}
             className={`w-full h-full ${className}`}
             role="img"
-            aria-label="Pré-visualização do autômato"
+            aria-label="Pre-visualizacao do automato"
         >
             <defs>
                 <marker id="preview-arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse">
@@ -49,7 +49,13 @@ export const AutomatonPreview: React.FC<AutomatonPreviewProps> = ({ data, classN
 
                 const pathD = calculatePath(source, target, t.curvatura, t.controlPoint);
                 const labelPos = getLabelPosition(source, target, t.curvatura, t.controlPoint);
-                const label = t.simbolo.trim() || '?';
+                let label = t.simbolo.trim() || '?';
+                if (data.tipo === 'Mealy') {
+                    const [inputRaw, ...rest] = label.split('/');
+                    const input = inputRaw.trim();
+                    const output = t.output ?? (rest.length > 0 ? rest.join('/').trim() : '');
+                    label = output ? `${input}/${output}` : input;
+                }
 
                 return (
                     <g key={t.id}>
@@ -57,11 +63,11 @@ export const AutomatonPreview: React.FC<AutomatonPreviewProps> = ({ data, classN
                         <g transform={`translate(${labelPos.x}, ${labelPos.y})`}>
                             <rect
                                 x="-14" y="-12" width="28" height="24" rx="8"
-                                className="fill-white stroke-[var(--border-color)] stroke-1"
+                                className="fill-[var(--canvas-surface)] stroke-[var(--stroke-idle)] stroke-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]"
                             />
                             <text
                                 dy="5" textAnchor="middle"
-                                className="text-[11px] font-mono font-bold select-none pointer-events-none fill-[var(--text-primary)]"
+                                className="text-[12px] font-mono font-bold select-none pointer-events-none fill-[var(--text-primary)]"
                             >
                                 {label}
                             </text>
@@ -73,20 +79,21 @@ export const AutomatonPreview: React.FC<AutomatonPreviewProps> = ({ data, classN
             {data.estados.map(s => (
                 <g key={s.id} transform={`translate(${s.x}, ${s.y})`}>
                     {s.isInicial && (
-                        <path d="M -50 0 L -32 0" stroke="currentColor" strokeWidth="2" markerEnd="url(#preview-arrow)" className="text-[var(--stroke-idle)] opacity-70" />
+                        <path d="M -50 0 L -32 0" stroke="currentColor" strokeWidth="2" markerEnd="url(#preview-arrow)" className="text-stroke-idle opacity-70" />
                     )}
 
-                    <circle r="26" className="fill-white stroke-[var(--stroke-idle)] stroke-2" />
+                    <circle r="26" className="fill-[var(--canvas-surface)] stroke-[var(--stroke-idle)] stroke-2" />
 
                     {s.isFinal && (
                         <circle r="22" fill="none" className="stroke-[var(--stroke-idle)]" strokeWidth="1.5" />
                     )}
 
-                    <text dy="5" textAnchor="middle" className="text-xs font-bold select-none pointer-events-none font-mono fill-[var(--text-primary)]">
-                        {s.label}
+                    <text dy="5" textAnchor="middle" className="text-[12px] font-bold select-none pointer-events-none font-mono fill-[var(--text-primary)]">
+                        {data.tipo === 'Moore' && s.output ? `${s.label}/${s.output}` : s.label}
                     </text>
                 </g>
             ))}
         </svg>
     );
 };
+

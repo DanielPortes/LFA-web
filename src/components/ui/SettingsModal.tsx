@@ -4,11 +4,9 @@ import { useUiSettings } from '../../hooks/UiSettingsContext';
 import { Modal } from './Modal';
 import { useToast } from './Toast';
 import { runSelfCheck } from '../../utils/selfCheck';
+import type { ModalBaseProps } from './types';
 
-interface SettingsModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-}
+interface SettingsModalProps extends ModalBaseProps {}
 
 const ToggleRow = ({
     label,
@@ -25,12 +23,12 @@ const ToggleRow = ({
 }) => (
     <div className="flex items-center justify-between gap-4 py-3">
         <div className="flex items-start gap-3">
-            <div className="p-2 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-500">
+            <div className="p-2 rounded-xl bg-surface-muted text-secondary">
                 {icon}
             </div>
             <div>
-                <div className="font-bold text-sm text-[var(--text-primary)]">{label}</div>
-                <div className="text-xs text-[var(--text-secondary)]">{description}</div>
+                <div className="font-bold text-sm text-primary">{label}</div>
+                <div className="text-xs text-secondary">{description}</div>
             </div>
         </div>
         <button
@@ -48,7 +46,19 @@ const ToggleRow = ({
 );
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
-    const { focusMode, cursorEnabled, reduceMotion, effectiveReduceMotion, setFocusMode, setCursorEnabled, setReduceMotion } = useUiSettings();
+    const {
+        focusMode,
+        cursorEnabled,
+        reduceMotion,
+        effectiveReduceMotion,
+        inputTokenization,
+        inputSeparator,
+        setFocusMode,
+        setCursorEnabled,
+        setReduceMotion,
+        setInputTokenization,
+        setInputSeparator
+    } = useUiSettings();
     const { addToast } = useToast();
 
     const handleSelfCheck = () => {
@@ -62,36 +72,67 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Preferências">
+        <Modal isOpen={isOpen} onClose={onClose} title="Preferencias">
             <div className="space-y-6">
                 <div className="space-y-2">
                     <ToggleRow
                         label="Modo foco"
-                        description="Aumenta contraste e reduz transparências."
+                        description="Aumenta contraste e reduz transparencias."
                         checked={focusMode}
                         onChange={setFocusMode}
                         icon={<Focus size={18} />}
                     />
                     <ToggleRow
                         label="Cursor customizado"
-                        description="Desative para maior precisão ou acessibilidade."
+                        description="Desative para maior precisao ou acessibilidade."
                         checked={cursorEnabled}
                         onChange={setCursorEnabled}
                         icon={<MousePointer2 size={18} />}
                     />
                     <ToggleRow
-                        label="Reduzir animações"
-                        description={effectiveReduceMotion ? 'Ativo (inclui preferência do sistema).' : 'Desativa animações e efeitos pesados.'}
+                        label="Reduzir animacoes"
+                        description={effectiveReduceMotion ? 'Ativo (inclui preferencia do sistema).' : 'Desativa animacoes e efeitos pesados.'}
                         checked={reduceMotion}
                         onChange={setReduceMotion}
                         icon={<Activity size={18} />}
                     />
                 </div>
 
-                <div className="rounded-2xl border border-[var(--border-color)] p-4 flex items-center justify-between">
+                <div className="rounded-2xl border border-default p-4 space-y-3">
+                    <div className="ui-kicker text-secondary">Entrada do simulador</div>
+                    <div className="grid gap-3 md:grid-cols-[1fr,1fr] items-center">
+                        <div>
+                            <label className="block ui-kicker-xs text-muted mb-1">Tokenizacao</label>
+                            <select
+                                value={inputTokenization}
+                                onChange={(e) => setInputTokenization(e.target.value as 'auto' | 'char' | 'separator')}
+                                className="w-full rounded-xl border border-default bg-surface-2 px-3 py-2 text-sm font-semibold text-primary shadow-inner"
+                            >
+                                <option value="auto">Auto (espaco ou caracteres)</option>
+                                <option value="char">Caractere a caractere</option>
+                                <option value="separator">Separador customizado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block ui-kicker-xs text-muted mb-1">Separador</label>
+                            <input
+                                value={inputSeparator}
+                                onChange={(e) => setInputSeparator(e.target.value)}
+                                disabled={inputTokenization !== 'separator'}
+                                placeholder="ex: , ou |"
+                                className="w-full rounded-xl border border-default bg-surface-2 px-3 py-2 text-sm font-mono text-primary shadow-inner disabled:opacity-60"
+                            />
+                        </div>
+                    </div>
+                    <div className="text-[11px] text-muted">
+                        Use o modo "Separador" para simbolos multi-caractere sem espacos.
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-default p-4 flex items-center justify-between">
                     <div>
-                        <div className="font-bold text-sm text-[var(--text-primary)]">Auto-testes rápidos</div>
-                        <div className="text-xs text-[var(--text-secondary)]">Verifica lógica básica de autômatos e regex.</div>
+                        <div className="font-bold text-sm text-primary">Auto-testes rapidos</div>
+                        <div className="text-xs text-secondary">Verifica logica basica de automatos e regex.</div>
                     </div>
                     <button
                         onClick={handleSelfCheck}
@@ -102,9 +143,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     </button>
                 </div>
 
-                <div className="text-xs text-gray-400 flex items-center gap-2">
+                <div className="text-xs text-muted flex items-center gap-2">
                     <XCircle size={14} />
-                    Alterações são salvas localmente neste dispositivo.
+                    Alteracoes sao salvas localmente neste dispositivo.
                 </div>
             </div>
         </Modal>

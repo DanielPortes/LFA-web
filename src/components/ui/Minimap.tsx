@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import type { AutomatoData } from '../../types';
+import type { BaseProps } from './types';
 
-interface MinimapProps {
+interface MinimapProps extends BaseProps {
     data: AutomatoData;
     viewport: { x: number; y: number; width: number; height: number };
     zoom: number;
@@ -16,7 +17,8 @@ export const Minimap: React.FC<MinimapProps> = ({
     zoom,
     pan,
     onPanChange,
-    activeStates = []
+    activeStates = [],
+    className = ''
 }) => {
     const MINIMAP_WIDTH = 150;
     const MINIMAP_HEIGHT = 100;
@@ -77,7 +79,7 @@ export const Minimap: React.FC<MinimapProps> = ({
     if (data.estados.length === 0) return null;
 
     return (
-        <div className="absolute bottom-6 left-6 z-20 glass-panel rounded-xl overflow-hidden shadow-apple-lg">
+        <div className={`glass-panel rounded-xl overflow-hidden shadow-apple-lg ${className}`}>
             <svg
                 width={MINIMAP_WIDTH}
                 height={MINIMAP_HEIGHT}
@@ -88,7 +90,7 @@ export const Minimap: React.FC<MinimapProps> = ({
                 <rect
                     width={MINIMAP_WIDTH}
                     height={MINIMAP_HEIGHT}
-                    className="fill-[var(--bg-card)]"
+                    className="fill-surface-1"
                 />
 
                 {/* Transitions */}
@@ -109,7 +111,7 @@ export const Minimap: React.FC<MinimapProps> = ({
                             y1={y1}
                             x2={x2}
                             y2={y2}
-                            className="stroke-gray-400 dark:stroke-gray-600"
+                            className="stroke-muted"
                             strokeWidth="1"
                             opacity="0.5"
                         />
@@ -135,7 +137,7 @@ export const Minimap: React.FC<MinimapProps> = ({
                                         ? 'fill-ios-purple'
                                         : s.isInicial
                                             ? 'fill-ios-blue'
-                                            : 'fill-gray-400 dark:fill-gray-500'}
+                                            : 'fill-muted'}
                             `}
                         />
                     );

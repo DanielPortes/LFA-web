@@ -1,11 +1,21 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AutomatonEditor } from '../components/automaton/AutomatonEditor';
-import type { AutomatoData, SimulationStep, Transicao } from '../types';
-import { Play, Pause, SkipForward, SkipBack, RotateCcw, CheckCircle2, XCircle, X, Zap, Keyboard, History, ListOrdered, Info } from 'lucide-react';
-import { getEpsilonClosure, performStep } from '../utils/automatonLogic';
-import { getAlphabet } from '../utils/conversions';
-import { matchesSymbol } from '../utils/symbols';
-import { useToast } from '../components/ui/Toast';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { AutomatonEditor } from '../components/automaton';
+import type { AutomatoData, SimulationStep } from '../types';
+import { CheckCircle2, XCircle, X, Keyboard, History, ListOrdered, Info, Pencil } from 'lucide-react';
+import { regexToNfa } from '../utils/conversions';
+import {
+    DerivationTreeVisualizer,
+    StackVisualizer,
+    TuringTape,
+    useToast,
+    SimulationControls,
+    InputTape
+} from '../components/ui';
+import { useUiSettings } from '../hooks/UiSettingsContext';
+import { useLocalStorageState } from '../hooks/useLocalStorageState';
+import { SIMULATOR_STORAGE_KEY, SIMULATOR_VIEW_KEY } from '../constants/storage';
+import { useAutomatonSimulation } from '../hooks/useAutomatonSimulation';
+import { useGrammarSimulation } from '../hooks/useGrammarSimulation';
 
 interface SimulatorProps {
     initialData?: AutomatoData;
@@ -15,124 +25,120 @@ const emptyAutomaton: AutomatoData = {
     tipo: 'AFD',
     estados: [],
     transicoes: [],
-    descricao: 'Novo Autômato'
+    descricao: 'Novo automato'
 };
 
 export const SimulatorPage: React.FC<SimulatorProps> = ({ initialData }) => {
     // Ensure data is never null, even if initialData is undefined
-    const [data, setData] = useState<AutomatoData>(initialData ?? emptyAutomaton);
+    const [data, setData] = useLocalStorageState<AutomatoData>(
+        SIMULATOR_STORAGE_KEY,
+        initialData ?? emptyAutomaton,
+        { readOnInit: !initialData }
+    );
+    const [simulatorMode, setSimulatorMode] = useState<'automaton' | 'grammar'>('automaton');
     
+    // Persistent View State
+    const [viewState, setViewState] = useLocalStorageState(
+        SIMULATOR_VIEW_KEY,
+        { zoom: 1, pan: { x: 0, y: 0 } }
+    );
+
+    const handleViewStateChange = useCallback((zoom: number, pan: { x: number; y: number }) => {
+        setViewState((prev: { zoom: number; pan: { x: number; y: number } }) => {
+            const zoomDelta = Math.abs(prev.zoom - zoom);
+            const panDelta = Math.abs(prev.pan.x - pan.x) + Math.abs(prev.pan.y - pan.y);
+            if (zoomDelta < 0.001 && panDelta < 0.5) return prev;
+            return { zoom, pan };
+        });
+    }, []);
+
     // Safety check: if data somehow becomes null (e.g. from parent update), use empty
     const safeData = data || emptyAutomaton;
 
     const [inputString, setInputString] = useState('');
-    const [simulationState, setSimulationState] = useState<SimulationStep | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [speed, setSpeed] = useState(1000);
-    const [history, setHistory] = useState<SimulationStep[]>([]);
-    const [activeTransitions, setActiveTransitions] = useState<string[]>([]);
+    const [regexImport, setRegexImport] = useState('');
+    const [regexImportError, setRegexImportError] = useState<string | null>(null);
     const [showDetails, setShowDetails] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const { addToast } = useToast();
+    const {
+        inputTokenization,
+        inputSeparator,
+        setInputTokenization,
+        setInputSeparator
+    } = useUiSettings();
 
-    const alphabet = useMemo(() => safeData ? getAlphabet(safeData) : [], [safeData]);
-    const stateLabelMap = useMemo(() => {
-        const map = new Map<string, string>();
-        if (safeData && safeData.estados) {
-            safeData.estados.forEach((state) => map.set(state.id, state.label || state.id));
-        }
-        return map;
-    }, [safeData]);
-    const transitionMap = useMemo(() => {
-        const map = new Map<string, Transicao>();
-        if (safeData && safeData.transicoes) {
-            safeData.transicoes.forEach((transition) => map.set(transition.id, transition));
-        }
-        return map;
-    }, [safeData]);
-    const invalidSymbols = useMemo(() => {
-        if (!inputString || alphabet.length === 0) return [];
-        const unique = new Set<string>();
-        for (const symbol of inputString) {
-            if (!alphabet.includes(symbol)) {
-                unique.add(symbol);
-            }
-        }
-        return Array.from(unique);
-    }, [inputString, alphabet]);
-    const hasInvalidInput = invalidSymbols.length > 0;
+    // Automaton Simulation Hook
+    const {
+        simulationState,
+        isPlaying,
+        speed,
+        history,
+        activeTransitions,
+        inputTokens,
+        alphabet,
+        invalidSymbols,
+        hasInvalidInput,
+        isPda,
+        isTuring,
+        isAll,
+        isMoore,
+        isMealy,
+        stateLabelMap,
+        transitionMap,
+        setSpeed,
+        setIsPlaying,
+        resetSimulation,
+        step,
+        stepBack,
+        formatPdaConfig
+    } = useAutomatonSimulation(
+        safeData,
+        inputString,
+        { mode: inputTokenization, separator: inputSeparator }
+    );
 
-    const resetSimulation = useCallback((fullReset = false) => {
-        setIsPlaying(false);
-        setHistory([]);
-        setActiveTransitions([]);
-        if (fullReset) {
-            setSimulationState(null);
-            return;
-        }
-
-        if (!safeData || !safeData.estados || !safeData.transicoes) return;
-
-        const initialStates = safeData.estados.filter(e => e.isInicial).map(e => e.id);
-        const activeStates = getEpsilonClosure(initialStates, safeData.transicoes);
-
-        const initialStep: SimulationStep = {
-            activeStates,
-            remainingInput: inputString,
-            processedInput: '',
-            status: 'running'
-        };
-        setSimulationState(initialStep);
-        setHistory([initialStep]);
-    }, [safeData, inputString]);
+    // Grammar Simulation Hook
+    const {
+        grammarSource,
+        grammarInput,
+        grammarResult,
+        grammarWarnings,
+        grammarLimits,
+        grammarStrategy,
+        grammarTransform,
+        setGrammarSource,
+        setGrammarInput,
+        setGrammarLimits,
+        setGrammarStrategy,
+        runDerivation,
+        runTransform,
+        clearTransform,
+        clearResult
+    } = useGrammarSimulation({ mode: inputTokenization, separator: inputSeparator });
 
     const prevInitialDataRef = useRef<string>('');
 
     useEffect(() => {
-        if (initialData) {
-            const currentString = JSON.stringify(initialData);
-            if (prevInitialDataRef.current !== currentString) {
-                prevInitialDataRef.current = currentString;
-                setData(initialData);
-                // We don't call resetSimulation here immediately to avoid dependency cycles if not needed
-                // But logic requires it. It is safe now as resetSimulation depends on safeData.
-                // However, setData is async. The resetSimulation will run with OLD data if called immediately?
-                // Actually, resetSimulation depends on [safeData]. So when data updates, resetSimulation is recreated.
-                // We should trigger reset in a separate effect that watches data?
-                // Or just let the user reset? No, auto-reset is expected.
-                
-                // Better pattern: Set data. Then an effect on [data] triggers reset.
-            }
+        if (!initialData) return;
+        const currentString = JSON.stringify(initialData);
+        if (prevInitialDataRef.current !== currentString) {
+            prevInitialDataRef.current = currentString;
+            setData(initialData);
+            setSimulatorMode('automaton');
         }
-    }, [initialData]);
-
-    // Auto-reset when data changes
-    useEffect(() => {
-        resetSimulation(true);
-    }, [data]); // Trigger full reset when data object reference changes (loaded new automaton)
+    }, [initialData, setData]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setInputString(e.target.value);
-        // We need to reset simulation but keep input
-        // We can't call resetSimulation(true) because it clears everything including potential state?
-        // Actually resetSimulation(true) clears state. We want to restart from q0 with new input.
-        // So we call resetSimulation(false) which recalculates initial closure.
-        // But we need to update inputString state first.
-        // The resetSimulation depends on inputString.
-        // So we just setInputString. The effect or callback needs to handle it.
-        // Let's keep manual call for now to be explicit.
     };
     
-    // Fix: We need to trigger simulation reset when input changes, but we can't depend on inputString in the effect above
-    // or it will reset on every keystroke (which is fine actually, live update).
-    // But resetSimulation(false) is what we want.
-    
     useEffect(() => {
-        resetSimulation(false); 
-    }, [inputString]); // Re-run simulation setup when input changes
-
-
+        if (simulatorMode === 'automaton') {
+             resetSimulation(false);
+        }
+    }, [inputTokens, simulatorMode, resetSimulation]);
 
     const clearInput = () => {
         setInputString('');
@@ -140,126 +146,31 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({ initialData }) => {
         inputRef.current?.focus();
     };
 
-    const findActiveTransitions = useCallback((fromStates: string[], symbol: string): string[] => {
-        if (!symbol || !safeData.transicoes) return [];
-        return safeData.transicoes
-            .filter(t => fromStates.includes(t.de) && matchesSymbol(t.simbolo, symbol))
-            .map(t => t.id);
-    }, [safeData]);
-
-    const step = useCallback(() => {
-        if (hasInvalidInput || !safeData || !safeData.estados || !safeData.transicoes) {
-            setIsPlaying(false);
-            return;
+    const handleRegexImport = useCallback(() => {
+        const trimmed = regexImport.trim();
+        if (!trimmed) return;
+        try {
+            const nfa = regexToNfa(trimmed);
+            setData(nfa);
+            setSimulatorMode('automaton');
+            setRegexImportError(null);
+            addToast('Regex convertida para AFN', 'success');
+        } catch {
+            setRegexImportError('Regex invalida');
         }
+    }, [regexImport, addToast, setData]);
 
-        let currentState = simulationState;
+    const handleCanvasInteract = useCallback(() => {
+        if (simulatorMode !== 'automaton') return;
+        if (!simulationState && history.length === 0) return;
+        resetSimulation(true);
+        addToast('Edição no autômato reiniciou a simulação.', 'info');
+    }, [simulationState, history.length, resetSimulation, addToast, simulatorMode]);
 
-        if (!currentState) {
-            const initialStates = safeData.estados.filter(e => e.isInicial).map(e => e.id);
-            const activeStates = getEpsilonClosure(initialStates, safeData.transicoes);
-
-            currentState = {
-                activeStates,
-                remainingInput: inputString,
-                processedInput: '',
-                status: 'running'
-            };
-            setSimulationState(currentState);
-            setHistory([currentState]);
-            return;
-        }
-
-        if (currentState.status !== 'running') return;
-
-        if (currentState.remainingInput.length === 0) {
-            const hasFinal = currentState.activeStates.some(id => safeData.estados.find(e => e.id === id)?.isFinal);
-            const status: SimulationStep['status'] = hasFinal ? 'accepted' : 'rejected';
-            const finalStep: SimulationStep = { ...currentState, status };
-            setSimulationState(finalStep);
-            setHistory(prev => {
-                if (prev.length === 0) return [finalStep];
-                const updated = [...prev];
-                updated[updated.length - 1] = finalStep;
-                return updated;
-            });
-            setIsPlaying(false);
-            setActiveTransitions([]);
-
-            if (status === 'accepted') {
-                addToast('String aceita!', 'success');
-            } else {
-                addToast('String rejeitada', 'error');
-            }
-            return;
-        }
-
-        const currentSymbol = currentState.remainingInput[0];
-
-        // Find active transitions for visual trace
-        const transitions = findActiveTransitions(currentState.activeStates, currentSymbol);
-        setActiveTransitions(transitions);
-
-        const nextStatesArray = performStep(currentState.activeStates, currentSymbol, safeData.transicoes);
-
-        const nextRemaining = currentState.remainingInput.slice(1);
-        let status: 'running' | 'accepted' | 'rejected' = 'running';
-
-        if (nextStatesArray.length === 0) {
-            status = 'rejected';
-            addToast('String rejeitada - sem transição válida', 'error');
-        }
-
-        const newStep: SimulationStep = {
-            activeStates: nextStatesArray,
-            remainingInput: nextRemaining,
-            processedInput: currentState.processedInput + (currentSymbol || ''),
-            status,
-            symbol: currentSymbol,
-            fromStates: currentState.activeStates,
-            usedTransitions: transitions
-        };
-
-        if (nextRemaining.length === 0 && status === 'running') {
-            const hasFinal = nextStatesArray.some(id => safeData.estados.find(e => e.id === id)?.isFinal);
-            newStep.status = hasFinal ? 'accepted' : 'rejected';
-
-            if (newStep.status === 'accepted') {
-                addToast('String aceita!', 'success');
-            } else {
-                addToast('String rejeitada', 'error');
-            }
-        }
-
-        setSimulationState(newStep);
-        setHistory(prev => [...prev, newStep]);
-        if (newStep.status !== 'running') {
-            setIsPlaying(false);
-        }
-    }, [simulationState, safeData, inputString, findActiveTransitions, addToast, hasInvalidInput]);
-
-    const stepBack = useCallback(() => {
-        if (history.length <= 1) return;
-
-        const newHistory = history.slice(0, -1);
-        const previousState = newHistory[newHistory.length - 1];
-
-        setHistory(newHistory);
-        setSimulationState(previousState);
-        setActiveTransitions(previousState.usedTransitions || []);
-        setIsPlaying(false);
-    }, [history]);
-
-    useEffect(() => {
-        let interval: number;
-        if (isPlaying) {
-            interval = setInterval(step, speed);
-        }
-        return () => clearInterval(interval);
-    }, [isPlaying, step, speed]);
-
+    // Keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            if (simulatorMode !== 'automaton') return;
             if (document.activeElement === inputRef.current) {
                 if (e.key === 'Enter') {
                     inputRef.current?.blur();
@@ -276,7 +187,7 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({ initialData }) => {
                     e.preventDefault();
                     if (!hasInvalidInput) {
                         if (!simulationState) resetSimulation();
-                        setIsPlaying(p => !p);
+                        setIsPlaying(!isPlaying);
                     }
                     break;
                 case 'ArrowRight':
@@ -297,14 +208,9 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({ initialData }) => {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [simulationState, isPlaying, step, stepBack, resetSimulation, hasInvalidInput]);
+    }, [simulationState, isPlaying, step, stepBack, resetSimulation, hasInvalidInput, simulatorMode, setIsPlaying]);
 
-    const handleCanvasInteract = useCallback(() => {
-        if (!simulationState && history.length === 0) return;
-        resetSimulation(true);
-        addToast('Edição no autômato reiniciou a simulação.', 'info');
-    }, [simulationState, history.length, resetSimulation, addToast]);
-
+    // Helpers for display
     const formatStateList = useCallback((ids: string[] | undefined) => {
         if (!ids || ids.length === 0) return 'vazio';
         return ids.map(id => stateLabelMap.get(id) || id).join(', ');
@@ -322,84 +228,163 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({ initialData }) => {
         });
     }, [transitionMap, stateLabelMap]);
 
+    const formatConfigs = useCallback((configs: SimulationStep['activeConfigs']) => {
+        if (!configs || configs.length === 0) return 'vazio';
+        return configs.slice(0, 6).map(cfg => {
+            const label = stateLabelMap.get(cfg.stateId) || cfg.stateId;
+            const stackLabel = cfg.stack.length > 0 ? cfg.stack.join(' ') : 'eps';
+            return `${label} [${stackLabel}]`;
+        }).join(' | ');
+    }, [stateLabelMap]);
+
     const stepCount = simulationState?.processedInput.length || 0;
-    const totalSteps = inputString.length;
+    const totalSteps = inputTokens.length;
+
+    // Toast for status changes
+    useEffect(() => {
+        if (simulationState?.status === 'accepted') {
+             // Optional: visual feedback already exists
+        }
+    }, [simulationState?.status]);
+
 
     return (
-        <div className="absolute inset-x-0 bottom-0 top-24 animate-fade-in flex flex-col overflow-hidden">
-            {/* Full Width Canvas Layer */}
-            <div className="flex-1 relative z-0">
-                <AutomatonEditor
-                    data={safeData}
-                    onChange={setData}
-                    activeStates={simulationState?.activeStates}
-                    activeTransitions={activeTransitions}
-                    readOnly={!!simulationState && simulationState.processedInput.length > 0}
-                    onInteract={handleCanvasInteract}
-                />
-            </div>
+        <div className="absolute inset-0 animate-fade-in flex flex-col overflow-hidden">
+            {simulatorMode === 'automaton' ? (
+                <>
+                    {/* Full Width Canvas Layer */}
+                    <div className="flex-1 relative z-0">
+                        {/* Top Bar: Mode Selector + Regex Import */}
+                        <div className="absolute top-4 left-4 right-4 z-20 flex items-start justify-between gap-4 pointer-events-none">
+                            {/* Regex Import (left) */}
+                            <div className="glass-panel p-3 rounded-2xl pointer-events-auto max-w-xs flex-shrink-0">
+                                <div className="ui-kicker-xs text-muted mb-2">
+                                    Regex → AFN
+                                </div>
+                                <div className="flex gap-2">
+                                    <input
+                                        value={regexImport}
+                                        onChange={(e) => {
+                                            setRegexImport(e.target.value);
+                                            setRegexImportError(null);
+                                        }}
+                                        placeholder="ex: (a+b)*abb"
+                                        className="flex-1 min-w-0 rounded-xl border border-default bg-surface-2 px-3 py-2 text-xs font-mono text-primary shadow-inner"
+                                    />
+                                    <button
+                                        onClick={handleRegexImport}
+                                        className="px-3 py-2 rounded-xl bg-ios-blue text-white text-[10px] font-bold hover:bg-blue-600 transition-colors whitespace-nowrap"
+                                    >
+                                        OK
+                                    </button>
+                                </div>
+                                {regexImportError && (
+                                    <div className="mt-2 text-[10px] text-ios-red">{regexImportError}</div>
+                                )}
+                            </div>
+
+                            {/* Mode Selector (right) */}
+                            <div className="glass-dock px-2 py-1.5 rounded-full flex gap-1 pointer-events-auto flex-shrink-0">
+                                <button
+                                    onClick={() => setSimulatorMode('automaton')}
+                                    className="px-3 py-1.5 rounded-full text-xs font-bold transition-all bg-ios-blue text-white shadow"
+                                >
+                                    Autômato
+                                </button>
+                                <button
+                                    onClick={() => setSimulatorMode('grammar')}
+                                    className="px-3 py-1.5 rounded-full text-xs font-bold transition-all text-secondary hover:bg-surface-muted"
+                                >
+                                    Gramática
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Stats Panel (bottom right) */}
+                        <div className="absolute bottom-24 right-4 z-20 pointer-events-none">
+                            <div className="glass-panel px-3 py-2 rounded-xl ui-kicker-xs text-muted flex flex-col gap-1 shadow-apple-md pointer-events-auto">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-ios-blue bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md">{safeData.tipo}</span>
+                                </div>
+                                <div className="flex items-center gap-3 text-[9px]">
+                                    <span>{safeData.estados.length} Estados</span>
+                                    <span>{safeData.transicoes.length} Trans.</span>
+                                </div>
+                                <div className="flex items-center gap-2 pt-1 border-t border-default">
+                                    <span className="text-primary">{Math.round((viewState?.zoom ?? 1) * 100)}%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <AutomatonEditor
+                            data={safeData}
+                            onChange={setData}
+                            activeStates={simulationState?.activeStates}
+                            activeTransitions={activeTransitions}
+                            readOnly={!!simulationState && simulationState.processedInput.length > 0}
+                            onInteract={handleCanvasInteract}
+                            viewState={viewState}
+                            onViewStateChange={handleViewStateChange}
+                            compact
+                        />
+                    </div>
 
             {/* Floating Control Dock - Bottom Center */}
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col gap-4 w-full max-w-2xl px-4 pointer-events-none">
 
-                {/* Visual Tape */}
+                {/* Visual Tape / Machine State */}
                 <div className={`glass-card p-4 transition-all duration-500 pointer-events-auto
-                    ${inputString ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+                    ${(inputTokens.length > 0 || isTuring) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
 
                     <div className="flex items-center justify-between mb-3 px-1">
-                        <span className={`text-[11px] font-bold uppercase tracking-widest flex items-center gap-1.5
+                        <span className={`ui-kicker-xs flex items-center gap-1.5
                              ${simulationState?.status === 'accepted' ? 'text-ios-green' :
-                                simulationState?.status === 'rejected' ? 'text-ios-red' : 'text-gray-500'}`}>
+                                simulationState?.status === 'rejected' ? 'text-ios-red' : 'text-muted'}`}>
                             {simulationState?.status === 'accepted' && <CheckCircle2 size={14} />}
                             {simulationState?.status === 'rejected' && <XCircle size={14} />}
-                            {simulationState?.status === 'accepted' ? 'Aceito' : simulationState?.status === 'rejected' ? 'Rejeitado' : 'Fita de Leitura'}
+                            {simulationState?.status === 'accepted'
+                                ? 'Aceito'
+                                : simulationState?.status === 'rejected'
+                                    ? 'Rejeitado'
+                                    : isAll
+                                        ? 'Fita limitada'
+                                        : isTuring
+                                            ? 'Fita infinita'
+                                            : 'Fita de leitura'}
                         </span>
                         <div className="flex items-center gap-3">
                             {history.length > 1 && (
-                                <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
+                                <span className="text-[10px] font-bold text-muted flex items-center gap-1">
                                     <History size={12} />
                                     {history.length - 1} passos
                                 </span>
                             )}
-                            <span className="text-[11px] font-mono text-gray-500">
-                                Passo {stepCount} / {totalSteps}
+                            <span className="text-[11px] font-mono text-muted">
+                                {isTuring ? `Cabeça: ${simulationState?.headPos ?? 0}` : `Passo ${stepCount} / ${totalSteps}`}
                             </span>
                         </div>
                     </div>
 
-                    <div className="h-16 bg-white/20 dark:bg-black/20 rounded-xl border border-[var(--border-color)] flex items-center justify-center overflow-hidden relative shadow-inner backdrop-blur-sm">
-                        <div className="absolute top-0 bottom-0 left-1/2 w-[2px] bg-ios-blue z-10 h-full opacity-40"></div>
-                        <div
-                            className="flex gap-3 absolute transition-all duration-300 ease-out will-change-transform"
-                            style={{ transform: `translateX(calc(50% - ${(simulationState?.processedInput.length || 0) * 44 + 22}px))` }}
-                        >
-                            {inputString.split('').map((char, i) => {
-                                const processedLen = simulationState?.processedInput.length || 0;
-                                const isCurrent = i === processedLen;
-                                const isProcessed = i < processedLen;
-
-                                return (
-                                    <div
-                                        key={i}
-                                        className={`w-8 h-10 rounded-lg flex items-center justify-center font-mono font-bold text-lg transition-all duration-300
-                                            ${isCurrent
-                                                ? 'bg-ios-blue text-white scale-125 shadow-lg z-20 ring-4 ring-blue-500/20'
-                                                : (isProcessed
-                                                    ? 'text-[var(--text-secondary)] opacity-40 scale-90 blur-[0.5px]'
-                                                    : 'text-[var(--text-primary)] bg-white/40 dark:bg-white/5 border border-[var(--border-color)]')
-                                            }`}
-                                    >
-                                        {char}
-                                    </div>
-                                );
-                            })}
+                    {isTuring ? (
+                        <TuringTape 
+                            tape={simulationState?.tape ?? {}} 
+                            headPos={simulationState?.headPos ?? 0}
+                            minIndex={isAll ? 0 : undefined}
+                            maxIndex={isAll ? inputTokens.length + 1 : undefined}
+                        />
+                    ) : (
+                        <div className="flex justify-center">
+                             <InputTape 
+                                tokens={inputTokens}
+                                processedCount={simulationState?.processedInput.length || 0}
+                             />
                         </div>
-                    </div>
+                    )}
 
                     {/* Active States Indicator */}
                     {simulationState && simulationState.activeStates.length > 0 && (
                         <div className="mt-3 flex items-center justify-center gap-2">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase">Estados ativos:</span>
+                            <span className="text-[10px] font-bold text-muted uppercase">Estados ativos:</span>
                             <div className="flex gap-1">
                                 {simulationState.activeStates.map(stateId => {
                                     const state = data.estados.find(s => s.id === stateId);
@@ -416,6 +401,74 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({ initialData }) => {
                             </div>
                         </div>
                     )}
+
+                    {(isMoore || isMealy) && simulationState && (
+                        <div className="mt-3 flex items-center justify-center gap-2">
+                            <span className="text-[10px] font-bold text-muted uppercase">Saida:</span>
+                            {simulationState.outputStatus === 'ambiguous' ? (
+                                <span className="text-[10px] font-bold text-ios-orange">Ambigua</span>
+                            ) : (
+                                <div className="flex gap-1">
+                                    {(simulationState.output ?? []).length === 0 && (
+                                        <span className="text-[10px] text-muted">vazio</span>
+                                    )}
+                                    {(simulationState.output ?? []).map((out, idx) => (
+                                        <span
+                                            key={`${out}-${idx}`}
+                                            className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-ios-purple/20 text-ios-purple"
+                                        >
+                                            {out}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    
+                    {/* PDA Stack Visualizer */}
+                    {isPda && simulationState?.activeConfigs && simulationState.activeConfigs.length > 0 && (
+                        <div className="mt-4 flex justify-center">
+                            <StackVisualizer stack={simulationState.activeConfigs[0].stack} />
+                        </div>
+                    )}
+                    {isPda && simulationState?.activeConfigs && simulationState.activeConfigs.length > 1 && (
+                        <div className="mt-4 rounded-xl border border-default bg-surface-muted p-3">
+                            <div className="ui-kicker-xs text-muted mb-2">
+                                Ramificacoes ({simulationState.activeConfigs.length})
+                            </div>
+                            <div className="grid gap-2 max-h-32 overflow-y-auto custom-scrollbar">
+                                {simulationState.activeConfigs.map((cfg, idx) => {
+                                    const label = data.estados.find(s => s.id === cfg.stateId)?.label || cfg.stateId;
+                                    const stack = cfg.stack.length > 0 ? cfg.stack.join('') : 'vazio';
+                                    return (
+                                        <div key={`${cfg.stateId}-${idx}`} className="flex items-center justify-between text-xs">
+                                            <span className="font-bold text-primary">{label}</span>
+                                            <span className="font-mono text-secondary">{stack}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                    {isPda && simulationState?.pdaEdges && simulationState.pdaEdges.length > 0 && (
+                        <div className="mt-3 rounded-xl border border-default bg-surface-muted p-3">
+                            <div className="ui-kicker-xs text-muted mb-2">
+                                Arvore de ramificacoes
+                            </div>
+                            <div className="grid gap-1 max-h-32 overflow-y-auto custom-scrollbar text-[11px] text-secondary font-mono">
+                                {simulationState.pdaEdges.slice(0, 30).map((edge, idx) => (
+                                    <div key={`${edge.from}-${edge.to}-${idx}`}>
+                                        {formatPdaConfig(edge.from)} -&gt; {formatPdaConfig(edge.to)}
+                                    </div>
+                                ))}
+                                {simulationState.pdaEdges.length > 30 && (
+                                    <div className="text-[10px] text-muted">
+                                        +{simulationState.pdaEdges.length - 30} ramificacoes...
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {hasInvalidInput && (
@@ -424,49 +477,78 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({ initialData }) => {
                         Entrada contém símbolos fora do alfabeto: {invalidSymbols.join(', ')}.
                     </div>
                 )}
+                {inputTokens.length > 0 && alphabet.length === 0 && (
+                    <div className="glass-card px-4 py-3 text-xs text-ios-orange flex items-center gap-2 pointer-events-auto">
+                        <Info size={14} />
+                        {isPda ? 'Defina o alfabeto de entrada antes de simular.' : 'Defina o alfabeto nas transições antes de simular.'}
+                    </div>
+                )}
+                {isPda && (
+                    <div className="glass-card px-4 py-3 text-xs text-secondary flex items-center gap-2 pointer-events-auto">
+                        <Info size={14} />
+                        Formato de transicao do AP: <span className="font-mono">a, Z -&gt; AZ</span> (use eps para vazio).
+                    </div>
+                )}
 
                 {showDetails && (
                     <div className="glass-card p-4 pointer-events-auto">
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-[11px] font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
+                            <span className="ui-kicker-xs text-muted flex items-center gap-1.5">
                                 <ListOrdered size={12} />
                                 Detalhes
                             </span>
-                            <span className="text-[10px] text-gray-500">
+                            <span className="text-[10px] text-muted">
                                 Alfabeto: {alphabet.length > 0 ? alphabet.join(', ') : 'vazio'}
                             </span>
                         </div>
                         <div className="max-h-48 overflow-auto space-y-2 custom-scrollbar">
                             {history.length === 0 ? (
-                                <div className="text-xs text-gray-400">Sem execução ainda.</div>
+                                <div className="text-xs text-muted">Sem execução ainda.</div>
                             ) : history.map((stepItem, index) => {
                                 const statusLabel = stepItem.status === 'accepted'
                                     ? 'Aceito'
                                     : stepItem.status === 'rejected'
                                         ? 'Rejeitado'
                                         : 'Rodando';
-                                const symbolLabel = stepItem.symbol ?? (index === 0 ? 'início' : '-');
+                                const symbolLabel = stepItem.symbol ?? (index === 0 ? 'inicio' : '-');
                                 const used = formatTransitions(stepItem.usedTransitions);
+                                const directTargetsLabel = formatStateList(stepItem.directTargets);
                                 return (
-                                    <div key={`${index}-${stepItem.processedInput}`} className="rounded-xl border border-[var(--border-color)] p-3 text-xs bg-white/40 dark:bg-black/20">
+                                    <div key={`${index}-${stepItem.processedInput.join(' ')}`} className="rounded-xl border border-default p-3 text-xs bg-surface-muted">
                                         <div className="flex items-center justify-between mb-2">
-                                            <span className="font-bold text-[var(--text-primary)]">Passo {index}</span>
-                                            <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                                            <span className="font-bold text-primary">Passo {index}</span>
+                                            <span className={`ui-kicker-xs ${
                                                 stepItem.status === 'accepted'
                                                     ? 'text-ios-green'
                                                     : stepItem.status === 'rejected'
                                                         ? 'text-ios-red'
-                                                        : 'text-gray-500'
+                                                        : 'text-muted'
                                             }`}>
                                                 {statusLabel}
                                             </span>
                                         </div>
-                                        <div className="text-[11px] text-gray-500 font-mono mb-1">Símbolo: {symbolLabel}</div>
-                                        <div className="text-[11px] text-gray-600">De: {formatStateList(stepItem.fromStates || stepItem.activeStates)}</div>
-                                        <div className="text-[11px] text-gray-600">Para: {formatStateList(stepItem.activeStates)}</div>
+                                        <div className="text-[11px] text-muted font-mono mb-1">Simbolo: {symbolLabel}</div>
+                                        <div className="text-[11px] text-secondary">De: {formatStateList(stepItem.fromStates || stepItem.activeStates)}</div>
+                                        {stepItem.directTargets && stepItem.directTargets.length > 0 && (
+                                            <div className="text-[11px] text-secondary">Alvo direto: {directTargetsLabel}</div>
+                                        )}
+                                        <div className="text-[11px] text-secondary">Para: {formatStateList(stepItem.activeStates)}</div>
+                                        {isPda && stepItem.activeConfigs && (
+                                            <div className="text-[11px] text-secondary">Configuracoes: {formatConfigs(stepItem.activeConfigs)}</div>
+                                        )}
+                                        {(isMoore || isMealy) && stepItem.output && (
+                                            <div className="text-[11px] text-secondary">
+                                                Saida: {stepItem.outputStatus === 'ambiguous' ? 'ambigua' : (stepItem.output.length > 0 ? stepItem.output.join(' ') : 'vazio')}
+                                            </div>
+                                        )}
+                                        {stepItem.pdaEdges && stepItem.pdaEdges.length > 0 && (
+                                            <div className="text-[11px] text-secondary">
+                                                Ramificacoes: {stepItem.pdaEdges.length}
+                                            </div>
+                                        )}
                                         {used.length > 0 && (
-                                            <div className="mt-2 text-[10px] text-gray-500 font-mono">
-                                                Transições: {used.join(' | ')}
+                                            <div className="mt-2 text-[10px] text-muted font-mono">
+                                                Transicoes: {used.join(' | ')}
                                             </div>
                                         )}
                                     </div>
@@ -480,91 +562,88 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({ initialData }) => {
                 <div className="glass-dock p-2 flex items-center justify-between gap-4 pointer-events-auto">
 
                     {/* Input Field Area */}
-                    <div className={`flex-1 flex items-center bg-white/30 dark:bg-black/20 rounded-full px-4 py-1 border border-[var(--border-color)] focus-within:ring-2 transition-all ${
+                    <div className={`flex-1 flex items-center bg-surface-soft rounded-full px-4 py-1 border border-default focus-within:ring-2 transition-all ${
                         hasInvalidInput ? 'ring-2 ring-ios-red/40' : 'focus-within:ring-ios-blue/30'
                     }`}>
-                        <Keyboard size={16} className="text-gray-500 mr-2" />
+                        <Keyboard size={16} className="text-muted mr-2" />
                         <input
                             ref={inputRef}
                             type="text"
                             value={inputString}
                             onChange={handleInputChange}
-                            placeholder="Digite a entrada..."
-                            className="flex-1 bg-transparent border-none outline-none text-sm font-mono font-medium py-2 text-[var(--text-primary)] placeholder-gray-500/70"
+                            placeholder="Digite a entrada (use espacos para simbolos)..."
+                            className="flex-1 bg-transparent border-none outline-none text-sm font-mono font-medium py-2 text-primary placeholder:text-muted placeholder:opacity-70"
                             aria-invalid={hasInvalidInput}
                         />
+                        <div className="flex items-center gap-2">
+                            <select
+                                value={inputTokenization}
+                                onChange={(e) => setInputTokenization(e.target.value as 'auto' | 'char' | 'separator')}
+                                className="text-[10px] font-bold bg-surface-muted border border-default rounded-lg px-2 py-1 text-secondary"
+                                title="Tokenizacao"
+                            >
+                                <option value="auto">Auto</option>
+                                <option value="char">Char</option>
+                                <option value="separator">Sep</option>
+                            </select>
+                            {inputTokenization === 'separator' && (
+                                <input
+                                    value={inputSeparator}
+                                    onChange={(e) => setInputSeparator(e.target.value)}
+                                    className="w-10 text-[10px] font-mono bg-surface-muted border border-default rounded-lg px-2 py-1 text-secondary"
+                                    title="Separador"
+                                    placeholder="|"
+                                />
+                            )}
+                        </div>
                         {inputString && (
-                            <button onClick={clearInput} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded-full hover:bg-black/5 transition-all">
+                            <button onClick={clearInput} className="text-muted hover:text-primary p-1 rounded-full hover:bg-surface-muted transition-all">
                                 <X size={14} />
                             </button>
                         )}
                     </div>
 
                     {/* Divider */}
-                    <div className="w-px h-8 bg-gray-400/30 dark:bg-white/10"></div>
+                    <div className="w-px h-8 bg-border"></div>
 
                     {/* Playback Controls */}
-                    <div className="flex items-center gap-1">
-                        {/* Speed Trigger */}
-                        <div className="flex bg-white/30 dark:bg-black/20 rounded-full p-1 border border-[var(--border-color)] mr-2">
-                            {[1000, 500, 200].map((s) => (
-                                <button
-                                    key={s}
-                                    onClick={() => setSpeed(s)}
-                                    className={`w-8 h-8 flex items-center justify-center rounded-full text-[10px] font-bold transition-all
-                                        ${speed === s
-                                            ? 'bg-white dark:bg-gray-700 shadow-sm text-ios-blue scale-105'
-                                            : 'text-gray-500 hover:text-[var(--text-primary)]'}`}
-                                >
-                                    {s === 1000 ? '1x' : s === 500 ? '2x' : <Zap size={12} />}
-                                </button>
-                            ))}
-                        </div>
+                    <SimulationControls 
+                        isPlaying={isPlaying}
+                        canStep={!hasInvalidInput && (!simulationState?.status || simulationState.status === 'running')}
+                        canStepBack={history.length > 1}
+                        speed={speed}
+                        onPlay={() => {
+                            if (!simulationState) resetSimulation();
+                            setIsPlaying(true);
+                        }}
+                        onPause={() => setIsPlaying(false)}
+                        onStep={() => {
+                            if (!simulationState) resetSimulation();
+                            step();
+                        }}
+                        onStepBack={stepBack}
+                        onReset={() => resetSimulation()}
+                        onSpeedChange={setSpeed}
+                        disabled={hasInvalidInput}
+                    />
 
-                        {/* Step Back */}
-                        <button
-                            onClick={stepBack}
-                            disabled={history.length <= 1}
-                            className="btn-icon text-[var(--text-secondary)] hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
-                            title="Voltar (←)"
-                        >
-                            <SkipBack size={20} />
-                        </button>
-
-                        <button
-                            onClick={() => resetSimulation()}
-                            className="btn-icon text-[var(--text-secondary)] hover:bg-black/5 dark:hover:bg-white/10"
-                            title="Reiniciar (R)"
-                        >
-                            <RotateCcw size={20} />
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                if (hasInvalidInput) return;
-                                if (!simulationState) resetSimulation();
-                                setIsPlaying(!isPlaying);
-                            }}
-                            disabled={hasInvalidInput}
-                            className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg transition-all active:scale-95 hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed
-                                ${isPlaying ? 'bg-ios-orange shadow-orange-500/30' : 'bg-ios-blue shadow-blue-500/30'}`}
-                        >
-                            {isPlaying ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" className="ml-1" />}
-                        </button>
-
-                        <button
-                            onClick={() => { if (!simulationState) resetSimulation(); step(); }}
-                            disabled={hasInvalidInput || isPlaying || (!!simulationState?.status && simulationState.status !== 'running')}
-                            className="btn-icon text-[var(--text-secondary)] hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30"
-                            title="Avançar (→)"
-                        >
-                            <SkipForward size={22} />
-                        </button>
-
+                    {/* Extra Actions */}
+                    <div className="flex items-center gap-1 border-l border-border pl-2">
+                         {simulationState && (
+                            <button
+                                onClick={() => resetSimulation(true)}
+                                className="p-2 rounded-lg hover:bg-surface-soft text-secondary hover:text-primary transition-all"
+                                title="Editar autômato"
+                            >
+                                <Pencil size={18} />
+                            </button>
+                        )}
                         <button
                             onClick={() => setShowDetails(s => !s)}
-                            className={`btn-icon text-[var(--text-secondary)] hover:bg-black/5 dark:hover:bg-white/10 ${
-                                showDetails ? 'bg-ios-blue/10 text-ios-blue' : ''
+                            className={`p-2 rounded-lg transition-all ${
+                                showDetails 
+                                    ? 'bg-ios-blue/10 text-ios-blue' 
+                                    : 'hover:bg-surface-soft text-secondary hover:text-primary'
                             }`}
                             title="Detalhes da simulação"
                         >
@@ -573,6 +652,245 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({ initialData }) => {
                     </div>
                 </div>
             </div>
+                </>
+            ) : (
+                <div className="flex-1 relative z-0 overflow-hidden">
+                    <div className="absolute inset-0 bg-canvas" />
+                    <div className="absolute inset-0 bg-grid-pattern opacity-60 pointer-events-none" />
+
+                    {/* Mode Selector (top right) */}
+                    <div className="absolute top-4 right-4 z-20">
+                        <div className="glass-dock px-2 py-1.5 rounded-full flex gap-1">
+                            <button
+                                onClick={() => setSimulatorMode('automaton')}
+                                className="px-3 py-1.5 rounded-full text-xs font-bold transition-all text-secondary hover:bg-surface-muted"
+                            >
+                                Autômato
+                            </button>
+                            <button
+                                onClick={() => setSimulatorMode('grammar')}
+                                className="px-3 py-1.5 rounded-full text-xs font-bold transition-all bg-ios-purple text-white shadow"
+                            >
+                                Gramática
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="relative h-full overflow-auto px-6 py-16">
+                        <div className="max-w-6xl mx-auto">
+                            <div className="glass-panel rounded-[32px] p-6 md:p-8 border border-default shadow-apple-lg">
+                                <div className="grid gap-6 lg:grid-cols-[1.2fr,0.8fr]">
+                                    <div className="glass-card p-6">
+                            <div className="flex items-start justify-between gap-4 mb-4">
+                                <div>
+                                    <h2 className="text-xl font-bold text-primary">Gramatica Livre de Contexto</h2>
+                                    <p className="text-sm text-secondary">
+                                        Formato: <span className="font-mono">S -&gt; a S b | eps</span>. Use espacos para simbolos multi-caractere.
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setGrammarSource('S -> a S b | eps')}
+                                        className="px-3 py-1.5 rounded-lg text-xs font-bold border border-blue-200/60 bg-blue-50/70 text-ios-blue hover:bg-blue-100/80 transition-colors dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20"
+                                    >
+                                        Exemplo a^n b^n
+                                    </button>
+                                    <button
+                                        onClick={() => setGrammarSource('S -> a S a | b S b | a | b | eps')}
+                                        className="px-3 py-1.5 rounded-lg text-xs font-bold border border-purple-200/60 bg-purple-50/70 text-ios-purple hover:bg-purple-100/80 transition-colors dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-300 dark:hover:bg-purple-500/20"
+                                    >
+                                        Exemplo palindromo
+                                    </button>
+                                </div>
+                            </div>
+                            <textarea
+                                value={grammarSource}
+                                onChange={(e) => setGrammarSource(e.target.value)}
+                                className="w-full h-64 rounded-xl border border-default bg-surface-soft p-4 font-mono text-sm text-primary shadow-inner"
+                                placeholder="S -> a S b | eps"
+                            />
+                            {grammarWarnings.length > 0 && (
+                                <div className="mt-4 rounded-xl border border-yellow-400/40 bg-yellow-50/60 dark:bg-yellow-900/10 p-3 text-xs text-yellow-700 dark:text-yellow-300">
+                                    {grammarWarnings.map((warn, idx) => (
+                                        <div key={`${warn}-${idx}`}>- {warn}</div>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="mt-4 grid grid-cols-3 gap-3">
+                                <div>
+                                    <label className="block ui-kicker-xs text-muted mb-1">Max passos</label>
+                                    <input
+                                        type="number"
+                                        min={5}
+                                        max={100}
+                                        value={grammarLimits.maxSteps}
+                                        onChange={(e) => setGrammarLimits({ ...grammarLimits, maxSteps: Number(e.target.value) })}
+                                        className="w-full rounded-lg border border-default bg-surface-soft px-3 py-2 text-xs font-mono shadow-inner"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block ui-kicker-xs text-muted mb-1">Max fila</label>
+                                    <input
+                                        type="number"
+                                        min={100}
+                                        max={10000}
+                                        value={grammarLimits.maxQueue}
+                                        onChange={(e) => setGrammarLimits({ ...grammarLimits, maxQueue: Number(e.target.value) })}
+                                        className="w-full rounded-lg border border-default bg-surface-soft px-3 py-2 text-xs font-mono shadow-inner"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block ui-kicker-xs text-muted mb-1">Max simbolos</label>
+                                    <input
+                                        type="number"
+                                        min={5}
+                                        max={100}
+                                        value={grammarLimits.maxSymbols}
+                                        onChange={(e) => setGrammarLimits({ ...grammarLimits, maxSymbols: Number(e.target.value) })}
+                                        className="w-full rounded-lg border border-default bg-surface-soft px-3 py-2 text-xs font-mono shadow-inner"
+                                    />
+                                </div>
+                            </div>
+                            <div className="mt-4 rounded-xl border border-default bg-surface-muted p-4">
+                                <div className="ui-kicker-xs text-muted mb-3">
+                                    Transformacoes
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        onClick={() => runTransform('epsilon')}
+                                        className="px-3 py-2 rounded-lg text-xs font-bold border border-default bg-surface-soft hover:bg-surface-muted transition-colors">
+                                        Remover epsilon
+                                    </button>
+                                    <button
+                                        onClick={() => runTransform('unit')}
+                                        className="px-3 py-2 rounded-lg text-xs font-bold border border-default bg-surface-soft hover:bg-surface-muted transition-colors">
+                                        Remover unitarias
+                                    </button>
+                                    <button
+                                        onClick={() => runTransform('cnf')}
+                                        className="px-3 py-2 rounded-lg text-xs font-bold border border-default bg-surface-soft hover:bg-surface-muted transition-colors">
+                                        CNF
+                                    </button>
+                                    <button
+                                        onClick={() => runTransform('gnf')}
+                                        className="px-3 py-2 rounded-lg text-xs font-bold border border-default bg-surface-soft hover:bg-surface-muted transition-colors">
+                                        GNF
+                                    </button>
+                                </div>
+                                {grammarTransform && (
+                                    <div className="mt-3 rounded-lg border border-default bg-surface-soft p-3 text-xs">
+                                        <div className="font-bold text-primary mb-2">{grammarTransform.title}</div>
+                                        {grammarTransform.warnings && grammarTransform.warnings.length > 0 && (
+                                            <div className="text-[10px] text-yellow-700 dark:text-yellow-300 mb-2">
+                                                {grammarTransform.warnings.map((warn, idx) => (
+                                                    <div key={`${warn}-${idx}`}>- {warn}</div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {grammarTransform.steps.length > 0 && (
+                                            <div className="space-y-1 text-[10px] text-secondary">
+                                                {grammarTransform.steps.map((step, idx) => (
+                                                    <div key={`${step}-${idx}`}>{idx + 1}. {step}</div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {grammarTransform.output && (
+                                            <pre className="mt-2 text-[11px] font-mono text-secondary whitespace-pre-wrap">
+                                                {grammarTransform.output}
+                                            </pre>
+                                        )}
+                                        <button onClick={clearTransform} className="mt-2 text-[10px] text-ios-blue underline">Fechar</button>
+                                    </div>
+                                )}
+                            </div>
+                                    </div>
+
+                                    <div className="glass-card p-6 flex flex-col gap-4">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-primary mb-1">Teste de derivacao</h3>
+                                            <p className="text-xs text-muted">Aceita tokens separados por espaco.</p>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs">
+                                            <span className="ui-kicker-xs text-muted">Derivacao</span>
+                                            <button
+                                                onClick={() => setGrammarStrategy('leftmost')}
+                                                className={`px-3 py-1 rounded-full border text-[10px] font-bold ${
+                                                    grammarStrategy === 'leftmost'
+                                                        ? 'bg-ios-blue text-white border-ios-blue'
+                                                        : 'bg-surface-soft text-secondary border-default'
+                                                }`}
+                                            >
+                                                Esquerda
+                                            </button>
+                                            <button
+                                                onClick={() => setGrammarStrategy('rightmost')}
+                                                className={`px-3 py-1 rounded-full border text-[10px] font-bold ${
+                                                    grammarStrategy === 'rightmost'
+                                                        ? 'bg-ios-purple text-white border-ios-purple'
+                                                        : 'bg-surface-soft text-secondary border-default'
+                                                }`}
+                                            >
+                                                Direita
+                                            </button>
+                                        </div>
+                                        <input
+                                            value={grammarInput}
+                                            onChange={(e) => setGrammarInput(e.target.value)}
+                                            className="w-full rounded-xl border border-default bg-surface-soft px-4 py-2 text-sm font-mono text-primary shadow-inner"
+                                            placeholder="ex: a a b b"
+                                        />
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={runDerivation}
+                                                className="flex-1 px-4 py-2 rounded-xl text-sm font-bold bg-ios-green text-white hover:bg-green-600 transition-colors shadow-apple-sm"
+                                            >
+                                                Derivar
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setGrammarInput('');
+                                                    clearResult();
+                                                }}
+                                                className="px-4 py-2 rounded-xl text-sm font-bold text-secondary border border-default bg-surface-soft hover:bg-surface-muted transition-colors"
+                                            >
+                                                Limpar
+                                            </button>
+                                        </div>
+
+                                        {grammarResult && (
+                                            <div className="rounded-xl border border-default bg-surface-muted p-4 text-sm">
+                                                <div className={`font-bold mb-2 ${grammarResult.status === 'accepted' ? 'text-ios-green' : 'text-ios-red'}`}>
+                                                    {grammarResult.status === 'accepted' ? 'Aceito' : 'Rejeitado'}
+                                                </div>
+                                                {grammarResult.reason && (
+                                                    <div className="text-xs text-muted mb-2">{grammarResult.reason}</div>
+                                                )}
+                                                {grammarResult.steps.length > 0 && (
+                                                    <div className="text-xs font-mono text-secondary space-y-1">
+                                                        {grammarResult.steps.map((step, idx) => (
+                                                            <div key={`${step}-${idx}`}>{idx}. {step}</div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {grammarResult.tree && (
+                                                    <div className="mt-3">
+                                                        <DerivationTreeVisualizer tree={grammarResult.tree} steps={grammarResult.steps} autoPlay={true} />
+                                                    </div>
+                                                )}
+                                                {grammarResult.treeText && (
+                                                    <pre className="mt-3 text-[11px] font-mono text-secondary whitespace-pre-wrap">
+                                                        {grammarResult.treeText}
+                                                    </pre>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
