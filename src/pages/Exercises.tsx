@@ -171,8 +171,13 @@ export const ExerciciosSection = ({
     }, [initialExerciseId, activeCategory, solvingExercise]);
 
     useEffect(() => {
-        onSelectionChange?.(activeCategory, solvingExercise);
-    }, [activeCategory, solvingExercise, onSelectionChange]);
+        if (
+            activeCategory !== initialCategoryId ||
+            solvingExercise !== initialExerciseId
+        ) {
+            onSelectionChange?.(activeCategory, solvingExercise);
+        }
+    }, [activeCategory, solvingExercise, onSelectionChange, initialCategoryId, initialExerciseId]);
 
     useEffect(() => {
         setLastCategory(activeCategory);
