@@ -168,7 +168,7 @@ export const ExerciciosSection = ({
                 stopSolving();
             }
         }
-    }, [initialExerciseId, activeCategory]);
+    }, [initialExerciseId, activeCategory, solvingExercise]);
 
     useEffect(() => {
         onSelectionChange?.(activeCategory, solvingExercise);
