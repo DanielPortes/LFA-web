@@ -1,38 +1,21 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-
-type UiSettings = {
-    focusMode: boolean;
-    cursorEnabled: boolean;
-    reduceMotion: boolean;
-    effectiveReduceMotion: boolean;
-    snapToGrid: boolean;
-    inputTokenization: 'auto' | 'char' | 'separator';
-    inputSeparator: string;
-    setFocusMode: (value: boolean) => void;
-    setCursorEnabled: (value: boolean) => void;
-    setReduceMotion: (value: boolean) => void;
-    setSnapToGrid: (value: boolean) => void;
-    setInputTokenization: (value: 'auto' | 'char' | 'separator') => void;
-    setInputSeparator: (value: string) => void;
-};
-
-const STORAGE_KEY = 'lfa-ui-settings';
-
-const UiSettingsContext = createContext<UiSettings | null>(null);
+import React, { useEffect, useMemo, useState } from 'react';
+import { UI_SETTINGS_STORAGE_KEY, UiSettingsContext } from './uiSettingsStore';
+import { isSimulatorLayout } from '../features/simulator/types';
 
 export const UiSettingsProvider = ({ children }: { children: React.ReactNode }) => {
     // Lazy initialization to prevent overwriting storage with defaults on mount
     const [settings, setSettings] = useState(() => {
         try {
             if (typeof window !== 'undefined') {
-                const saved = localStorage.getItem(STORAGE_KEY);
+                const saved = localStorage.getItem(UI_SETTINGS_STORAGE_KEY);
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     return {
                         focusMode: !!parsed.focusMode,
-                        cursorEnabled: parsed.cursorEnabled !== false, // default true
+                        cursorEnabled: parsed.cursorEnabled === true, // default false
                         reduceMotion: !!parsed.reduceMotion,
                         snapToGrid: !!parsed.snapToGrid,
+                        simulatorLayout: isSimulatorLayout(parsed.simulatorLayout) ? parsed.simulatorLayout : 'bottom',
                         inputTokenization: parsed.inputTokenization || 'auto',
                         inputSeparator: typeof parsed.inputSeparator === 'string' ? parsed.inputSeparator : ' '
                     };
@@ -43,9 +26,10 @@ export const UiSettingsProvider = ({ children }: { children: React.ReactNode }) 
         }
         return {
             focusMode: false,
-            cursorEnabled: true,
+            cursorEnabled: false,
             reduceMotion: false,
             snapToGrid: false,
+            simulatorLayout: 'bottom',
             inputTokenization: 'auto',
             inputSeparator: ' '
         };
@@ -58,10 +42,11 @@ export const UiSettingsProvider = ({ children }: { children: React.ReactNode }) 
     const setCursorEnabled = (val: boolean) => setSettings(s => ({ ...s, cursorEnabled: val }));
     const setReduceMotion = (val: boolean) => setSettings(s => ({ ...s, reduceMotion: val }));
     const setSnapToGrid = (val: boolean) => setSettings(s => ({ ...s, snapToGrid: val }));
+    const setSimulatorLayout = (val: 'bottom' | 'side' | 'top_side') => setSettings(s => ({ ...s, simulatorLayout: val }));
     const setInputTokenization = (val: 'auto' | 'char' | 'separator') => setSettings(s => ({ ...s, inputTokenization: val }));
     const setInputSeparator = (val: string) => setSettings(s => ({ ...s, inputSeparator: val }));
 
-    const { focusMode, cursorEnabled, reduceMotion, snapToGrid, inputTokenization, inputSeparator } = settings;
+    const { focusMode, cursorEnabled, reduceMotion, snapToGrid, simulatorLayout, inputTokenization, inputSeparator } = settings;
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -75,7 +60,7 @@ export const UiSettingsProvider = ({ children }: { children: React.ReactNode }) 
     // Save changes
     useEffect(() => {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+            localStorage.setItem(UI_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
         } catch {
             // ignore
         }
@@ -95,25 +80,21 @@ export const UiSettingsProvider = ({ children }: { children: React.ReactNode }) 
         reduceMotion,
         effectiveReduceMotion,
         snapToGrid,
+        simulatorLayout,
         inputTokenization,
         inputSeparator,
         setFocusMode,
         setCursorEnabled,
         setReduceMotion,
         setSnapToGrid,
+        setSimulatorLayout,
         setInputTokenization,
         setInputSeparator
-    }), [focusMode, cursorEnabled, reduceMotion, effectiveReduceMotion, snapToGrid, inputTokenization, inputSeparator]);
+    }), [focusMode, cursorEnabled, reduceMotion, effectiveReduceMotion, snapToGrid, simulatorLayout, inputTokenization, inputSeparator]);
 
     return (
         <UiSettingsContext.Provider value={value}>
             {children}
         </UiSettingsContext.Provider>
     );
-};
-
-export const useUiSettings = () => {
-    const context = useContext(UiSettingsContext);
-    if (!context) throw new Error('useUiSettings must be used within UiSettingsProvider');
-    return context;
 };

@@ -97,7 +97,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, options, onClose
                         }}
                         className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2 transition-colors
                             ${opt.danger
-                                ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10'
+                                ? 'text-status-danger status-hover-danger'
                                 : 'text-primary hover:bg-surface-muted'
                             }`}
                     >

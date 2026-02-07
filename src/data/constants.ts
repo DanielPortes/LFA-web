@@ -1,4 +1,4 @@
-import { Layers, Zap, Code, FileText, Split, Filter, Braces, ArrowRightLeft, Maximize } from 'lucide-react';
+﻿import { Layers, Zap, Code, FileText, Split, Filter, Braces, ArrowRightLeft, Maximize } from 'lucide-react';
 import type { Exercicio, Topic } from '../types';
 
 export const topicos: Topic[] = [
@@ -10,7 +10,7 @@ export const topicos: Topic[] = [
     },
     {
         id: 'afd',
-        title: 'Autômatos Finitos (AFD)',
+        title: 'Automatos Finitos (AFD)',
         desc: 'Definição formal, diagramas e processamento determinístico.',
         icon: Layers
     },
@@ -28,14 +28,14 @@ export const topicos: Topic[] = [
     },
     {
         id: 'afne',
-        title: 'Transições Vazias (AFNε)',
+        title: 'Transicoes Vazias (AFNε)',
         desc: 'O poder do silêncio (ε) e conversões.',
         icon: Filter
     },
     {
         id: 'er',
         title: 'Expressões Regulares',
-        desc: 'Padrões de texto e equivalência com autômatos.',
+        desc: 'Padrões de texto e equivalência com automatos.',
         icon: Code
     },
     {
@@ -52,14 +52,14 @@ export const topicos: Topic[] = [
     },
     {
         id: 'pda',
-        title: 'Autômatos de Pilha',
+        title: 'Automatos de Pilha',
         desc: 'Reconhecimento de linguagens não regulares.',
         icon: Layers
     },
     {
         id: 'chomsky',
         title: 'Hierarquia de Chomsky',
-        desc: 'Classes de linguagens (Tipos 0 a 3). Inclui o Autômato Linearmente Limitado (ALL) no Tipo 1.',
+        desc: 'Classes de linguagens (Tipos 0 a 3). Inclui o Automato Linearmente Limitado (ALL) no Tipo 1.',
         icon: Split
     },
     {
@@ -71,7 +71,7 @@ export const topicos: Topic[] = [
     {
         id: 'moore_mealy',
         title: 'Máquinas de Moore e Mealy',
-        desc: 'Autômatos com saída (Transdutores).',
+        desc: 'Automatos com saída (Transdutores).',
         icon: ArrowRightLeft
     },
     {
@@ -318,15 +318,15 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 10,
             nivel: 'dificil',
-            pergunta: 'Construa um AFD para L = { w | w comeca e termina com o mesmo símbolo }.',
-            dica: 'Memorize o primeiro símbolo e acompanhe o ultimo.',
+            pergunta: 'Construa um AFD para L = { w | w comeca e termina com o mesmo simbolo }.',
+            dica: 'Memorize o primeiro simbolo e acompanhe o ultimo.',
             respostaTexto: 'Use estados para primeiro=a/primeiro=b e se o ultimo coincide.'
         },
         {
             id: 11,
             nivel: 'medio',
             pergunta: 'Construa um AFD para L = { w | w não contém a substring "bb" }.',
-            dica: 'Use um estado que lembra se o ultimo símbolo foi b, e um estado de erro.',
+            dica: 'Use um estado que lembra se o ultimo simbolo foi b, e um estado de erro.',
             respostaTexto: 'q0 (ultimo nao-b) -a-> q0, -b-> q1; q1 -a-> q0, -b-> erro; erro loop.',
             testes: [
                 { input: '', expected: 'accept' },
@@ -418,7 +418,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 14,
             nivel: 'dificil',
-            pergunta: 'Reconheca ponto flutuante: [+-]?[0-9]+\.[0-9]+(e[+-]?[0-9]+)?',
+            pergunta: 'Reconheca ponto flutuante: [+-]?[0-9]+.[0-9]+(e[+-]?[0-9]+)?',
             dica: 'Obrigatorio ponto e parte fracionaria; expoente opcional.',
             respostaTexto: 'Ex.: 3.14, -0.5, 2.0e10 aceitos; 3., .5 rejeitados.',
             testes: [
@@ -446,7 +446,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 3,
             nivel: 'facil',
             pergunta: "AFN para palavras terminadas em 'aba'.",
-            dica: "Loop no q0 com a,b. Transição q0->q1 com 'a' para começar o padrão.",
+            dica: "Loop no q0 com a,b. Transicao q0->q1 com 'a' para começar o padrão.",
             respostaTexto: 'q0(loop) -a-> q1 -b-> q2 -a-> q3(final)',
             testes: [
                 { input: 'aba', expected: 'accept' },
@@ -468,7 +468,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             nivel: 'facil',
             pergunta: 'AFN para palavras que contém a substring "ab".',
             dica: 'Loop em q0 com a,b e chute o inicio do padrao.',
-            respostaTexto: 'q0 loop em a,b; transição q0 -a-> q1 -b-> q2(final).'
+            respostaTexto: 'q0 loop em a,b; transicao q0 -a-> q1 -b-> q2(final).'
         },
         {
             id: 6,
@@ -481,7 +481,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 7,
             nivel: 'medio',
             pergunta: 'Construa um AFN para L = a* b* (a e depois b).',
-            dica: 'Permita ficar em a e depois mudar para b com uma transição.',
+            dica: 'Permita ficar em a e depois mudar para b com uma transicao.',
             respostaTexto: 'q0 loop em a; q0 -b-> q1; q1 loop em b; q0 e q1 finais.'
         },
         {
@@ -508,7 +508,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 11,
             nivel: 'medio',
             pergunta: 'Construa um AFNε para L = { a } ∪ { bb } ∪ { ccc }.',
-            dica: 'Use um estado inicial com transições ε para três caminhos.',
+            dica: 'Use um estado inicial com transicoes ε para três caminhos.',
             respostaTexto: 'Um ramo para a, outro para bb e outro para ccc, todos a partir do início via ε.',
             respostaAutomato: {
                 tipo: 'AFN',
@@ -557,8 +557,8 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 13,
             nivel: 'medio',
             pergunta: 'AFN-ε para L = a? b* (a opcional).',
-            dica: 'Use uma transição ε para pular o a.',
-            respostaTexto: 'Inicial tem ε para caminho sem a e transição a para caminho com a; ambos vao para loop de b.'
+            dica: 'Use uma transicao ε para pular o a.',
+            respostaTexto: 'Inicial tem ε para caminho sem a e transicao a para caminho com a; ambos vao para loop de b.'
         },
         {
             id: 14,
@@ -570,9 +570,9 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 15,
             nivel: 'medio',
-            pergunta: 'Explique como eliminar transições ε de um AFN.',
+            pergunta: 'Explique como eliminar transicoes ε de um AFN.',
             dica: 'Use fecho-ε.',
-            respostaTexto: 'Calcule fecho-ε de cada estado e atualize transições; estados finais são aqueles cujo fecho contém final.'
+            respostaTexto: 'Calcule fecho-ε de cada estado e atualize transicoes; estados finais são aqueles cujo fecho contém final.'
         }
     ],
 
@@ -790,7 +790,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 8,
             nivel: 'medio',
-            pergunta: "Minimize o autômato: q0->q1(a), q1->q0(a). Ambos finais.",
+            pergunta: "Minimize o automato: q0->q1(a), q1->q0(a). Ambos finais.",
             dica: 'Se q0 e q1 são finais e reagem igual, eles viram um só.',
             respostaTexto: "Estado único {q0, q1} com loop em 'a'."
         },
@@ -816,7 +816,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 12,
             nivel: 'medio',
             pergunta: 'Em um AFD total, o estado de erro pode ser removido?',
-            respostaTexto: 'Nao, pois ele garante transições definidas; removendo, o AFD deixa de ser total.'
+            respostaTexto: 'Nao, pois ele garante transicoes definidas; removendo, o AFD deixa de ser total.'
         },
         {
             id: 13,
@@ -834,13 +834,13 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 14,
             nivel: 'facil',
             pergunta: 'Explique a diferença entre máquinas de Moore e Mealy.',
-            respostaTexto: 'Moore produz saída por estado; Mealy produz saída por transição. Em Moore a saída muda quando o estado muda, em Mealy a saída pode mudar no mesmo símbolo.'
+            respostaTexto: 'Moore produz saída por estado; Mealy produz saída por transicao. Em Moore a saída muda quando o estado muda, em Mealy a saída pode mudar no mesmo simbolo.'
         },
         {
             id: 15,
             nivel: 'medio',
             pergunta: 'Como converter uma maquina de Mealy em Moore?',
-            respostaTexto: 'Divida estados quando saidas diferentes ocorrem em transições que entram no mesmo estado.'
+            respostaTexto: 'Divida estados quando saidas diferentes ocorrem em transicoes que entram no mesmo estado.'
         },
         {
             id: 16,
@@ -852,13 +852,13 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 17,
             nivel: 'medio',
             pergunta: 'Em Mealy, a saida pode mudar quando?',
-            respostaTexto: 'No momento da transição, lendo o símbolo.'
+            respostaTexto: 'No momento da transicao, lendo o simbolo.'
         },
         {
             id: 18,
             nivel: 'dificil',
             pergunta: 'Explique por que Mealy pode usar menos estados que Moore.',
-            respostaTexto: 'Como a saida depende da transição, não e necessario duplicar estados para representar saidas diferentes.'
+            respostaTexto: 'Como a saida depende da transicao, não e necessario duplicar estados para representar saidas diferentes.'
         }
     ],
 
@@ -1072,3 +1072,4 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         }
     ]
 };
+

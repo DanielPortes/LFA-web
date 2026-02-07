@@ -1,14 +1,14 @@
-import type { CourseModule } from '../../../types';
+﻿import type { CourseModule } from '../../../types';
 import { ap_an_bn } from '../automataDefs';
 
 export const mod11: CourseModule = {
     id: 'mod11',
-    title: 'Módulo 11: Autômatos de Pilha (AP)',
+    title: 'Módulo 11: Automatos de Pilha (AP)',
     lessons: [
         {
             id: 'l11-def',
             title: 'Definição de AP',
-            description: 'Extensão dos autômatos finitos com memória.',
+            description: 'Extensão dos automatos finitos com memória.',
             content: [
                 {
                     type: 'definition',
@@ -17,8 +17,8 @@ export const mod11: CourseModule = {
                 },
                 {
                     type: 'definition',
-                    title: 'Notação de transição (Blauth)',
-                    content: 'No grafo, usa-se (a, A, α):\n• a: símbolo lido da fita.\n• A: símbolo desempilhado.\n• α: palavra empilhada.'
+                    title: 'Notação de transicao (Blauth)',
+                    content: 'No grafo, usa-se (a, A, α):\n• a: simbolo lido da fita.\n• A: simbolo desempilhado.\n• α: palavra empilhada.'
                 },
                 {
                     type: 'note',
@@ -68,3 +68,4 @@ export const mod11: CourseModule = {
         }
     ]
 };
+

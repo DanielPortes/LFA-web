@@ -1,23 +1,23 @@
-import type { CourseModule } from '../../../types';
+﻿import type { CourseModule } from '../../../types';
 import { afd_paridade, afd_substring_aa_ou_bb, afd_substring_abb, afd_prefixo_ab } from '../automataDefs';
 
 export const mod1: CourseModule = {
     id: 'mod1',
-    title: 'Módulo 1: Autômatos Finitos (AFD)',
+    title: 'Módulo 1: Automatos Finitos (AFD)',
     lessons: [
         {
             id: 'l1-def',
-            title: 'Autômato Finito Determinístico',
+            title: 'Automato Finito Determinístico',
             description: 'O reconhecedor operacional mais preciso.',
             content: [
                 {
                     type: 'text',
-                    content: 'No AFD, para cada estado e cada símbolo de entrada, existe no máximo uma transição possível.'
+                    content: 'No AFD, para cada estado e cada simbolo de entrada, existe no máximo uma transicao possível.'
                 },
                 {
                     type: 'definition',
                     title: 'Quíntupla M = (Σ, Q, δ, q0, F)',
-                    content: '• Σ: alfabeto de entrada.\n• Q: conjunto **finito** de estados.\n• δ: função programa (ou função de transição), δ: Q × Σ → Q (parcial).\n• q0: estado inicial.\n• F: conjunto de estados finais (F ⊆ Q).\n\nComo δ é parcial, pode faltar transição para algum símbolo; nessa situação, o autômato trava e rejeita.'
+                    content: '• Σ: alfabeto de entrada.\n• Q: conjunto **finito** de estados.\n• δ: função programa (ou função de transicao), δ: Q × Σ → Q (parcial).\n• q0: estado inicial.\n• F: conjunto de estados finais (F ⊆ Q).\n\nComo δ é parcial, pode faltar transicao para algum simbolo; nessa situação, o automato trava e rejeita.'
                 },
                 {
                     type: 'definition',
@@ -27,12 +27,12 @@ export const mod1: CourseModule = {
                 {
                     type: 'warning',
                     title: 'Condições de parada (Blauth)',
-                    content: '1) Aceitação: fim da fita em estado final.\n2) Rejeição por estado: fim da fita em estado não final.\n3) Rejeição por indefinição: a função δ não está definida para algum símbolo.'
+                    content: '1) Aceitação: fim da fita em estado final.\n2) Rejeição por estado: fim da fita em estado não final.\n3) Rejeição por indefinição: a função δ não está definida para algum simbolo.'
                 },
                 {
                     type: 'example',
                     title: 'Exemplo: paridade',
-                    content: 'Este autômato controla se o número de "a"s e "b"s é par ou ímpar.',
+                    content: 'Este automato controla se o número de "a"s e "b"s é par ou ímpar.',
                     automatoRef: afd_paridade
                 }
             ]
@@ -45,14 +45,14 @@ export const mod1: CourseModule = {
                 {
                     type: 'math-tip',
                     title: 'Definição indutiva',
-                    content: 'Base: δ̂(q, ε) = q.\nPasso: δ̂(q, aw) = δ̂(δ(q, a), w).\n\nConsuma o primeiro símbolo, mude de estado e repita.'
+                    content: 'Base: δ̂(q, ε) = q.\nPasso: δ̂(q, aw) = δ̂(δ(q, a), w).\n\nConsuma o primeiro simbolo, mude de estado e repita.'
                 },
                 {
                     type: 'algorithm',
                     title: 'Simulação de uma palavra',
                     content: [
                         'Inicie em q0.',
-                        'Para cada símbolo, aplique δ e avance o ponteiro.',
+                        'Para cada simbolo, aplique δ e avance o ponteiro.',
                         'No fim, aceite se o estado atual estiver em F.'
                     ]
                 }
@@ -80,7 +80,7 @@ export const mod1: CourseModule = {
                 {
                     type: 'example',
                     title: 'Exemplo (Blauth): aa ou bb',
-                    content: 'L1 = { w | w possui aa ou bb como subpalavra }. Os estados q1 e q2 memorizam o símbolo anterior.',
+                    content: 'L1 = { w | w possui aa ou bb como subpalavra }. Os estados q1 e q2 memorizam o simbolo anterior.',
                     automatoRef: afd_substring_aa_ou_bb
                 },
                 {
@@ -96,7 +96,7 @@ export const mod1: CourseModule = {
                         'Defina o alfabeto e a propriedade da linguagem.',
                         'Descubra a memória mínima que precisa ser guardada.',
                         'Crie estados que representem essa memória.',
-                        'Complete transições e teste palavras pequenas.'
+                        'Complete transicoes e teste palavras pequenas.'
                     ]
                 }
             ]
@@ -104,11 +104,11 @@ export const mod1: CourseModule = {
         {
             id: 'l1-completo',
             title: 'AFD Total e Estado de Erro',
-            description: 'Como lidar com transições ausentes.',
+            description: 'Como lidar com transicoes ausentes.',
             content: [
                 {
                     type: 'text',
-                    content: 'Um AFD total possui transições definidas para todos os símbolos do alfabeto.'
+                    content: 'Um AFD total possui transicoes definidas para todos os simbolos do alfabeto.'
                 },
                 {
                     type: 'warning',
@@ -125,8 +125,8 @@ export const mod1: CourseModule = {
                     type: 'algorithm',
                     title: 'Como completar um AFD',
                     content: [
-                        'Liste todos os símbolos do alfabeto.',
-                        'Para cada estado, verifique transições faltantes.',
+                        'Liste todos os simbolos do alfabeto.',
+                        'Para cada estado, verifique transicoes faltantes.',
                         'Crie um estado de erro (sink).',
                         'Direcione todas as faltantes para o estado de erro.'
                     ]
@@ -140,3 +140,4 @@ export const mod1: CourseModule = {
         }
     ]
 };
+

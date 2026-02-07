@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+﻿import React, { useMemo, useState, useEffect } from 'react';
 import type { GrammarTree } from '../../types';
 import { ChevronLeft, ChevronRight, Play, RotateCcw, Pause, Maximize2 } from 'lucide-react';
 import { ZoomModal } from './ZoomModal';
@@ -65,7 +65,7 @@ export const DerivationTreeVisualizer: React.FC<DerivationTreeVisualizerProps> =
         const rootLayout = calculateDimensions(tree, 0);
         setTotalNodeCount(count);
 
-        const assignPositions = (node: TreeNodeLayout, xStart: number) => {
+        const assigNÓSitions = (node: TreeNodeLayout, xStart: number) => {
             node.x = xStart + node.width / 2;
             let currentX = xStart;
             const childrenTotalWidth = node.children.reduce((sum, c) => sum + c.width, 0);
@@ -73,12 +73,12 @@ export const DerivationTreeVisualizer: React.FC<DerivationTreeVisualizerProps> =
                 currentX += (node.width - childrenTotalWidth) / 2;
             }
             node.children.forEach(child => {
-                assignPositions(child, currentX);
+                assigNÓSitions(child, currentX);
                 currentX += child.width;
             });
         };
 
-        assignPositions(rootLayout, 0);
+        assigNÓSitions(rootLayout, 0);
         return rootLayout;
     }, [tree]);
 
@@ -197,8 +197,8 @@ export const DerivationTreeVisualizer: React.FC<DerivationTreeVisualizerProps> =
                 >
                     <circle
                         r={NODE_RADIUS}
-                        fill={isLast ? "var(--ios-blue)" : "var(--surface-card)"}
-                        stroke={isLast ? "var(--ios-blue)" : "var(--border-color)"}
+                        fill={isLast ? 'var(--color-info)' : 'var(--color-surface-1)'}
+                        stroke={isLast ? 'var(--color-info)' : 'var(--border-color)'}
                         strokeWidth="2"
                         className="transition-colors duration-300 shadow-sm"
                     />
@@ -263,13 +263,13 @@ export const DerivationTreeVisualizer: React.FC<DerivationTreeVisualizerProps> =
                     </div>
 
                     <div className="flex items-center gap-4">
-                         <span className="font-mono text-[10px] font-bold text-secondary bg-surface-1 px-2 py-0.5 rounded border border-default">
+                         <span className="font-mono text-xs font-bold text-secondary bg-surface-1 px-2 py-0.5 rounded border border-default">
                             {visibleNodeCount} / {totalNodeCount} NÓS
                         </span>
                         <button 
                             onClick={() => setIsZoomed(true)} 
                             className="p-1.5 hover:bg-surface-hover rounded-md transition-colors text-secondary hover:text-primary"
-                            title="Expandir Visualização"
+                            title="Expandir visualização"
                         >
                             <Maximize2 size={14} />
                         </button>
@@ -303,3 +303,5 @@ export const DerivationTreeVisualizer: React.FC<DerivationTreeVisualizerProps> =
         </>
     );
 };
+
+

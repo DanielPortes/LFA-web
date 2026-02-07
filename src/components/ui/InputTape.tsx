@@ -47,9 +47,9 @@ export const InputTape: React.FC<InputTapeProps> = ({
                         key={index}
                         className={`${cellClass} transition-all duration-200 ${
                             isProcessed
-                                ? 'bg-green-100 dark:bg-green-900/30 border-ios-green/50 text-ios-green'
+                                ? 'bg-status-success-soft border-status-success text-status-success'
                                 : isCurrent
-                                    ? 'bg-blue-100 dark:bg-blue-900/30 border-ios-blue text-ios-blue ring-2 ring-ios-blue/30'
+                                    ? 'bg-status-info-soft border-status-info text-status-info ring-2 ring-ios-blue/30'
                                     : 'bg-surface-muted border-default text-secondary'
                         }`}
                     >

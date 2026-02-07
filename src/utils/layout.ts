@@ -10,6 +10,7 @@ const LABEL_PADDING = 8;
 const MIN_STATE_SPACING = 130; // Increased from 100
 const MIN_LABEL_STATE_SPACING = 15; // Increased from 8
 const MIN_LABEL_LABEL_SPACING = 10; // Increased from 6
+const MAX_LABEL_OFFSET_FROM_CURVE = 72;
 
 // Force-directed layout constants
 const REPULSION_FORCE = 15000; // Increased from 8000
@@ -127,7 +128,7 @@ const estimateLabelText = (t: Transicao): string => {
     let text = t.simbolo || '?';
     // Turing Machine heuristics
     if (t.write || t.direction) {
-        text = `${t.simbolo}→${t.write || t.simbolo},${t.direction || 'R'}`;
+        text = `${t.simbolo}->${t.write || t.simbolo},${t.direction || 'R'}`;
     }
     // Mealy Machine heuristics
     else if (t.output) {
@@ -470,27 +471,16 @@ export const calculateSmartLabelPositions = (
             const loopHeight = 50 + Math.abs(curvature) * 0.5;
             basePos = { x: source.x, y: source.y - loopHeight - 15 };
         } else {
-            // Regular transition: Position at curve midpoint
-            const mx = (source.x + target.x) / 2;
-            const my = (source.y + target.y) / 2;
-
-            const dx = target.x - source.x;
-            const dy = target.y - source.y;
-            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-
-            // Normal vector
-            const nx = -dy / dist;
-            const ny = dx / dist;
-
-            // Offset by half the curvature (label sits at curve apex)
+            // Regular transition: follow the actual bezier midpoint, including manual control-point offsets.
+            const cp = getTransitionControlPoint(source, target, t, curvature);
             basePos = {
-                x: mx + nx * curvature * 0.5,
-                y: my + ny * curvature * 0.5
+                x: (source.x + 2 * cp.x + target.x) / 4,
+                y: (source.y + 2 * cp.y + target.y) / 4
             };
         }
 
         // Try to find a position that doesn't overlap
-        const finalPos = findNonOverlappingPosition(
+        const resolvedPos = findNonOverlappingPosition(
             basePos,
             labelWidth,
             LABEL_HEIGHT,
@@ -499,6 +489,7 @@ export const calculateSmartLabelPositions = (
             source,
             target
         );
+        const finalPos = clampLabelOffset(basePos, resolvedPos, MAX_LABEL_OFFSET_FROM_CURVE);
 
         result.set(t.id, finalPos);
         placedLabels.push({
@@ -511,6 +502,53 @@ export const calculateSmartLabelPositions = (
     }
 
     return result;
+};
+
+const getTransitionControlPoint = (
+    source: Estado,
+    target: Estado,
+    transition: Transicao,
+    fallbackCurvature: number
+): Point => {
+    const mx = (source.x + target.x) / 2;
+    const my = (source.y + target.y) / 2;
+
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
+    const tx = dx / dist;
+    const ty = dy / dist;
+    const nx = -dy / dist;
+    const ny = dx / dist;
+
+    if (transition.controlPoint) {
+        return {
+            x: mx + (nx * transition.controlPoint.x) + (tx * transition.controlPoint.y),
+            y: my + (ny * transition.controlPoint.x) + (ty * transition.controlPoint.y)
+        };
+    }
+
+    return {
+        x: mx + nx * fallbackCurvature,
+        y: my + ny * fallbackCurvature
+    };
+};
+
+const clampLabelOffset = (anchor: Point, point: Point, maxDistance: number): Point => {
+    const dx = point.x - anchor.x;
+    const dy = point.y - anchor.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist <= maxDistance || dist <= 0.001) {
+        return point;
+    }
+
+    const scale = maxDistance / dist;
+    return {
+        x: anchor.x + dx * scale,
+        y: anchor.y + dy * scale
+    };
 };
 
 /**

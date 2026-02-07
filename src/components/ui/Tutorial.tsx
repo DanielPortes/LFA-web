@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useId } from 'react';
+﻿import React, { useState, useEffect, useId } from 'react';
 import {
     MousePointer2, Plus, ArrowUpRight, Trash2, Play,
     ChevronRight, ChevronLeft, X, Keyboard, Move,
@@ -46,13 +46,13 @@ const tutorialSteps: TutorialStep[] = [
     },
     {
         title: "Navegação",
-        description: "Space + arrastar para mover o canvas. Scroll do mouse ou botões +/- para zoom.",
+        description: "No canvas, segure Espaço + arraste para mover a visão. Use o scroll do mouse ou os botões +/- para zoom.",
         icon: <ZoomIn size={32} />,
         shortcut: "Space"
     },
     {
         title: "Simular",
-        description: "Digite uma string de entrada e pressione Enter ou Play. Use as setas para avançar passo a passo.",
+        description: "Digite uma entrada e pressione Enter ou Play. Fora do canvas, Espaço pausa/continua e as setas avançam passo a passo.",
         icon: <Play size={32} />,
         shortcut: "Enter"
     },
@@ -106,15 +106,7 @@ export const Tutorial: React.FC<TutorialProps> = ({ isOpen, onClose, onComplete 
     };
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <div
-                className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300
-                    ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
-                onClick={handleSkip}
-            />
-
-            {/* Modal */}
+        <div className="overlay-backdrop z-[200]" onClick={handleSkip}>
             <div
                 ref={dialogRef}
                 role="dialog"
@@ -122,17 +114,15 @@ export const Tutorial: React.FC<TutorialProps> = ({ isOpen, onClose, onComplete 
                 aria-labelledby={titleId}
                 tabIndex={-1}
                 className={`
-                relative w-full max-w-lg bg-white dark:bg-[#1a1a1a] rounded-3xl shadow-2xl
+                overlay-surface relative w-full max-w-lg
                 transform transition-all duration-500 ease-out overflow-hidden
                 ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}
-            `}>
+            `}
+                onClick={(event) => event.stopPropagation()}
+            >
                 {/* Header */}
-                <div className="relative h-48 bg-gradient-to-br from-ios-blue to-ios-purple flex items-center justify-center overflow-hidden">
+                <div className="relative h-44 bg-gradient-to-br from-ios-blue to-ios-purple flex items-center justify-center overflow-hidden">
                     <div className="absolute inset-0 bg-black/10" />
-
-                    {/* Animated background circles */}
-                    <div className="absolute w-64 h-64 bg-white/10 rounded-full -top-20 -right-20 animate-pulse" />
-                    <div className="absolute w-48 h-48 bg-white/10 rounded-full -bottom-10 -left-10 animate-pulse" style={{ animationDelay: '1s' }} />
 
                     <div className="relative z-10 text-white text-center">
                         <div className="w-20 h-20 mx-auto mb-4 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
@@ -149,6 +139,7 @@ export const Tutorial: React.FC<TutorialProps> = ({ isOpen, onClose, onComplete 
                     <button
                         onClick={handleSkip}
                         className="absolute top-4 right-4 p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+                        aria-label="Fechar tutorial"
                     >
                         <X size={18} />
                     </button>
@@ -177,6 +168,8 @@ export const Tutorial: React.FC<TutorialProps> = ({ isOpen, onClose, onComplete 
                             <button
                                 key={idx}
                                 onClick={() => setCurrentStep(idx)}
+                                aria-label={`Ir para dica ${idx + 1}`}
+                                aria-pressed={idx === currentStep}
                                 className={`w-2 h-2 rounded-full transition-all duration-300 ${
                                     idx === currentStep
                                         ? 'w-6 bg-ios-blue'
@@ -225,30 +218,4 @@ export const Tutorial: React.FC<TutorialProps> = ({ isOpen, onClose, onComplete 
     );
 };
 
-// Hook to manage tutorial visibility
-export const useTutorial = () => {
-    const STORAGE_KEY = 'lfa-tutorial-completed';
 
-    const [showTutorial, setShowTutorial] = useState(false);
-
-    useEffect(() => {
-        const completed = localStorage.getItem(STORAGE_KEY);
-        if (!completed) {
-            // Small delay to let the page load first
-            const timer = setTimeout(() => setShowTutorial(true), 1000);
-            return () => clearTimeout(timer);
-        }
-    }, []);
-
-    const completeTutorial = () => {
-        localStorage.setItem(STORAGE_KEY, 'true');
-        setShowTutorial(false);
-    };
-
-    const resetTutorial = () => {
-        localStorage.removeItem(STORAGE_KEY);
-        setShowTutorial(true);
-    };
-
-    return { showTutorial, setShowTutorial, completeTutorial, resetTutorial };
-};

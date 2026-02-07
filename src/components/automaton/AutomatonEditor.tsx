@@ -1,19 +1,34 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import type { AutomatoData, Tool } from '../../types';
+import type { AutomatoData, Tool, APData, Estado } from '../../types';
+import { isAP } from '../../types';
 import { AutomatonCanvas } from './AutomatonCanvas';
+
+// Helper to safely get PDA properties
+function getPdaProps(data: AutomatoData) {
+    if (isAP(data)) {
+        return {
+            alfabetoPilha: data.alfabetoPilha,
+            simboloInicialPilha: data.simboloInicialPilha,
+            pdaAcceptance: data.pdaAcceptance,
+        };
+    }
+    return { alfabetoPilha: undefined, simboloInicialPilha: undefined, pdaAcceptance: undefined };
+}
 import {
     MousePointer2, Plus, ArrowUpRight, Trash2, Download, ZoomIn, ZoomOut, RotateCcw,
     Undo2, Redo2, Upload, Share2, Image, FileJson, Grid3X3, LayoutTemplate,
     AlertTriangle, Beaker, AlertCircle, Table, Folder, Zap, MoreVertical,
-    Settings, Play, ChevronDown, ChevronUp, ArrowRightLeft
+    Settings, Play, ChevronDown, ChevronUp, ArrowRightLeft, Sparkles, Lightbulb, X
 } from 'lucide-react';
 import { useHistory } from '../../hooks/useHistory';
-import { useToast } from '../ui/Toast';
-import { useUiSettings } from '../../hooks/UiSettingsContext';
+import { useToast } from '../ui';
+import { useUiSettings } from '../../hooks/useUiSettings';
 import { TemplatesGallery } from '../ui/TemplatesGallery';
 import { ValidationPanel } from '../ui/ValidationPanel';
 import { BatchTestPanel } from '../ui/BatchTestPanel';
+import { EquivalentsPanel } from '../ui/EquivalentsPanel';
 import { Minimap } from '../ui/Minimap';
+import { ToolbarButton } from '../ui/ToolbarButton';
 import { TransitionTableModal } from './TransitionTableModal';
 import { SavedAutomataModal } from '../ui/SavedAutomataModal';
 import { Modal } from '../ui/Modal';
@@ -34,52 +49,6 @@ import { splitSymbolTokens } from '../../utils/symbols';
 import { generateShareUrl, copyToClipboard, exportAsSvg, exportAsPng, downloadFile, downloadDataUrl } from '../../utils/sharing';
 import { computeAutoLayout, optimizeLoadedLayout } from '../../utils/layout';
 
-interface ToolbarButtonProps {
-    icon: React.ElementType;
-    label: string;
-    shortcut?: string;
-    hint?: string;
-    active?: boolean;
-    onClick: () => void;
-    disabled?: boolean;
-    className?: string;
-    danger?: boolean;
-    side?: 'left' | 'right';
-    badge?: number | string;
-}
-
-const ToolbarButton: React.FC<ToolbarButtonProps> = ({ icon: Icon, label, shortcut, hint, active, onClick, disabled, className = '', danger, side = 'right', badge }) => (
-    <button
-        onClick={onClick}
-        disabled={disabled}
-        className={`p-2.5 rounded-xl transition-all duration-200 relative group/tooltip flex items-center justify-center shrink-0
-            ${active
-                ? 'bg-ios-blue text-white shadow-md shadow-blue-500/20'
-                : 'text-secondary hover:bg-surface-hover'}
-            ${danger ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20' : ''}
-            ${disabled ? 'opacity-40 cursor-not-allowed' : ''}
-            ${className}
-        `}
-    >
-        <Icon size={20} strokeWidth={2.5} />
-        {badge !== undefined && (
-            <span className="absolute -top-1 -right-1 bg-ios-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm min-w-[16px] flex items-center justify-center">
-                {badge}
-            </span>
-        )}
-        {/* Tooltip */}
-        <div className={`absolute ${side === 'right' ? 'left-full ml-3' : 'right-full mr-3'} top-1/2 -translate-y-1/2 px-3 py-2 bg-gray-900/95 backdrop-blur-sm text-white text-xs font-medium rounded-lg opacity-0 group-hover/tooltip:opacity-100 pointer-events-none whitespace-nowrap transition-opacity z-50 shadow-xl border border-white/10`}>
-            <div className="font-bold leading-none">{label}</div>
-            {(shortcut || hint) && (
-                <div className="text-[10px] text-gray-300 flex items-center gap-1 mt-1">
-                    {shortcut && <span className="bg-white/20 px-1.5 py-0.5 rounded font-mono">{shortcut}</span>}
-                    {hint && <span>{hint}</span>}
-                </div>
-            )}
-        </div>
-    </button>
-);
-
 interface EditorProps {
     data: AutomatoData;
     onChange: (data: AutomatoData) => void;
@@ -90,7 +59,10 @@ interface EditorProps {
     viewState?: { zoom: number; pan: { x: number; y: number } };
     onViewStateChange?: (zoom: number, pan: { x: number; y: number }) => void;
     compact?: boolean;
+    fitRequestToken?: number;
 }
+
+const EDITOR_COACH_STORAGE_KEY = 'lfa-simulator-coach-dismissed-v1';
 
 export const AutomatonEditor: React.FC<EditorProps> = ({
     data,
@@ -101,7 +73,8 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
     onInteract,
     viewState,
     onViewStateChange,
-    compact = false
+    compact = false,
+    fitRequestToken
 }) => {
     const [localTool, setTool] = useState<Tool>('pointer');
     const tool = localTool;
@@ -113,35 +86,49 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
     const zoom = viewState?.zoom ?? internalZoom;
     const pan = viewState?.pan ?? internalPan;
 
+    // Use refs to avoid recreating callbacks when zoom/pan change
+    const zoomRef = useRef(zoom);
+    const panRef = useRef(pan);
+    const onViewStateChangeRef = useRef(onViewStateChange);
+
+    useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+    useEffect(() => { panRef.current = pan; }, [pan]);
+    useEffect(() => { onViewStateChangeRef.current = onViewStateChange; }, [onViewStateChange]);
+
+    // Stable callbacks that don't change when zoom/pan change
     const handleZoomChange = useCallback((newZoom: number | ((prev: number) => number)) => {
-        const nextZoom = typeof newZoom === 'function' ? newZoom(zoom) : newZoom;
-        if (Math.abs(nextZoom - zoom) < 0.001) return;
-        if (onViewStateChange) {
-            onViewStateChange(nextZoom, pan);
+        const currentZoom = zoomRef.current;
+        const currentPan = panRef.current;
+        const nextZoom = typeof newZoom === 'function' ? newZoom(currentZoom) : newZoom;
+        if (Math.abs(nextZoom - currentZoom) < 0.001) return;
+        if (onViewStateChangeRef.current) {
+            onViewStateChangeRef.current(nextZoom, currentPan);
         } else {
             setInternalZoom(nextZoom);
         }
-    }, [zoom, pan, onViewStateChange]);
+    }, []);
 
     const handlePanChange = useCallback((newPan: { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number })) => {
-        const nextPan = typeof newPan === 'function' ? newPan(pan) : newPan;
-        const panDelta = Math.abs(nextPan.x - pan.x) + Math.abs(nextPan.y - pan.y);
+        const currentZoom = zoomRef.current;
+        const currentPan = panRef.current;
+        const nextPan = typeof newPan === 'function' ? newPan(currentPan) : newPan;
+        const panDelta = Math.abs(nextPan.x - currentPan.x) + Math.abs(nextPan.y - currentPan.y);
         if (panDelta < 0.5) return;
-        if (onViewStateChange) {
-            onViewStateChange(zoom, nextPan);
+        if (onViewStateChangeRef.current) {
+            onViewStateChangeRef.current(currentZoom, nextPan);
         } else {
             setInternalPan(nextPan);
         }
-    }, [zoom, pan, onViewStateChange]);
+    }, []);
 
     const handleTransformChange = useCallback((newZoom: number, newPan: { x: number; y: number }) => {
-        if (onViewStateChange) {
-            onViewStateChange(newZoom, newPan);
+        if (onViewStateChangeRef.current) {
+            onViewStateChangeRef.current(newZoom, newPan);
         } else {
             setInternalZoom(newZoom);
             setInternalPan(newPan);
         }
-    }, [onViewStateChange]);
+    }, []);
 
     const { snapToGrid, setSnapToGrid } = useUiSettings();
     const [showTemplates, setShowTemplates] = useState(false);
@@ -149,8 +136,9 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
     const [showLibrary, setShowLibrary] = useState(false);
     const [showValidation, setShowValidation] = useState(false);
     const [showBatchTest, setShowBatchTest] = useState(false);
+    const [showEquivalents, setShowEquivalents] = useState(false);
     const [showUtilities, setShowUtilities] = useState(false);
-    const [showProps, setShowProps] = useState(true);
+    const [showProps, setShowProps] = useState(!compact);
     const [conversionModal, setConversionModal] = useState<null | {
         title: string;
         steps?: ConversionStep[];
@@ -178,9 +166,11 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
     const [modifierHeld, setModifierHeld] = useState<'shift' | 'alt' | null>(null);
     const previousToolRef = useRef<Tool>('pointer');
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-    // Auto-Layout State Tracking
     const lastStateCountRef = useRef(data.estados.length);
+    const [showCoachMarks, setShowCoachMarks] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return localStorage.getItem(EDITOR_COACH_STORAGE_KEY) !== '1';
+    });
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const canvasRef = useRef<SVGSVGElement>(null);
@@ -231,39 +221,14 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
         dataRef.current = data;
     }, [data]);
 
-    useEffect(() => {
-        const currentCount = data.estados.length;
-        const prevCount = lastStateCountRef.current;
-        const shouldOptimize = currentCount > prevCount + 1 || (currentCount > 0 && prevCount === 0);
+    const pdaProps = getPdaProps(data);
 
-        if (shouldOptimize) {
-            const timeout = setTimeout(() => {
-                const currentData = dataRef.current;
-                const rect = canvasRef.current?.getBoundingClientRect();
-                const viewWidth = rect?.width || 800;
-                const viewHeight = rect?.height || 600;
-
-                const { states: optimized, needsReposition } = optimizeLoadedLayout(
-                    currentData.estados,
-                    currentData.transicoes,
-                    viewWidth,
-                    viewHeight
-                );
-
-                if (needsReposition) {
-                    handleChange({ ...currentData, estados: optimized });
-                    addToast('Layout ajustado automaticamente', 'info');
-                }
-                lastStateCountRef.current = currentData.estados.length;
-            }, 100);
-            return () => clearTimeout(timeout);
-        }
-
-        lastStateCountRef.current = currentCount;
-    }, [data.estados.length, handleChange, addToast]);
-
-    const calculateFitTransform = useCallback((states: typeof data.estados) => {
+    const calculateFitTransform = useCallback((states: Estado[]) => {
         if (states.length === 0) return { zoom: 1, pan: { x: 0, y: 0 } };
+
+        const rect = canvasRef.current?.getBoundingClientRect();
+        const viewWidth = Math.max(rect?.width || viewport.width || 800, 320);
+        const viewHeight = Math.max(rect?.height || viewport.height || 600, 240);
 
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         states.forEach(s => {
@@ -276,20 +241,20 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
         const padding = 150;
         const contentWidth = (maxX - minX) + padding;
         const contentHeight = (maxY - minY) + padding;
-        const zoomX = viewport.width / contentWidth;
-        const zoomY = viewport.height / contentHeight;
+        const zoomX = viewWidth / contentWidth;
+        const zoomY = viewHeight / contentHeight;
         const nextZoom = Math.max(0.3, Math.min(1.5, Math.min(zoomX, zoomY)));
 
         const centerX = (minX + maxX) / 2;
         const centerY = (minY + maxY) / 2;
         
         const nextPan = {
-            x: viewport.width / 2 - centerX * nextZoom,
-            y: viewport.height / 2 - centerY * nextZoom
+            x: viewWidth / 2 - centerX * nextZoom,
+            y: viewHeight / 2 - centerY * nextZoom
         };
 
         return { zoom: nextZoom, pan: nextPan };
-    }, [viewport]);
+    }, [viewport.height, viewport.width]);
 
     const fitToContent = useCallback(() => {
         if (!canvasRef.current || data.estados.length === 0) {
@@ -301,38 +266,120 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
         handleTransformChange(nextZoom, nextPan);
     }, [data.estados, calculateFitTransform, handleTransformChange]);
 
+    const lastFitRequestRef = useRef<number | undefined>(undefined);
+    useEffect(() => {
+        if (fitRequestToken === undefined) return;
+        if (lastFitRequestRef.current === fitRequestToken) return;
+        lastFitRequestRef.current = fitRequestToken;
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                fitToContent();
+            });
+        });
+    }, [fitRequestToken, fitToContent]);
+
+    const normalizeLoadedAutomaton = useCallback((incoming: AutomatoData) => {
+        const rect = canvasRef.current?.getBoundingClientRect();
+        const viewWidth = rect?.width || viewport.width || 800;
+        const viewHeight = rect?.height || viewport.height || 600;
+        const { states: optimizedStates, needsReposition } = optimizeLoadedLayout(
+            incoming.estados,
+            incoming.transicoes,
+            viewWidth,
+            viewHeight
+        );
+        return {
+            normalized: { ...incoming, estados: optimizedStates } as AutomatoData,
+            needsReposition
+        };
+    }, [viewport.width, viewport.height]);
+
+    const loadAutomatonIntoEditor = useCallback((incoming: AutomatoData, options?: {
+        successMessage?: string;
+        quiet?: boolean;
+        repositionMessage?: string;
+    }) => {
+        const { normalized, needsReposition } = normalizeLoadedAutomaton(incoming);
+        handleChange(normalized);
+
+        // Wait for canvas/layout to settle before fitting.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                fitToContent();
+            });
+        });
+
+        if (options?.quiet) return;
+
+        if (needsReposition && options?.repositionMessage) {
+            addToast(options.repositionMessage, 'info');
+            return;
+        }
+
+        if (needsReposition) {
+            addToast('Autômato carregado e ajustado na tela.', 'success');
+            return;
+        }
+
+        if (options?.successMessage) {
+            addToast(options.successMessage, 'success');
+        }
+    }, [normalizeLoadedAutomaton, handleChange, fitToContent, addToast]);
+
+    const dismissCoachMarks = useCallback(() => {
+        setShowCoachMarks(false);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(EDITOR_COACH_STORAGE_KEY, '1');
+        }
+    }, []);
+
+    useEffect(() => {
+        const currentCount = data.estados.length;
+        const prevCount = lastStateCountRef.current;
+        const shouldOptimize = currentCount > prevCount + 1 || (currentCount > 0 && prevCount === 0);
+
+        if (shouldOptimize) {
+            const timeout = setTimeout(() => {
+                const currentData = dataRef.current;
+                const { normalized, needsReposition } = normalizeLoadedAutomaton(currentData);
+                if (needsReposition) {
+                    handleChange(normalized);
+                    addToast('Layout ajustado automaticamente.', 'info');
+                }
+                lastStateCountRef.current = currentData.estados.length;
+            }, 100);
+            return () => clearTimeout(timeout);
+        }
+
+        lastStateCountRef.current = currentCount;
+    }, [data.estados.length, normalizeLoadedAutomaton, handleChange, addToast]);
+
     const handleMagicLayout = () => {
         if (!canvasRef.current) return;
         if (data.estados.length === 0) {
-            addToast('Adicione estados primeiro', 'warning');
+            addToast('Adicione estados primeiro.', 'warning');
             return;
         }
 
         const rect = canvasRef.current.getBoundingClientRect();
-        // Ensure valid dimensions
         const width = Math.max(rect.width, 400);
         const height = Math.max(rect.height, 300);
-
         const layouted = computeAutoLayout(data.estados, data.transicoes, width, height);
 
-        // Validate layout results before applying
-        const isValid = layouted.every(s =>
-            Number.isFinite(s.x) && Number.isFinite(s.y) &&
-            s.x > 0 && s.y > 0 && s.x < width * 2 && s.y < height * 2
+        const isValid = layouted.every((s) =>
+            Number.isFinite(s.x) && Number.isFinite(s.y) && s.x > 0 && s.y > 0 && s.x < width * 2 && s.y < height * 2
         );
 
         if (!isValid) {
-            addToast('Erro no layout, tente novamente', 'error');
+            addToast('Erro no layout, tente novamente.', 'error');
             return;
         }
 
         handleChange({ ...data, estados: layouted });
-        
-        // Calculate and apply new view transform immediately
         const { zoom: nextZoom, pan: nextPan } = calculateFitTransform(layouted);
         handleTransformChange(nextZoom, nextPan);
-
-        addToast('Layout automático aplicado!', 'success');
+        addToast('Layout automatico aplicado.', 'success');
     };
 
     const commitAlphabet = useCallback((value: string) => {
@@ -345,12 +392,13 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
     }, [data, handleChange]);
 
     const commitStackAlphabet = useCallback((value: string) => {
+        if (data.tipo !== 'AP') return;
         const tokens = splitSymbolTokens(value);
-        if (tokens.length === 0) {
-            handleChange({ ...data, alfabetoPilha: undefined });
-        } else {
-            handleChange({ ...data, alfabetoPilha: tokens });
-        }
+        const nextData: APData = {
+            ...data,
+            alfabetoPilha: tokens.length === 0 ? undefined : tokens
+        };
+        handleChange(nextData);
     }, [data, handleChange]);
 
     const handleUndo = useCallback(() => {
@@ -370,7 +418,7 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
             transicoes: []
         });
         setShowDeleteConfirm(false);
-        addToast('Autômato limpo', 'info');
+        addToast('Autômato limpo.', 'info');
     }, [data, handleChange, addToast]);
 
     useEffect(() => {
@@ -398,13 +446,13 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
             if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
                 e.preventDefault();
                 handleUndo();
-                addToast('Ação desfeita', 'info');
+                addToast('Acao desfeita.', 'info');
                 return;
             }
             if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
                 e.preventDefault();
                 handleRedo();
-                addToast('Ação refeita', 'info');
+                addToast('Acao refeita.', 'info');
                 return;
             }
 
@@ -424,6 +472,8 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                         e.preventDefault();
                         setShowDeleteConfirm(true);
                     }
+                    break;
+                default:
                     break;
             }
         };
@@ -465,24 +515,25 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
             ? data.alfabeto
             : getAlphabet({ ...data, alfabeto: undefined });
         setAlphabetInput(inferred.join(', '));
-    }, [data.alfabeto, data.transicoes, isEditingAlphabet]);
+    }, [data, data.alfabeto, data.transicoes, isEditingAlphabet]);
 
     useEffect(() => {
         if (isEditingStackAlphabet) return;
-        const inferred = data.alfabetoPilha && data.alfabetoPilha.length > 0
-            ? data.alfabetoPilha
+        const inferred = pdaProps.alfabetoPilha && pdaProps.alfabetoPilha.length > 0
+            ? pdaProps.alfabetoPilha
             : [];
         setStackAlphabetInput(inferred.join(', '));
-    }, [data.alfabetoPilha, isEditingStackAlphabet]);
+    }, [pdaProps.alfabetoPilha, isEditingStackAlphabet]);
 
     useEffect(() => {
         if (isEditingStackStart) return;
-        setStackStartSymbol(data.simboloInicialPilha ?? '');
-    }, [data.simboloInicialPilha, isEditingStackStart]);
+        setStackStartSymbol(pdaProps.simboloInicialPilha ?? '');
+    }, [pdaProps.simboloInicialPilha, isEditingStackStart]);
 
     useEffect(() => {
         if (data.tipo === 'AP') {
             setShowTable(false);
+            setShowBatchTest(false);
         }
     }, [data.tipo]);
 
@@ -490,13 +541,13 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
         { id: 'pointer', icon: MousePointer2, label: 'Mover', shortcut: 'V', hint: 'Segure Shift' },
         { id: 'state', icon: Plus, label: 'Estado', shortcut: 'S', hint: 'Clique para criar' },
         { id: 'transition', icon: ArrowUpRight, label: 'Transição', shortcut: 'T', hint: 'Segure Alt' },
-        { id: 'delete', icon: Trash2, label: 'Apagar', shortcut: 'D', hint: 'Clique p/ remover' },
+        { id: 'delete', icon: Trash2, label: 'Apagar', shortcut: 'D', hint: 'Clique para remover' }
     ];
 
     const exportData = () => {
         const jsonString = JSON.stringify(data, null, 2);
         downloadFile(jsonString, `automato-${Date.now()}.json`, 'application/json');
-        addToast('Autômato exportado como JSON', 'success');
+        addToast('Autômato exportado como JSON.', 'success');
     };
 
     const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -507,36 +558,26 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
         reader.onload = (event) => {
             try {
                 const imported = JSON.parse(event.target?.result as string);
-                if (imported.estados && imported.transicoes) {
-                    const rect = canvasRef.current?.getBoundingClientRect();
-                    const viewWidth = rect?.width || 800;
-                    const viewHeight = rect?.height || 600;
-
-                    const { states: optimizedStates, needsReposition } = optimizeLoadedLayout(
-                        imported.estados,
-                        imported.transicoes,
-                        viewWidth,
-                        viewHeight
-                    );
-
-                    const optimizedData = { ...imported, estados: optimizedStates };
-                    handleChange(optimizedData);
-
-                    if (needsReposition) {
-                        addToast('Autômato importado e ajustado!', 'success');
-                    } else {
-                        addToast('Autômato importado com sucesso!', 'success');
-                    }
-                    setTimeout(() => fitToContent(), 200);
-                } else {
-                    addToast('Arquivo JSON inválido', 'error');
+                if (!imported.estados || !imported.transicoes) {
+                    addToast('Arquivo JSON inválido.', 'error');
+                    return;
                 }
-            } catch {
-                addToast('Erro ao ler arquivo JSON', 'error');
+
+                loadAutomatonIntoEditor(imported as AutomatoData, {
+                    successMessage: 'Autômato importado com sucesso.',
+                    repositionMessage: 'Autômato importado e reposicionado automaticamente.'
+                });
+            } catch (err) {
+                if (err instanceof SyntaxError) {
+                    addToast('Arquivo JSON malformado.', 'error');
+                } else {
+                    addToast('Erro ao processar arquivo.', 'error');
+                }
+            } finally {
+                e.target.value = '';
             }
         };
         reader.readAsText(file);
-        e.target.value = '';
     };
 
     const handleShare = async () => {
@@ -573,36 +614,46 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
     const handleConvertToDFA = () => {
         try {
             const result = nfaToDfaWithSteps(data);
-            openConversionModal({ title: 'Determinizar (AFN -> AFD)', steps: result.steps, automaton: result.automaton });
-        } catch { addToast('Erro na conversao', 'error'); }
+            openConversionModal({ title: 'Determinizar (AFN → AFD)', steps: result.steps, automaton: result.automaton });
+        } catch { addToast('Erro na conversão', 'error'); }
     };
     const handleEliminateEpsilon = () => {
         try {
             const result = eliminateEpsilonTransitions(data);
-            openConversionModal({ title: 'Remocao de eps', steps: result.steps, automaton: result.automaton });
-        } catch { addToast('Erro na conversao', 'error'); }
+            openConversionModal({ title: 'Remoção de eps', steps: result.steps, automaton: result.automaton });
+        } catch { addToast('Erro na conversão', 'error'); }
     };
     const handleMinimizeDfa = () => {
         try {
             const result = minimizeDfaWithSteps(data);
-            openConversionModal({ title: 'Minimizacao de AFD', steps: result.steps, automaton: result.automaton });
-        } catch { addToast('Erro na minimizacao', 'error'); }
+            if (result.isMinimal && !result.needsCompletion) {
+                addToast('AFD já está minimizado', 'info');
+                openConversionModal({ title: 'Minimização de AFD', steps: result.steps });
+                return;
+            }
+            if (result.isMinimal && result.needsCompletion) {
+                addToast('AFD já é mínimo, mas está incompleto', 'info');
+                openConversionModal({ title: 'Minimização de AFD', steps: result.steps, automaton: result.automaton });
+                return;
+            }
+            openConversionModal({ title: 'Minimização de AFD', steps: result.steps, automaton: result.automaton });
+        } catch { addToast('Erro na minimização', 'error'); }
     };
     const openConversionModal = (payload: any) => setConversionModal(payload);
     
     const handleMooreToMealy = () => {
         const converted = mooreToMealy(data);
-        openConversionModal({ title: 'Moore -> Mealy', steps: [{ title: 'Conversao', detail: 'OK' }], automaton: converted });
+        openConversionModal({ title: 'Moore → Mealy', steps: [{ title: 'Conversão', detail: 'OK' }], automaton: converted });
     };
     const handleMealyToMoore = () => {
         const converted = mealyToMoore(data);
-        openConversionModal({ title: 'Mealy -> Moore', steps: [{ title: 'Conversao', detail: 'OK' }], automaton: converted });
+        openConversionModal({ title: 'Mealy → Moore', steps: [{ title: 'Conversão', detail: 'OK' }], automaton: converted });
     };
 
     const handleGrammarImport = () => {
          const source = grammarImportSource.trim();
         if (!source) {
-            setGrammarImportError('Informe a gramatica.');
+            setGrammarImportError('Informe a gramática.');
             return;
         }
         if (grammarImportKind === 'regular') {
@@ -612,9 +663,9 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                 return;
             }
             setGrammarImportWarnings(result.warnings ?? []);
-            handleChange(result.automaton);
+            loadAutomatonIntoEditor(result.automaton, { quiet: true });
             setShowGrammarImport(false);
-            addToast('Gramatica convertida', 'success');
+            addToast('Gramática convertida', 'success');
         } else {
              const result = cfgToPda(source);
             if (!result.automaton) {
@@ -622,7 +673,7 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                 return;
             }
             setGrammarImportWarnings(result.warnings ?? []);
-            handleChange(result.automaton);
+            loadAutomatonIntoEditor(result.automaton, { quiet: true });
             setShowGrammarImport(false);
             addToast('GLC convertida', 'success');
         }
@@ -645,7 +696,7 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                 <div className="absolute left-4 top-4 bottom-4 z-20 flex flex-col pointer-events-none">
                     <div className="pointer-events-auto flex flex-col gap-3">
                         {/* Tools */}
-                        <div className="glass-panel p-2 rounded-2xl flex flex-col gap-1 shadow-xl backdrop-blur-xl border border-white/20">
+                        <div className="glass-panel p-2 rounded-2xl flex flex-col gap-1 shadow-apple-md border border-default">
                             {tools.map((t) => (
                                 <ToolbarButton
                                     key={t.id}
@@ -665,25 +716,61 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                         </div>
 
                         {/* History */}
-                        <div className="glass-panel p-2 rounded-2xl flex flex-col gap-1 shadow-xl backdrop-blur-xl border border-white/20">
+                        <div className="glass-panel p-2 rounded-2xl flex flex-col gap-1 shadow-apple-md border border-default">
                             <ToolbarButton icon={Undo2} label="Desfazer" shortcut="Ctrl+Z" disabled={!canUndo} onClick={handleUndo} side="right" />
                             <ToolbarButton icon={Redo2} label="Refazer" shortcut="Ctrl+Y" disabled={!canRedo} onClick={handleRedo} side="right" />
                         </div>
 
                         {/* Actions */}
-                        <div className="glass-panel p-2 rounded-2xl flex flex-col gap-1 shadow-xl backdrop-blur-xl border border-white/20">
+                        <div className="glass-panel p-2 rounded-2xl flex flex-col gap-1 shadow-apple-md border border-default">
                              <ToolbarButton icon={LayoutTemplate} label="Templates" onClick={() => setShowTemplates(true)} side="right" />
                              <ToolbarButton icon={Folder} label="Biblioteca" onClick={() => setShowLibrary(true)} side="right" />
                         </div>
                          
                          {/* Utilities Toggle */}
-                        <div className="glass-panel p-2 rounded-2xl flex flex-col gap-1 shadow-xl backdrop-blur-xl border border-white/20">
+                        <div className="glass-panel p-2 rounded-2xl flex flex-col gap-1 shadow-apple-md border border-default">
                             <ToolbarButton icon={MoreVertical} label={showUtilities ? 'Menos' : 'Mais'} active={showUtilities} onClick={() => setShowUtilities(s => !s)} side="right" />
+                        </div>
+
+                        {/* Suggestions */}
+                        <div className="relative pointer-events-auto">
+                            <div className="glass-panel p-2 rounded-2xl flex flex-col gap-1 shadow-apple-md border border-default">
+                                <ToolbarButton
+                                    icon={Lightbulb}
+                                    label="Sugestões"
+                                    active={showCoachMarks}
+                                    onClick={() => setShowCoachMarks((value) => !value)}
+                                    side="right"
+                                />
+                            </div>
+                            {showCoachMarks && (
+                                <div className="absolute left-full top-0 ml-3 w-80 glass-panel rounded-2xl border border-default p-3 shadow-apple-lg z-40">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p className="text-sm font-semibold text-primary">Sugestões rápidas</p>
+                                            <ul className="mt-2 space-y-1.5 text-xs text-secondary leading-relaxed">
+                                                <li>Duplo clique no canvas para criar um estado.</li>
+                                                <li>Use `T` para transição e clique em origem e destino.</li>
+                                                <li>Use Shift para mover rápido e Alt para transição temporária.</li>
+                                                <li>Clique em um elemento para editar sem abrir menus extras.</li>
+                                            </ul>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={dismissCoachMarks}
+                                            className="rounded-lg p-1 text-secondary hover:text-primary hover:bg-surface-hover transition-colors"
+                                            aria-label="Fechar sugestões"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Expanded Utilities */}
                         {showUtilities && (
-                            <div className="glass-panel p-2 rounded-2xl flex flex-col gap-1 shadow-xl backdrop-blur-xl border border-white/20 animate-slide-right-fade">
+                            <div className="glass-panel p-2 rounded-2xl flex flex-col gap-1 shadow-apple-md border border-default animate-slide-right-fade">
                                 <ToolbarButton icon={Upload} label="Importar JSON" onClick={() => fileInputRef.current?.click()} side="right" />
                                 <ToolbarButton icon={Download} label="Exportar JSON" onClick={exportData} side="right" />
                                 <ToolbarButton icon={Share2} label="Compartilhar" onClick={handleShare} side="right" />
@@ -701,7 +788,7 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                 <div className="pointer-events-auto flex flex-col gap-3 w-full h-full overflow-y-auto overflow-x-hidden custom-scrollbar pb-4 pr-1">
                     
                     {/* Collapsible Properties Panel */}
-                    <div className="glass-panel p-1 rounded-2xl shadow-xl backdrop-blur-xl border border-white/20 w-full animate-fade-in-up transition-all">
+                    <div className="glass-panel p-1 rounded-2xl shadow-apple-md border border-default w-full animate-fade-in-up transition-all">
                         <button 
                             onClick={() => setShowProps(p => !p)}
                             className="w-full flex items-center justify-between p-3 text-secondary hover:bg-surface-hover rounded-xl transition-colors"
@@ -716,14 +803,33 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                         {showProps && (
                             <div className="px-3 pb-3 pt-1 space-y-3 animate-scale-in origin-top">
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-muted uppercase">Tipo</label>
+                                    <label className="text-xs font-bold text-muted uppercase">Tipo</label>
                                     <select
                                         value={data.tipo}
                                         onChange={(e) => {
                                             const nextTipo = e.target.value as AutomatoData['tipo'];
-                                            const nextData = { ...data, tipo: nextTipo, pdaAcceptance: nextTipo === 'AP' ? (data.pdaAcceptance ?? 'final') : data.pdaAcceptance };
-                                            if (nextTipo === 'AP' && !data.simboloInicialPilha) nextData.simboloInicialPilha = 'Z';
-                                            handleChange(nextData);
+                                            if (nextTipo === 'AP') {
+                                                const apData: APData = {
+                                                    tipo: 'AP',
+                                                    estados: data.estados,
+                                                    transicoes: data.transicoes,
+                                                    alfabeto: data.alfabeto,
+                                                    descricao: data.descricao,
+                                                    alfabetoPilha: pdaProps.alfabetoPilha,
+                                                    simboloInicialPilha: pdaProps.simboloInicialPilha ?? 'Z',
+                                                    pdaAcceptance: pdaProps.pdaAcceptance ?? 'final',
+                                                };
+                                                handleChange(apData);
+                                            } else {
+                                                const baseData = {
+                                                    tipo: nextTipo,
+                                                    estados: data.estados,
+                                                    transicoes: data.transicoes,
+                                                    alfabeto: data.alfabeto,
+                                                    descricao: data.descricao,
+                                                } as AutomatoData;
+                                                handleChange(baseData);
+                                            }
                                         }}
                                         disabled={readOnly}
                                         className="w-full bg-surface-muted border border-default rounded-lg px-2 py-1.5 text-sm font-semibold outline-none focus:ring-2 ring-ios-blue/30"
@@ -740,9 +846,9 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
 
                                 <div className="space-y-1">
                                     <div className="flex justify-between items-center">
-                                        <label className="text-[10px] font-bold text-muted uppercase">Alfabeto</label>
+                                        <label className="text-xs font-bold text-muted uppercase">Alfabeto</label>
                                         <button onClick={() => { setIsEditingAlphabet(false); const inferred = getAlphabet({ ...data, alfabeto: undefined }); setAlphabetInput(inferred.join(', ')); handleChange({ ...data, alfabeto: undefined }); }}
-                                            className="text-[10px] text-ios-blue hover:underline">Auto</button>
+                                            className="text-xs text-ios-blue hover:underline">Auto</button>
                                     </div>
                                     <input
                                         value={alphabetInput}
@@ -758,7 +864,7 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                                 {data.tipo === 'AP' && (
                                     <>
                                         <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-muted uppercase">Alfabeto Pilha</label>
+                                            <label className="text-xs font-bold text-muted uppercase">Alfabeto Pilha</label>
                                             <input
                                                 value={stackAlphabetInput}
                                                 onChange={(e) => setStackAlphabetInput(e.target.value)}
@@ -769,7 +875,7 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                                             />
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-muted uppercase">Início Pilha</label>
+                                            <label className="text-xs font-bold text-muted uppercase">Início Pilha</label>
                                             <input
                                                 value={stackStartSymbol}
                                                 onChange={(e) => setStackStartSymbol(e.target.value)}
@@ -787,7 +893,7 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
 
                     {/* Compact View & Analysis Tools */}
                     {!readOnly && (
-                    <div className="glass-panel p-2 rounded-2xl flex flex-wrap gap-2 shadow-xl backdrop-blur-xl border border-white/20 w-full animate-fade-in-up items-center justify-between" style={{ animationDelay: '0.1s' }}>
+                    <div className="glass-panel p-2 rounded-2xl flex flex-wrap gap-2 shadow-apple-md border border-default w-full animate-fade-in-up items-center justify-between" style={{ animationDelay: '0.1s' }}>
                          <div className="flex gap-1">
                             <ToolbarButton icon={Grid3X3} label="Grid" active={snapToGrid} onClick={() => setSnapToGrid(!snapToGrid)} side="left" />
                             <ToolbarButton icon={Zap} label="Magic Layout" onClick={handleMagicLayout} side="left" />
@@ -819,6 +925,13 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                                 side="left"
                                 disabled={data.tipo === 'AP'}
                              />
+                             <ToolbarButton
+                                icon={Sparkles}
+                                label="Equivalentes"
+                                active={showEquivalents}
+                                onClick={() => setShowEquivalents(s => !s)}
+                                side="left"
+                             />
                          </div>
                     </div>
                     )}
@@ -837,10 +950,24 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                         </div>
                     )}
 
+                    {/* Equivalents Panel (Embedded) */}
+                    {showEquivalents && (
+                        <div className="w-full animate-fade-in-up">
+                            <EquivalentsPanel
+                                data={data}
+                                onLoadEquivalent={(equivalent) => {
+                                    loadAutomatonIntoEditor(equivalent, {
+                                        successMessage: 'Autômato equivalente carregado.'
+                                    });
+                                }}
+                            />
+                        </div>
+                    )}
+
                      {/* Converters Panel (Only if Utility shown) */}
                     {showUtilities && !readOnly && (data.tipo === 'AFN' || data.tipo === 'AFD' || data.tipo === 'Moore' || data.tipo === 'Mealy') && (
-                         <div className="glass-panel p-3 rounded-2xl shadow-xl backdrop-blur-xl border border-white/20 w-full animate-fade-in-up flex flex-col gap-2">
-                            <div className="text-[10px] font-bold text-muted uppercase px-1">Conversores</div>
+                         <div className="glass-panel p-3 rounded-2xl shadow-apple-md border border-default w-full animate-fade-in-up flex flex-col gap-2">
+                            <div className="text-xs font-bold text-muted uppercase px-1">Conversores</div>
                             {data.tipo === 'AFN' && (
                                 <>
                                     <button onClick={handleConvertToDFA} className="flex items-center w-full p-2.5 rounded-xl hover:bg-surface-hover text-xs font-semibold text-secondary border border-transparent hover:border-default transition-all">
@@ -873,12 +1000,15 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
 
             {/* --- CANVAS --- */}
             <div className="absolute inset-0 z-0 overflow-hidden">
-                {!readOnly && data.estados.length === 0 && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none opacity-40">
-                         <div className="w-20 h-20 rounded-3xl bg-gray-100/50 dark:bg-white/5 flex items-center justify-center mb-4 border border-dashed border-gray-400">
-                            <Plus className="text-gray-400" size={40} />
+                {data.estados.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-4">
+                        <div className="w-full max-w-md glass-panel rounded-2xl border border-default p-5 text-center shadow-apple-md">
+                            <div className="mx-auto mb-3 h-14 w-14 rounded-2xl bg-surface-muted border border-default flex items-center justify-center text-ios-blue">
+                                <Plus size={28} />
+                            </div>
+                            <p className="text-sm font-bold text-primary">Canvas pronto para construir</p>
+                            <p className="mt-1 text-xs text-secondary">Pressione `S` e clique no canvas para criar estados.</p>
                         </div>
-                        <p className="text-sm font-medium text-muted">Comece adicionando um estado</p>
                     </div>
                 )}
                 <AutomatonCanvas
@@ -919,10 +1049,10 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
             {/* --- BOTTOM BAR --- (hidden in compact mode) */}
             {!compact && (
                 <div className="absolute bottom-4 left-0 right-0 z-20 flex justify-center pointer-events-none">
-                    <div className="glass-panel px-4 py-2 rounded-full flex items-center gap-4 shadow-2xl backdrop-blur-xl border border-white/20 pointer-events-auto">
+                    <div className="glass-panel px-4 py-2 rounded-full flex items-center gap-4 shadow-apple-lg border border-default pointer-events-auto">
                         {/* Info Stats */}
                         <div className="flex items-center gap-3 ui-kicker-xs text-secondary">
-                            <span className="text-ios-blue bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md">{data.tipo}</span>
+                            <span className="badge badge-info">{data.tipo}</span>
                             <span className="w-px h-3 bg-border"></span>
                             <span>{data.estados.length} Est.</span>
                             <span>{data.transicoes.length} Trans.</span>
@@ -932,7 +1062,7 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                         <div className="w-px h-4 bg-border"></div>
                         <div className="flex items-center gap-1">
                             <button onClick={handleZoomOut} className="p-1.5 hover:bg-surface-hover rounded-lg text-secondary transition-colors"><ZoomOut size={14} /></button>
-                            <span className="text-[10px] font-mono font-bold w-10 text-center text-primary">{Math.round(zoom * 100)}%</span>
+                            <span className="text-xs font-mono font-bold w-10 text-center text-primary">{Math.round(zoom * 100)}%</span>
                             <button onClick={handleZoomIn} className="p-1.5 hover:bg-surface-hover rounded-lg text-secondary transition-colors"><ZoomIn size={14} /></button>
                             <button onClick={handleZoomReset} className="p-1.5 hover:bg-surface-hover rounded-lg text-secondary transition-colors ml-1" title="Ajustar ao conteúdo"><RotateCcw size={14} /></button>
                         </div>
@@ -942,10 +1072,10 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
 
             {/* Modals */}
             {showDeleteConfirm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-                    <div className="glass-panel p-6 rounded-3xl shadow-2xl max-w-sm w-full animate-scale-in border border-white/20 bg-app">
+                <div className="overlay-backdrop z-[120] animate-fade-in">
+                    <div className="overlay-surface p-6 max-w-sm w-full animate-scale-in bg-app">
                         <div className="flex flex-col items-center text-center gap-3 mb-6">
-                            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-ios-red">
+                            <div className="w-12 h-12 rounded-full bg-status-danger-soft flex items-center justify-center text-status-danger">
                                 <AlertCircle size={24} />
                             </div>
                             <div>
@@ -961,16 +1091,29 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                 </div>
             )}
 
-            <TemplatesGallery isOpen={showTemplates} onClose={() => setShowTemplates(false)} onSelect={(t) => { handleChange(t); addToast('Template carregado!', 'success'); }} />
+            <TemplatesGallery
+                isOpen={showTemplates}
+                onClose={() => setShowTemplates(false)}
+                onSelect={(template) => {
+                    loadAutomatonIntoEditor(template, { successMessage: 'Template carregado.' });
+                }}
+            />
             <TransitionTableModal isOpen={showTable} onClose={() => setShowTable(false)} automaton={data} onChange={handleChange} />
-            <SavedAutomataModal isOpen={showLibrary} onClose={() => setShowLibrary(false)} current={data} onLoad={(l) => { handleChange(l); addToast('Carregado!', 'success'); }} />
+            <SavedAutomataModal
+                isOpen={showLibrary}
+                onClose={() => setShowLibrary(false)}
+                current={data}
+                onLoad={(loaded) => {
+                    loadAutomatonIntoEditor(loaded, { successMessage: 'Autômato carregado.' });
+                }}
+            />
             <SavedAutomataModal isOpen={showAuxLibrary} onClose={() => setShowAuxLibrary(false)} current={auxAutomaton ?? data} onLoad={(l) => { setAuxAutomaton(l); addToast('B carregado!', 'success'); }} />
             
             {/* Conversion Modal */}
             <Modal isOpen={!!conversionModal} onClose={() => setConversionModal(null)} title={conversionModal?.title || 'Conversão'} className="max-w-3xl">
                 <div className="space-y-6">
                      {conversionModal?.warnings && conversionModal.warnings.length > 0 && (
-                        <div className="p-4 rounded-2xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 text-orange-800 dark:text-orange-200 text-sm">
+                        <div className="p-4 rounded-2xl bg-status-warning-soft border border-status-warning text-status-warning text-sm">
                             <div className="font-bold mb-2 flex items-center gap-2"><AlertTriangle size={16}/> Avisos</div>
                             <ul className="list-disc list-inside space-y-1 opacity-90">{conversionModal.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul>
                         </div>
@@ -988,7 +1131,15 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                     {conversionModal?.outputText && <pre className="p-4 rounded-xl bg-surface-muted font-mono text-xs overflow-auto max-h-64 border border-default">{conversionModal.outputText}</pre>}
                     {conversionModal?.automaton && (
                         <div className="flex justify-end pt-4 border-t border-default">
-                            <button onClick={() => { handleChange(conversionModal.automaton as AutomatoData); setConversionModal(null); addToast('Aplicado!', 'success'); }} className="px-4 py-2 rounded-xl bg-ios-blue text-white text-sm font-bold hover:bg-blue-600 transition-colors">
+                            <button
+                                onClick={() => {
+                                    loadAutomatonIntoEditor(conversionModal.automaton as AutomatoData, {
+                                        successMessage: 'Conversão aplicada.'
+                                    });
+                                    setConversionModal(null);
+                                }}
+                                className="px-4 py-2 rounded-xl bg-ios-blue text-white text-sm font-bold hover:bg-blue-600 transition-colors"
+                            >
                                 Substituir Autômato Atual
                             </button>
                         </div>
@@ -1036,3 +1187,6 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
         </div>
     );
 };
+
+
+

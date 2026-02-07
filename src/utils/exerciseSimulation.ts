@@ -1,4 +1,5 @@
-import type { AutomatoData, GrammarTree } from '../types';
+import type { AutomatoData, AutomatoTipo, GrammarTree, APData } from '../types';
+import { isAP } from '../types';
 import { getEpsilonClosure, performStep } from './automatonLogic';
 import { getPdaEpsilonClosure, performPdaStep } from './pda';
 import { buildTuringConfigKey, END_MARKER, performALLStep, performTuringStep, START_MARKER } from './turingLogic';
@@ -18,33 +19,28 @@ export interface SimulationTraceStep {
     toStates: string[];
 }
 
-export const createEmptyAutomaton = (tipo: AutomatoData['tipo']): AutomatoData => {
-    const base: AutomatoData = {
-        tipo,
-        estados: [
-            { id: 'q0', label: 'q0', x: 200, y: 200, isInicial: true, isFinal: false }
-        ],
-        transicoes: []
-    };
+export const createEmptyAutomaton = (tipo: AutomatoTipo): AutomatoData => {
+    const baseState = { id: 'q0', label: 'q0', x: 200, y: 200, isInicial: true, isFinal: false };
 
     if (tipo === 'AP') {
-        return {
-            ...base,
+        const pdaAutomaton: APData = {
+            tipo: 'AP',
+            estados: [baseState],
+            transicoes: [],
             alfabeto: [],
             alfabetoPilha: [],
             simboloInicialPilha: 'Z',
             pdaAcceptance: 'empty'
         };
+        return pdaAutomaton;
     }
 
-    if (tipo === 'MT' || tipo === 'ALL') {
-        return {
-            ...base,
-            alfabeto: []
-        };
-    }
-
-    return base;
+    return {
+        tipo,
+        estados: [baseState],
+        transicoes: [],
+        alfabeto: tipo === 'MT' || tipo === 'ALL' ? [] : undefined
+    } as AutomatoData;
 };
 
 export const simulateAutomaton = (
@@ -152,7 +148,9 @@ export const simulatePda = (
         return { status: 'rejected', reason: 'Nenhum estado inicial definido', finalStates: [] };
     }
 
-    const baseStack = automaton.simboloInicialPilha ? [automaton.simboloInicialPilha] : [];
+    // Get PDA-specific properties safely
+    const simboloInicialPilha = isAP(automaton) ? automaton.simboloInicialPilha : undefined;
+    const baseStack = simboloInicialPilha ? [simboloInicialPilha] : [];
     const configs = initialStates.map(id => ({ stateId: id, stack: [...baseStack] }));
     let currentConfigs = getPdaEpsilonClosure(configs, automaton.transicoes);
 
@@ -171,7 +169,7 @@ export const simulatePda = (
 
     const hasFinal = currentConfigs.some(cfg => automaton.estados.find(e => e.id === cfg.stateId)?.isFinal);
     const hasEmpty = currentConfigs.some(cfg => cfg.stack.length === 0);
-    const acceptance = automaton.pdaAcceptance ?? 'final';
+    const acceptance = isAP(automaton) ? (automaton.pdaAcceptance ?? 'final') : 'final';
     const accepted = acceptance === 'final'
         ? hasFinal
         : acceptance === 'empty'

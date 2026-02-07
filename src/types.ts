@@ -1,10 +1,68 @@
 import type { LucideIcon } from 'lucide-react';
 
-export type Tab = 'home' | 'conteudo' | 'exercicios' | 'simulador';
+// ============================================================================
+// Constants (Magic Strings -> Enums/Constants)
+// ============================================================================
 
-export type Tool = 'pointer' | 'state' | 'transition' | 'delete';
+export const AutomatoTipos = {
+    AFD: 'AFD',
+    AFN: 'AFN',
+    AP: 'AP',
+    GR: 'GR',
+    ER: 'ER',
+    MT: 'MT',
+    ALL: 'ALL',
+    Moore: 'Moore',
+    Mealy: 'Mealy',
+} as const;
 
-export type AutomatoTipo = 'AFD' | 'AFN' | 'AP' | 'GR' | 'ER' | 'MT' | 'ALL' | 'Moore' | 'Mealy';
+export type AutomatoTipo = typeof AutomatoTipos[keyof typeof AutomatoTipos];
+
+export const ToolTypes = {
+    POINTER: 'pointer',
+    STATE: 'state',
+    TRANSITION: 'transition',
+    DELETE: 'delete',
+} as const;
+
+export type Tool = typeof ToolTypes[keyof typeof ToolTypes];
+
+export const TabTypes = {
+    HOME: 'home',
+    CONTEUDO: 'conteudo',
+    EXERCICIOS: 'exercicios',
+    SIMULADOR: 'simulador',
+} as const;
+
+export type Tab = typeof TabTypes[keyof typeof TabTypes];
+
+export const SimulationStatus = {
+    RUNNING: 'running',
+    ACCEPTED: 'accepted',
+    REJECTED: 'rejected',
+} as const;
+
+export type SimulationStatusType = typeof SimulationStatus[keyof typeof SimulationStatus];
+
+export const PdaAcceptanceMode = {
+    FINAL: 'final',
+    EMPTY: 'empty',
+    BOTH: 'both',
+} as const;
+
+export type PdaAcceptanceType = typeof PdaAcceptanceMode[keyof typeof PdaAcceptanceMode];
+
+export const TuringDirection = {
+    LEFT: 'L',
+    RIGHT: 'R',
+    STAY: 'S',
+} as const;
+
+export type TuringDirectionType = typeof TuringDirection[keyof typeof TuringDirection];
+
+// ============================================================================
+// Base Types
+// ============================================================================
 
 export interface Estado {
     id: string;
@@ -20,31 +78,193 @@ export interface Transicao {
     id: string;
     de: string;
     para: string;
-    simbolo: string; // Entrada para todos. Em Mealy: "entrada / saida". Em MT: "leitura"
+    simbolo: string;
     curvatura: number;
     controlPoint?: { x: number; y: number } | null;
-    
-    // Propriedades Específicas
-    write?: string;     // Para MT: Símbolo a escrever
-    direction?: 'L' | 'R' | 'S'; // Para MT: Esquerda, Direita, Stay (Ficar)
-    output?: string;    // Para Mealy (alternativo ao parse da string)
+
+    // MT specific (can also be parsed from simbolo)
+    write?: string;
+    direction?: TuringDirectionType;
+    // Mealy specific (alternative to parsing from simbolo)
+    output?: string;
 }
 
-export interface AutomatoData {
-    tipo: AutomatoTipo;
+// ============================================================================
+// Discriminated Union: AutomatoData
+// ============================================================================
+
+/** Base properties shared by all automaton types */
+interface BaseAutomato {
     estados: Estado[];
     transicoes: Transicao[];
+    descricao?: string;
     alfabeto?: string[];
+}
+
+/** Deterministic Finite Automaton */
+export interface AFDData extends BaseAutomato {
+    tipo: 'AFD';
+}
+
+/** Non-deterministic Finite Automaton */
+export interface AFNData extends BaseAutomato {
+    tipo: 'AFN';
+}
+
+/** Pushdown Automaton (with stack) */
+export interface APData extends BaseAutomato {
+    tipo: 'AP';
     alfabetoPilha?: string[];
     simboloInicialPilha?: string;
-    pdaAcceptance?: 'final' | 'empty' | 'both';
-    descricao?: string;
+    pdaAcceptance?: PdaAcceptanceType;
 }
+
+/** Regular Grammar */
+export interface GRData extends BaseAutomato {
+    tipo: 'GR';
+}
+
+/** Regular Expression */
+export interface ERData extends BaseAutomato {
+    tipo: 'ER';
+}
+
+/** Turing Machine */
+export interface MTData extends BaseAutomato {
+    tipo: 'MT';
+}
+
+/** Linear Bounded Automaton */
+export interface ALLData extends BaseAutomato {
+    tipo: 'ALL';
+}
+
+/** Moore Machine */
+export interface MooreData extends BaseAutomato {
+    tipo: 'Moore';
+}
+
+/** Mealy Machine */
+export interface MealyData extends BaseAutomato {
+    tipo: 'Mealy';
+}
+
+/** Discriminated Union type for all automaton types */
+export type AutomatoData =
+    | AFDData
+    | AFNData
+    | APData
+    | GRData
+    | ERData
+    | MTData
+    | ALLData
+    | MooreData
+    | MealyData;
+
+// ============================================================================
+// Type Guards
+// ============================================================================
+
+export function isAFD(data: AutomatoData): data is AFDData {
+    return data.tipo === AutomatoTipos.AFD;
+}
+
+export function isAFN(data: AutomatoData): data is AFNData {
+    return data.tipo === AutomatoTipos.AFN;
+}
+
+export function isAP(data: AutomatoData): data is APData {
+    return data.tipo === AutomatoTipos.AP;
+}
+
+export function isMT(data: AutomatoData): data is MTData {
+    return data.tipo === AutomatoTipos.MT;
+}
+
+export function isALL(data: AutomatoData): data is ALLData {
+    return data.tipo === AutomatoTipos.ALL;
+}
+
+export function isMoore(data: AutomatoData): data is MooreData {
+    return data.tipo === AutomatoTipos.Moore;
+}
+
+export function isMealy(data: AutomatoData): data is MealyData {
+    return data.tipo === AutomatoTipos.Mealy;
+}
+
+export function isTuringLike(data: AutomatoData): data is MTData | ALLData {
+    return data.tipo === AutomatoTipos.MT || data.tipo === AutomatoTipos.ALL;
+}
+
+export function isTransducer(data: AutomatoData): data is MooreData | MealyData {
+    return data.tipo === AutomatoTipos.Moore || data.tipo === AutomatoTipos.Mealy;
+}
+
+export function isFiniteAutomaton(data: AutomatoData): data is AFDData | AFNData {
+    return data.tipo === AutomatoTipos.AFD || data.tipo === AutomatoTipos.AFN;
+}
+
+// ============================================================================
+// Simulation Types
+// ============================================================================
+
+export interface SimulationStep {
+    activeStates: string[];
+    remainingInput: string[];
+    processedInput: string[];
+    status: SimulationStatusType;
+    symbol?: string;
+    fromStates?: string[];
+    usedTransitions?: string[];
+    directTargets?: string[];
+    // PDA specific
+    activeConfigs?: PdaConfiguration[];
+    pdaEdges?: PdaEdge[];
+    // Transducer specific
+    output?: string[];
+    outputStatus?: 'ok' | 'ambiguous';
+    // TM specific
+    tape?: Record<number, string>;
+    headPos?: number;
+}
+
+export interface PdaConfiguration {
+    stateId: string;
+    stack: string[];
+}
+
+export interface PdaEdge {
+    from: string;
+    to: string;
+    transitionId?: string;
+}
+
+// ============================================================================
+// Exercise Types
+// ============================================================================
 
 export interface TestCase {
     input: string;
     expected: 'accept' | 'reject';
 }
+
+export const ExerciseLevel = {
+    EASY: 'facil',
+    MEDIUM: 'medio',
+    HARD: 'dificil',
+} as const;
+
+export type ExerciseLevelType = typeof ExerciseLevel[keyof typeof ExerciseLevel];
+
+export const ExerciseMode = {
+    AUTOMATON: 'automaton',
+    REGEX: 'regex',
+    TEXT: 'text',
+    GRAMMAR: 'grammar',
+} as const;
+
+export type ExerciseModeType = typeof ExerciseMode[keyof typeof ExerciseMode];
 
 export interface Exercicio {
     id: number;
@@ -53,10 +273,14 @@ export interface Exercicio {
     respostaTexto?: string;
     respostaAutomato?: AutomatoData;
     testes?: TestCase[];
-    nivel: 'facil' | 'medio' | 'dificil';
-    mode?: 'automaton' | 'regex' | 'text' | 'grammar';
+    nivel: ExerciseLevelType;
+    mode?: ExerciseModeType;
     tipo?: AutomatoTipo;
 }
+
+// ============================================================================
+// UI Types
+// ============================================================================
 
 export interface Topic {
     id: string;
@@ -65,38 +289,34 @@ export interface Topic {
     icon: LucideIcon;
 }
 
-export interface SimulationStep {
-    activeStates: string[];
-    remainingInput: string[];
-    processedInput: string[];
-    status: 'running' | 'accepted' | 'rejected';
-    symbol?: string;
-    fromStates?: string[];
-    usedTransitions?: string[];
-    directTargets?: string[];
-    activeConfigs?: { stateId: string; stack: string[] }[];
-    pdaEdges?: { from: string; to: string; transitionId?: string }[];
-    output?: string[];
-    outputStatus?: 'ok' | 'ambiguous';
-    
-    // TM Specific
-    tape?: Record<number, string>;
-    headPos?: number;
-}
-
-// --- Tipos para o Material Didático Rico ---
+// ============================================================================
+// Content Types
+// ============================================================================
 
 export interface GrammarTree {
     symbol: string;
     children: GrammarTree[];
 }
 
+export const ContentBlockType = {
+    TEXT: 'text',
+    DEFINITION: 'definition',
+    THEOREM: 'theorem',
+    EXAMPLE: 'example',
+    LIST: 'list',
+    NOTE: 'note',
+    ALGORITHM: 'algorithm',
+    WARNING: 'warning',
+    MATH_TIP: 'math-tip',
+    INTERACTIVE_GRAMMAR: 'interactive-grammar',
+} as const;
+
+export type ContentBlockTypeValue = typeof ContentBlockType[keyof typeof ContentBlockType];
+
 export interface ContentBlock {
-    // Tipos estendidos para suportar didática avançada
-    type: 'text' | 'definition' | 'theorem' | 'example' | 'list' | 'note' | 'algorithm' | 'warning' | 'math-tip' | 'interactive-grammar';
+    type: ContentBlockTypeValue;
     content: string | string[];
     title?: string;
-    // Suporte para "Antes e Depois" (ex: Minimização)
     automatoRef?: AutomatoData;
     automatoRef2?: AutomatoData;
     grammarTreeData?: GrammarTree;
@@ -113,4 +333,70 @@ export interface CourseModule {
     id: string;
     title: string;
     lessons: Lesson[];
+}
+
+// ============================================================================
+// Helper Types for Creating Automata
+// ============================================================================
+
+export type CreateAutomatoOptions<T extends AutomatoTipo> =
+    T extends 'AFD' ? Omit<AFDData, 'tipo'> :
+    T extends 'AFN' ? Omit<AFNData, 'tipo'> :
+    T extends 'AP' ? Omit<APData, 'tipo'> :
+    T extends 'MT' ? Omit<MTData, 'tipo'> :
+    T extends 'ALL' ? Omit<ALLData, 'tipo'> :
+    T extends 'Moore' ? Omit<MooreData, 'tipo'> :
+    T extends 'Mealy' ? Omit<MealyData, 'tipo'> :
+    Omit<BaseAutomato, 'tipo'>;
+
+/** Factory function to create typed automata */
+export function createAutomaton<T extends AutomatoTipo>(
+    tipo: T,
+    options: CreateAutomatoOptions<T>
+): AutomatoData {
+    return { tipo, ...options } as AutomatoData;
+}
+
+// ============================================================================
+// Legacy Compatibility
+// ============================================================================
+
+/**
+ * @deprecated Use the discriminated union AutomatoData instead
+ * This interface is kept for backward compatibility during migration
+ */
+export interface LegacyAutomatoData {
+    tipo: AutomatoTipo;
+    estados: Estado[];
+    transicoes: Transicao[];
+    alfabeto?: string[];
+    alfabetoPilha?: string[];
+    simboloInicialPilha?: string;
+    pdaAcceptance?: PdaAcceptanceType;
+    descricao?: string;
+}
+
+/** Convert legacy data to typed automaton */
+export function fromLegacy(data: LegacyAutomatoData): AutomatoData {
+    switch (data.tipo) {
+        case 'AP':
+            return {
+                tipo: 'AP',
+                estados: data.estados,
+                transicoes: data.transicoes,
+                alfabeto: data.alfabeto,
+                alfabetoPilha: data.alfabetoPilha,
+                simboloInicialPilha: data.simboloInicialPilha,
+                pdaAcceptance: data.pdaAcceptance,
+                descricao: data.descricao,
+            };
+        default:
+            return {
+                tipo: data.tipo,
+                estados: data.estados,
+                transicoes: data.transicoes,
+                alfabeto: data.alfabeto,
+                descricao: data.descricao,
+            } as AutomatoData;
+    }
 }

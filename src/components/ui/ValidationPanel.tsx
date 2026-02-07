@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { AlertTriangle, XCircle, Info, CheckCircle2, ChevronRight, Lightbulb } from 'lucide-react';
 import type { ValidationIssue } from '../../utils/conversions';
 import type { AutomatoData } from '../../types';
@@ -14,11 +14,11 @@ interface ValidationPanelProps extends BaseProps {
 const IssueIcon = ({ type }: { type: ValidationIssue['type'] }) => {
     switch (type) {
         case 'error':
-            return <XCircle size={16} className="text-ios-red flex-shrink-0" />;
+            return <XCircle size={16} className="text-status-danger flex-shrink-0" />;
         case 'warning':
-            return <AlertTriangle size={16} className="text-ios-orange flex-shrink-0" />;
+            return <AlertTriangle size={16} className="text-status-warning flex-shrink-0" />;
         case 'info':
-            return <Info size={16} className="text-ios-blue flex-shrink-0" />;
+            return <Info size={16} className="text-status-info flex-shrink-0" />;
     }
 };
 
@@ -34,15 +34,15 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({ issues, automa
         <div className={`glass-panel rounded-2xl overflow-hidden ${className}`}>
             {/* Header */}
             <div className={`px-4 py-3 flex items-center gap-3 border-b border-default
-                ${isValid ? 'bg-green-50 dark:bg-green-900/10' : 'bg-red-50 dark:bg-red-900/10'}`}>
+                ${isValid ? 'bg-status-success-soft' : 'bg-status-danger-soft'}`}>
                 {isValid ? (
-                    <CheckCircle2 size={20} strokeWidth={3} className="text-ios-green" />
+                    <CheckCircle2 size={20} strokeWidth={3} className="text-status-success" />
                 ) : (
-                    <XCircle size={20} className="text-ios-red" />
+                    <XCircle size={20} className="text-status-danger" />
                 )}
                 <div className="flex-1">
                     <h4 className="font-bold text-sm text-primary">
-                        {isValid ? 'Autômato Válido' : 'Problemas Encontrados'}
+                        {isValid ? 'Autômato válido' : 'Problemas encontrados'}
                     </h4>
                     <p className="text-xs text-muted">
                         {automaton.tipo} • {automaton.estados.length} estados • {automaton.transicoes.length} transições
@@ -53,22 +53,22 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({ issues, automa
             {/* Stats */}
             <div className="px-4 py-3 flex gap-4 border-b border-default bg-surface-muted">
                 <div className="flex items-center gap-2">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold
-                        ${errorCount > 0 ? 'bg-ios-red text-white' : 'bg-surface-soft text-muted'}`}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
+                        ${errorCount > 0 ? 'bg-status-danger-soft text-status-danger' : 'bg-surface-soft text-muted'}`}>
                         {errorCount}
                     </div>
                     <span className="text-xs text-muted">Erros</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold
-                        ${warningCount > 0 ? 'bg-ios-orange text-white' : 'bg-surface-soft text-muted'}`}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
+                        ${warningCount > 0 ? 'bg-status-warning-soft text-status-warning' : 'bg-surface-soft text-muted'}`}>
                         {warningCount}
                     </div>
                     <span className="text-xs text-muted">Avisos</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold
-                        ${infoCount > 0 ? 'bg-ios-blue text-white' : 'bg-surface-soft text-muted'}`}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
+                        ${infoCount > 0 ? 'bg-status-info-soft text-status-info' : 'bg-surface-soft text-muted'}`}>
                         {infoCount}
                     </div>
                     <span className="text-xs text-muted">Info</span>
@@ -113,3 +113,4 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({ issues, automa
         </div>
     );
 };
+

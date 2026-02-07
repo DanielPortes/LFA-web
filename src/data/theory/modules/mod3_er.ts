@@ -1,4 +1,4 @@
-import type { CourseModule } from '../../../types';
+﻿import type { CourseModule } from '../../../types';
 import { er_thompson_a_ou_b, er_thompson_fecho } from '../automataDefs';
 
 export const mod3: CourseModule = {
@@ -48,7 +48,7 @@ export const mod3: CourseModule = {
                 {
                     type: 'example',
                     title: 'Bloco base: fecho (a*)',
-                    content: 'Note a transição de “pulo” do início para o fim e a de retorno para o loop.',
+                    content: 'Note a transicao de “pulo” do início para o fim e a de retorno para o loop.',
                     automatoRef: er_thompson_fecho
                 },
                 {
@@ -96,7 +96,7 @@ export const mod3: CourseModule = {
         {
             id: 'l3-elim',
             title: 'Eliminação de estados (AFD → ER)',
-            description: 'Convertendo autômatos em ERs.',
+            description: 'Convertendo automatos em ERs.',
             content: [
                 {
                     type: 'text',
@@ -122,3 +122,4 @@ export const mod3: CourseModule = {
         }
     ]
 };
+

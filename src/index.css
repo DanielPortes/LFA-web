@@ -108,6 +108,8 @@
         --bg-card: var(--color-surface-1);
         --bg-overlay: var(--color-surface-2);
         --bg-dock: var(--color-surface-3);
+        --surface-card: var(--color-surface-1);
+        --ios-blue: var(--color-ios-blue);
         --text-primary: var(--color-text-primary);
         --text-secondary: var(--color-text-secondary);
         --text-muted: var(--color-text-muted);
@@ -179,6 +181,7 @@
         background-color: var(--color-bg);
         color: var(--color-text-primary);
         font-family: var(--font-sans);
+        line-height: var(--line-normal);
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         transition: background-color var(--motion-slow) var(--motion-ease), color var(--motion-slow) var(--motion-ease);
@@ -187,9 +190,67 @@
         position: relative;
     }
 
-    /* Smooth transitions for all themed elements */
-    *, *::before, *::after {
-        transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow;
+    html {
+        scroll-padding-top: 6.5rem;
+    }
+
+    :focus-visible {
+        outline: 2px solid color-mix(in srgb, var(--color-info) 60%, transparent);
+        outline-offset: 2px;
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    [role="button"]:focus-visible {
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-info) 25%, transparent);
+    }
+
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .skip-link {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        z-index: 1000;
+        padding: 0.75rem 1rem;
+        border-radius: 999px;
+        background-color: var(--color-surface-2);
+        color: var(--color-text-primary);
+        border: 1px solid var(--color-border);
+        box-shadow: var(--shadow-apple-md);
+        transform: translateY(-200%);
+        transition: transform var(--motion-fast) var(--motion-ease);
+    }
+
+    .skip-link:focus-visible {
+        transform: translateY(0);
+    }
+
+    /* Limit transitions to interactive/surface elements to avoid jank. */
+    body,
+    button,
+    a,
+    input,
+    select,
+    textarea,
+    [role="button"],
+    .glass-panel,
+    .glass-card,
+    .glass-dock {
+        transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
         transition-duration: 0.3s;
         transition-timing-function: ease;
     }
@@ -557,6 +618,117 @@
     .surface-hover:active {
         background-color: var(--color-surface-soft);
     }
+
+    /* Status Tokens */
+    .text-status-info { color: var(--color-info); }
+    .text-status-success { color: var(--color-success); }
+    .text-status-warning { color: var(--color-warning); }
+    .text-status-danger { color: var(--color-danger); }
+    .text-status-accent { color: var(--color-accent); }
+
+    .bg-status-info-soft {
+        background-color: color-mix(in srgb, var(--color-info) 14%, transparent);
+    }
+
+    .bg-status-success-soft {
+        background-color: color-mix(in srgb, var(--color-success) 14%, transparent);
+    }
+
+    .bg-status-warning-soft {
+        background-color: color-mix(in srgb, var(--color-warning) 16%, transparent);
+    }
+
+    .bg-status-danger-soft {
+        background-color: color-mix(in srgb, var(--color-danger) 14%, transparent);
+    }
+
+    .bg-status-accent-soft {
+        background-color: color-mix(in srgb, var(--color-accent) 14%, transparent);
+    }
+
+    .border-status-info {
+        border-color: color-mix(in srgb, var(--color-info) 35%, transparent);
+    }
+
+    .border-status-success {
+        border-color: color-mix(in srgb, var(--color-success) 35%, transparent);
+    }
+
+    .border-status-warning {
+        border-color: color-mix(in srgb, var(--color-warning) 40%, transparent);
+    }
+
+    .border-status-danger {
+        border-color: color-mix(in srgb, var(--color-danger) 35%, transparent);
+    }
+
+    .border-status-accent {
+        border-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.125rem 0.5rem;
+        border-radius: 0.5rem;
+        font-size: var(--type-2xs);
+        font-weight: 700;
+        line-height: 1.2;
+        border: 1px solid transparent;
+    }
+
+    .badge-info {
+        color: var(--color-info);
+        background-color: color-mix(in srgb, var(--color-info) 12%, transparent);
+        border-color: color-mix(in srgb, var(--color-info) 30%, transparent);
+    }
+
+    .badge-success {
+        color: var(--color-success);
+        background-color: color-mix(in srgb, var(--color-success) 12%, transparent);
+        border-color: color-mix(in srgb, var(--color-success) 30%, transparent);
+    }
+
+    .badge-warning {
+        color: var(--color-warning);
+        background-color: color-mix(in srgb, var(--color-warning) 14%, transparent);
+        border-color: color-mix(in srgb, var(--color-warning) 35%, transparent);
+    }
+
+    .badge-danger {
+        color: var(--color-danger);
+        background-color: color-mix(in srgb, var(--color-danger) 12%, transparent);
+        border-color: color-mix(in srgb, var(--color-danger) 30%, transparent);
+    }
+
+    .badge-accent {
+        color: var(--color-accent);
+        background-color: color-mix(in srgb, var(--color-accent) 12%, transparent);
+        border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+    }
+
+    .status-hover-info:hover {
+        background-color: color-mix(in srgb, var(--color-info) 12%, transparent);
+    }
+
+    .status-hover-danger:hover {
+        background-color: color-mix(in srgb, var(--color-danger) 12%, transparent);
+    }
+
+    /* Shared overlays and modal surfaces */
+    .overlay-backdrop {
+        @apply fixed inset-0 z-[100] flex items-center justify-center p-4;
+        background-color: color-mix(in srgb, #000 48%, transparent);
+        backdrop-filter: blur(8px);
+    }
+
+    .overlay-surface {
+        @apply rounded-3xl border overflow-hidden backdrop-blur-2xl;
+        background-color: var(--color-surface-1);
+        border-color: var(--color-border);
+        box-shadow: var(--shadow-apple-xl);
+    }
 }
 
 /* Pattern Adjustments */
@@ -584,8 +756,20 @@
 
 /* Global cursor hide when custom cursor is active */
 body.custom-cursor-active,
-body.custom-cursor-active * {
+body.custom-cursor-active *:not(input):not(textarea):not(select):not([contenteditable="true"]) {
     cursor: none !important;
+}
+
+body.custom-cursor-active input,
+body.custom-cursor-active textarea,
+body.custom-cursor-active select,
+body.custom-cursor-active [contenteditable="true"] {
+    cursor: text !important;
+}
+
+body.custom-cursor-active.custom-cursor-paused,
+body.custom-cursor-active.custom-cursor-paused * {
+    cursor: auto !important;
 }
 
 /* Animation Utilities */
@@ -772,5 +956,209 @@ body.custom-cursor-active * {
     body::after,
     .bg-accent-orb {
         animation: none !important;
+    }
+}
+
+/* App ambient background (route-aware) */
+body::before,
+body::after {
+    content: none !important;
+}
+
+.bg-accent-orb {
+    display: none !important;
+}
+
+.page-ambient {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.page-ambient__mesh {
+    position: absolute;
+    inset: -12%;
+    background-image: var(--ambient-mesh);
+    opacity: calc(var(--ambient-intensity) * 0.72);
+    transform: scale(1.03);
+    filter: blur(10px);
+    transition: opacity 500ms ease, background-image 500ms ease;
+}
+
+.page-ambient__orb {
+    position: absolute;
+    border-radius: 999px;
+    filter: blur(70px);
+    opacity: calc(var(--ambient-intensity) * 0.56);
+    will-change: transform, opacity;
+    transition: background 500ms ease, opacity 500ms ease;
+}
+
+.page-ambient__orb--a {
+    width: min(56vw, 720px);
+    height: min(56vw, 720px);
+    left: -12vw;
+    top: -20vh;
+    background: var(--ambient-orb-a);
+}
+
+.page-ambient__orb--b {
+    width: min(48vw, 620px);
+    height: min(48vw, 620px);
+    right: -10vw;
+    top: 12vh;
+    background: var(--ambient-orb-b);
+}
+
+.page-ambient__orb--c {
+    width: min(44vw, 560px);
+    height: min(44vw, 560px);
+    left: 28vw;
+    bottom: -26vh;
+    background: var(--ambient-orb-c);
+}
+
+.page-ambient__flash {
+    position: absolute;
+    inset: -8%;
+    background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.06), transparent 58%);
+    opacity: 0;
+}
+
+.page-ambient--home .page-ambient__orb--a {
+    animation: ambient-home-a 23s ease-in-out infinite alternate;
+}
+
+.page-ambient--home .page-ambient__orb--b {
+    animation: ambient-home-b 27s ease-in-out infinite alternate;
+}
+
+.page-ambient--home .page-ambient__orb--c {
+    animation: ambient-home-c 31s ease-in-out infinite alternate;
+}
+
+.page-ambient--conteudo .page-ambient__orb--a {
+    animation: ambient-content-a 28s ease-in-out infinite alternate;
+}
+
+.page-ambient--conteudo .page-ambient__orb--b {
+    animation: ambient-content-b 34s ease-in-out infinite alternate;
+}
+
+.page-ambient--conteudo .page-ambient__orb--c {
+    animation: ambient-content-c 36s ease-in-out infinite alternate;
+}
+
+.page-ambient--exercicios .page-ambient__orb--a {
+    animation: ambient-exercises-a 30s ease-in-out infinite alternate;
+}
+
+.page-ambient--exercicios .page-ambient__orb--b {
+    animation: ambient-exercises-b 36s ease-in-out infinite alternate;
+}
+
+.page-ambient--exercicios .page-ambient__orb--c {
+    animation: ambient-exercises-c 42s ease-in-out infinite alternate;
+}
+
+.page-ambient--simulador .page-ambient__mesh {
+    opacity: calc(var(--ambient-intensity) * 0.55);
+}
+
+.page-ambient--simulador .page-ambient__orb {
+    animation: none !important;
+    opacity: calc(var(--ambient-intensity) * 0.35);
+}
+
+.page-ambient.is-transitioning .page-ambient__flash {
+    animation: ambient-flash 820ms ease-out;
+}
+
+.page-ambient.is-transitioning .page-ambient__orb--a {
+    animation-duration: 11s;
+}
+
+.page-ambient.is-transitioning .page-ambient__orb--b {
+    animation-duration: 13s;
+}
+
+.page-ambient.is-transitioning .page-ambient__orb--c {
+    animation-duration: 15s;
+}
+
+.page-ambient.is-static .page-ambient__mesh {
+    opacity: calc(var(--ambient-intensity) * 0.4);
+}
+
+.page-ambient.is-static .page-ambient__orb {
+    animation: none !important;
+    transform: none !important;
+    opacity: calc(var(--ambient-intensity) * 0.35);
+}
+
+@keyframes ambient-home-a {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to { transform: translate3d(10vw, 10vh, 0) scale(1.1); }
+}
+
+@keyframes ambient-home-b {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to { transform: translate3d(-8vw, 6vh, 0) scale(1.08); }
+}
+
+@keyframes ambient-home-c {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to { transform: translate3d(-6vw, -10vh, 0) scale(1.06); }
+}
+
+@keyframes ambient-content-a {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to { transform: translate3d(7vw, 5vh, 0) scale(1.05); }
+}
+
+@keyframes ambient-content-b {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to { transform: translate3d(-6vw, 4vh, 0) scale(1.04); }
+}
+
+@keyframes ambient-content-c {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to { transform: translate3d(4vw, -7vh, 0) scale(1.05); }
+}
+
+@keyframes ambient-exercises-a {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to { transform: translate3d(4vw, 4vh, 0) scale(1.03); }
+}
+
+@keyframes ambient-exercises-b {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to { transform: translate3d(-4vw, 3vh, 0) scale(1.02); }
+}
+
+@keyframes ambient-exercises-c {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to { transform: translate3d(3vw, -4vh, 0) scale(1.02); }
+}
+
+@keyframes ambient-flash {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    40% {
+        opacity: 0.2;
+    }
+    to {
+        opacity: 0;
+        transform: scale(1.03);
+    }
+}
+
+@media (max-width: 768px) {
+    .page-ambient__orb {
+        filter: blur(48px);
     }
 }

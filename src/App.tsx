@@ -1,120 +1,154 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ThemeProvider } from './hooks/ThemeContext';
 import type { AutomatoData, Tab } from './types';
 import { CustomCursor, SettingsModal, ToastProvider, Tutorial, useTutorial } from './components/ui';
 import { getAutomatonFromUrl } from './utils/sharing';
 import { UiSettingsProvider } from './hooks/UiSettingsContext';
-import { useUrlState } from './hooks/useUrlState';
-import { TopNav } from './components/layout';
+import { PageAmbientBackground, TopNav } from './components/layout';
+import { useRouteState } from './features/navigation';
 
 import { HomeSection } from './pages/Home';
 import { ConteudoSection } from './pages/Content';
 import { ExerciciosSection } from './pages/Exercises';
 import { SimulatorPage } from './pages/Simulator';
 
+const cloneAutomaton = (data: AutomatoData): AutomatoData => {
+    if (typeof structuredClone === 'function') {
+        return structuredClone(data);
+    }
+    return JSON.parse(JSON.stringify(data)) as AutomatoData;
+};
+
 function MainApp() {
-    const {
-        activeTab,
-        setActiveTab,
-        contentSelection,
-        setContentSelection,
-        exerciseSelection,
-        setExerciseSelection,
-        updateUrl
-    } = useUrlState();
-    const [pendingSimulatorData, setPendingSimulatorData] = useState<AutomatoData | undefined>(undefined);
+    const { route, updateRoute } = useRouteState();
+    const [pendingSimulatorData, setPendingSimulatorData] = useState<AutomatoData | undefined>(() => {
+        const fromUrl = getAutomatonFromUrl();
+        return fromUrl ? cloneAutomaton(fromUrl) : undefined;
+    });
     const { showTutorial, setShowTutorial, completeTutorial } = useTutorial();
     const [showSettings, setShowSettings] = useState(false);
-    const setTabAndClear = useCallback((
-        tab: Tab,
-        replace = false,
-        extraUpdates: Record<string, string | number | null | undefined> = {}
-    ) => {
-        setActiveTab(tab);
-        updateUrl({
-            tab,
-            module: null,
-            lesson: null,
-            cat: null,
-            ex: null,
-            ...extraUpdates
-        }, replace);
-    }, [setActiveTab, updateUrl]);
+    const [ambientTransitionKey, setAmbientTransitionKey] = useState(0);
+    const sharedAutomatonHandled = useRef(false);
 
-    // Check for automaton in URL on load
     useEffect(() => {
-        const urlAutomaton = getAutomatonFromUrl();
-        if (urlAutomaton) {
-            setPendingSimulatorData(urlAutomaton);
-            setTabAndClear('simulador', true, { automaton: null });
+        if (sharedAutomatonHandled.current) return;
+        if (!pendingSimulatorData) return;
+
+        sharedAutomatonHandled.current = true;
+        updateRoute(
+            { tab: 'simulador' },
+            { replace: true, stripAutomaton: true }
+        );
+    }, [pendingSimulatorData, updateRoute]);
+
+    const triggerAmbientTransition = useCallback(() => {
+        setAmbientTransitionKey((previous) => previous + 1);
+    }, []);
+
+    const navigateToTab = useCallback((tab: Tab) => {
+        if (tab === 'home') {
+            updateRoute({ tab, moduleId: null, lessonId: null, categoryId: null, exerciseId: null });
+            return;
         }
-    }, [setTabAndClear, updateUrl]);
+        if (tab === 'conteudo') {
+            updateRoute({ tab, categoryId: null, exerciseId: null });
+            return;
+        }
+        if (tab === 'exercicios') {
+            updateRoute({ tab, moduleId: null, lessonId: null });
+            return;
+        }
+        updateRoute({ tab, moduleId: null, lessonId: null, categoryId: null, exerciseId: null });
+    }, [updateRoute]);
 
-    const handleTabChange = (tab: Tab) => setTabAndClear(tab);
-
-    const handleSimulationRequest = useCallback((data: AutomatoData) => {
-        setPendingSimulatorData(data);
-        setTabAndClear('simulador');
-    }, [setTabAndClear]);
-
-    const handleContentSelectionChange = useCallback((moduleId: string | undefined, lessonId: string | undefined) => {
-        setContentSelection({ moduleId, lessonId });
-        updateUrl({ tab: 'conteudo', module: moduleId, lesson: lessonId });
-    }, [updateUrl]);
-
-    const handleExerciseSelectionChange = useCallback((categoryId: string, exerciseId: number | null) => {
-        setExerciseSelection({ categoryId, exerciseId });
-        updateUrl({ tab: 'exercicios', cat: categoryId, ex: exerciseId ?? undefined });
-    }, [updateUrl]);
-
-    useEffect(() => {
-        if (activeTab === 'simulador' && pendingSimulatorData) {
+    const handleTabChange = useCallback((tab: Tab) => {
+        if (tab === route.tab) return;
+        if (tab !== 'simulador') {
             setPendingSimulatorData(undefined);
         }
-    }, [activeTab, pendingSimulatorData]);
+        triggerAmbientTransition();
+        navigateToTab(tab);
+    }, [navigateToTab, route.tab, triggerAmbientTransition]);
+
+    const handleSimulationRequest = useCallback((data: AutomatoData) => {
+        setPendingSimulatorData(cloneAutomaton(data));
+        if (route.tab !== 'simulador') {
+            triggerAmbientTransition();
+        }
+        navigateToTab('simulador');
+    }, [navigateToTab, route.tab, triggerAmbientTransition]);
+
+    const handleContentSelectionChange = useCallback((moduleId: string | undefined, lessonId: string | undefined) => {
+        updateRoute({
+            tab: 'conteudo',
+            moduleId: moduleId ?? null,
+            lessonId: lessonId ?? null
+        });
+    }, [updateRoute]);
+
+    const handleExerciseSelectionChange = useCallback((categoryId: string, exerciseId: number | null) => {
+        updateRoute({
+            tab: 'exercicios',
+            categoryId: categoryId ?? null,
+            exerciseId
+        });
+    }, [updateRoute]);
 
     return (
         <div className="min-h-screen flex flex-col pb-6 relative font-sans">
+            <PageAmbientBackground tab={route.tab} transitionKey={ambientTransitionKey} />
+
+            <a href="#main-content" className="skip-link">
+                Pular para o conteúdo principal
+            </a>
+
             <CustomCursor />
+
             <TopNav
-                activeTab={activeTab}
+                activeTab={route.tab}
                 onTabChange={handleTabChange}
                 onShowTutorial={() => setShowTutorial(true)}
                 onShowSettings={() => setShowSettings(true)}
             />
 
             <main
-                className={`transition-all duration-500 ${
-                    activeTab === 'simulador'
-                        ? 'relative flex-1 w-full max-w-none mx-0 px-0 mt-0'
-                        : 'flex-1 w-full max-w-[1600px] mx-auto px-4 md:px-8 mt-24 md:mt-28'
+                id="main-content"
+                className={`relative z-10 transition-all duration-500 ${
+                    route.tab === 'simulador'
+                        ? 'flex-1 min-h-0 w-full max-w-none mx-0 px-0 mt-0'
+                        : 'flex-1 w-full max-w-[1600px] mx-auto px-4 md:px-8 mt-28 md:mt-32'
                 }`}
             >
-                <div className={`transition-opacity duration-300 ${activeTab === 'home' ? 'block' : 'hidden'}`}>
+                <div className={`transition-opacity duration-300 ${route.tab === 'home' ? 'block' : 'hidden'}`}>
                     <HomeSection onNavigate={handleTabChange} />
                 </div>
 
-                {activeTab === 'conteudo' && (
+                {route.tab === 'conteudo' && (
                     <ConteudoSection
                         onSimulate={handleSimulationRequest}
-                        initialModuleId={contentSelection.moduleId}
-                        initialLessonId={contentSelection.lessonId}
+                        initialModuleId={route.moduleId}
+                        initialLessonId={route.lessonId}
                         onSelectionChange={handleContentSelectionChange}
                     />
                 )}
 
-                {activeTab === 'exercicios' && (
+                {route.tab === 'exercicios' && (
                     <ExerciciosSection
                         onSimulate={handleSimulationRequest}
-                        initialCategoryId={exerciseSelection.categoryId}
-                        initialExerciseId={exerciseSelection.exerciseId}
+                        initialCategoryId={route.categoryId}
+                        initialExerciseId={route.exerciseId}
                         onSelectionChange={handleExerciseSelectionChange}
                     />
                 )}
-                {activeTab === 'simulador' && <SimulatorPage initialData={pendingSimulatorData} />}
+
+                {route.tab === 'simulador' && (
+                    <SimulatorPage
+                        initialData={pendingSimulatorData}
+                        onInitialDataConsumed={() => setPendingSimulatorData(undefined)}
+                    />
+                )}
             </main>
 
-            {/* Tutorial Overlay */}
             <Tutorial
                 isOpen={showTutorial}
                 onClose={() => setShowTutorial(false)}

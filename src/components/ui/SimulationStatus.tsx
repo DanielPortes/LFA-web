@@ -26,25 +26,25 @@ export const SimulationStatus: React.FC<SimulationStatusProps> = ({
             case 'accepted':
                 return {
                     icon: CheckCircle2,
-                    color: 'text-ios-green',
-                    bg: 'bg-green-50 dark:bg-green-900/20',
-                    border: 'border-ios-green/30',
+                    color: 'text-status-success',
+                    bg: 'bg-status-success-soft',
+                    border: 'border-status-success',
                     label: 'Aceita'
                 };
             case 'rejected':
                 return {
                     icon: XCircle,
-                    color: 'text-ios-red',
-                    bg: 'bg-red-50 dark:bg-red-900/20',
-                    border: 'border-ios-red/30',
+                    color: 'text-status-danger',
+                    bg: 'bg-status-danger-soft',
+                    border: 'border-status-danger',
                     label: 'Rejeitada'
                 };
             case 'running':
                 return {
                     icon: AlertTriangle,
-                    color: 'text-ios-orange',
-                    bg: 'bg-orange-50 dark:bg-orange-900/20',
-                    border: 'border-ios-orange/30',
+                    color: 'text-status-warning',
+                    bg: 'bg-status-warning-soft',
+                    border: 'border-status-warning',
                     label: 'Executando'
                 };
             default:

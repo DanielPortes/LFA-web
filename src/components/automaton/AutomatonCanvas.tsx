@@ -1,6 +1,6 @@
 import React, { useRef, useState, useMemo, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import type { Estado, Transicao, AutomatoData, Tool } from '../../types';
-import { calculatePath, getMousePos, calculateControlPoint, calculateControlOffsetFromPoint } from '../../utils/geometry';
+import { calculatePath, getMousePos, calculateControlPoint, calculateControlOffsetFromPoint, getQuadraticXY } from '../../utils/geometry';
 import { calculateOptimalCurvatures, calculateSmartLabelPositions, calculateLabelWidth } from '../../utils/layout';
 import { EPSILON_SYMBOL } from '../../utils/symbols';
 import { parseTuringTransition } from '../../utils/turingLogic';
@@ -29,6 +29,7 @@ interface CanvasProps {
 const GRID_SIZE = 40;
 const STATE_RADIUS = 28;
 const MIN_STATE_SPACING = 96;
+const TRANSITION_HINT_STORAGE_KEY = 'lfa-transition-control-hint-dismissed';
 
 // Safe ID Generator
 const generateId = (prefix: string = 'id') => `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
@@ -77,15 +78,27 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
 
     // Use refs for drag positions to avoid re-renders
     const dragPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
-    const [, forceUpdate] = useState(0);
+    const [renderTick, setRenderTick] = useState(0);
     const rafRef = useRef<number | null>(null);
+    const controlPointDraftRef = useRef<{ transitionId: string; controlPoint: { x: number; y: number } } | null>(null);
+    const [showTransitionHint, setShowTransitionHint] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return localStorage.getItem(TRANSITION_HINT_STORAGE_KEY) !== '1';
+    });
 
     const scheduleRender = useCallback(() => {
         if (rafRef.current !== null) return;
         rafRef.current = requestAnimationFrame(() => {
             rafRef.current = null;
-            forceUpdate(n => n + 1);
+            setRenderTick((n) => n + 1);
         });
+    }, []);
+
+    const dismissTransitionHint = useCallback(() => {
+        setShowTransitionHint(false);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(TRANSITION_HINT_STORAGE_KEY, '1');
+        }
     }, []);
 
     // Get rendered position of a state (with drag offset applied)
@@ -104,49 +117,111 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
     // Internal Pan state if not controlled
     const [pan, setPanInternal] = useState({ x: 0, y: 0 });
     const currentPan = externalPan ?? pan;
-    const setPan = onPanChange ?? setPanInternal;
+
+    // Store callbacks in refs to avoid dependency issues
+    const onPanChangeRef = useRef(onPanChange);
+    const onZoomChangeRef = useRef(onZoomChange);
+    const onTransformChangeRef = useRef(onTransformChange);
+    const onFitToContentRef = useRef(onFitToContent);
+    const onFocusHandledRef = useRef(onFocusHandled);
+
+    useEffect(() => { onPanChangeRef.current = onPanChange; }, [onPanChange]);
+    useEffect(() => { onZoomChangeRef.current = onZoomChange; }, [onZoomChange]);
+    useEffect(() => { onTransformChangeRef.current = onTransformChange; }, [onTransformChange]);
+    useEffect(() => { onFitToContentRef.current = onFitToContent; }, [onFitToContent]);
+    useEffect(() => { onFocusHandledRef.current = onFocusHandled; }, [onFocusHandled]);
+
+    // Stable setPan function
+    const setPan = useCallback((newPan: { x: number; y: number }) => {
+        if (onPanChangeRef.current) {
+            onPanChangeRef.current(newPan);
+        } else {
+            setPanInternal(newPan);
+        }
+    }, []);
 
     // Selection Box
     const [isSelecting, setIsSelecting] = useState(false);
     const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
     const [selectionEnd, setSelectionEnd] = useState({ x: 0, y: 0 });
 
-    // Initial Center
+    // Initial Center - run once when states appear
     const hasAutoFitRef = useRef(false);
+    // Start from empty history to ensure first mount with preloaded states triggers centering.
+    const stateCountRef = useRef(0);
+    const stateIdsRef = useRef<Set<string>>(new Set());
+
     useEffect(() => {
-        if (data.estados.length === 0) {
+        const prevCount = stateCountRef.current;
+        const currentCount = data.estados.length;
+        const prevIds = stateIdsRef.current;
+        const currentIds = new Set(data.estados.map((s) => s.id));
+        const overlapCount = [...currentIds].filter((id) => prevIds.has(id)).length;
+        const overlapRatio = prevCount > 0
+            ? overlapCount / Math.max(prevCount, currentCount || 1)
+            : 0;
+        const replacedMostStates = prevCount > 0 && currentCount > 0 && overlapRatio < 0.35;
+
+        stateCountRef.current = currentCount;
+        stateIdsRef.current = currentIds;
+
+        if (currentCount === 0) {
             hasAutoFitRef.current = false;
             return;
         }
-        if (!svgRef.current || !onFitToContent) return;
+        if (!svgRef.current) return;
+
+        const isInitialLoad = prevCount === 0 && currentCount > 0;
+        const shouldRefitForReplacement = replacedMostStates;
         const isDefaultView = Math.abs(currentPan.x) < 0.5
             && Math.abs(currentPan.y) < 0.5
             && Math.abs(zoom - 1) < 0.001;
-        if (!hasAutoFitRef.current && isDefaultView) {
-            hasAutoFitRef.current = true;
-            onFitToContent();
-        }
-    }, [data.estados.length, currentPan.x, currentPan.y, onFitToContent, zoom]);
 
-    // Handle External Focus
+        if (shouldRefitForReplacement) {
+            hasAutoFitRef.current = false;
+        }
+
+        if (!hasAutoFitRef.current && isDefaultView && (isInitialLoad || shouldRefitForReplacement)) {
+            hasAutoFitRef.current = true;
+            onFitToContentRef.current?.();
+        }
+    }, [data.estados, currentPan.x, currentPan.y, zoom]);
+
+    // Handle External Focus - use ref to avoid callback dependency loops
+    const focusHandledRef = useRef<string | null>(null);
+
     useEffect(() => {
-        if (!focusStateId) return;
+        // Reset when focusStateId is cleared
+        if (!focusStateId) {
+            focusHandledRef.current = null;
+            return;
+        }
+        // Prevent handling the same focus twice
+        if (focusHandledRef.current === focusStateId) return;
+
         const target = data.estados.find(s => s.id === focusStateId);
         if (!target) return;
+
+        focusHandledRef.current = focusStateId;
         setSelection({ type: 'state', id: target.id });
         setSelectedStateIds([target.id]);
+
         if (svgRef.current) {
             const rect = svgRef.current.getBoundingClientRect();
             const newPan = {
                 x: rect.width / 2 - target.x * zoom,
                 y: rect.height / 2 - target.y * zoom
             };
-            
-            if (onPanChange) onPanChange(newPan);
-            else setPanInternal(newPan);
+
+            const currentPanVal = panRef.current;
+            const panDelta = Math.abs(currentPanVal.x - newPan.x) + Math.abs(currentPanVal.y - newPan.y);
+
+            if (panDelta > 1) {
+                setPan(newPan);
+            }
         }
-        onFocusHandled?.();
-    }, [focusStateId, data.estados, zoom, onFocusHandled, onPanChange]); // Removed setPan from deps to avoid conflict
+        onFocusHandledRef.current?.();
+    }, [focusStateId, data.estados, zoom, setPan]);
 
     // Space key for panning
     const isSpacePressed = useRef(false);
@@ -161,27 +236,58 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
                 isSpacePressed.current = false;
             }
         };
+        // Reset modifier on window blur (prevents stuck keys)
+        const handleBlur = () => {
+            isSpacePressed.current = false;
+        };
         window.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
+        window.addEventListener('blur', handleBlur);
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
+            window.removeEventListener('blur', handleBlur);
         };
     }, [readOnly]);
 
-    const deleteState = (id: string) => {
+    const deleteState = useCallback((id: string) => {
         onChange({
             ...data,
             estados: data.estados.filter(e => e.id !== id),
             transicoes: data.transicoes.filter(t => t.de !== id && t.para !== id)
         });
         setSelection(null);
-    };
+    }, [data, onChange]);
 
-    const deleteTransition = (id: string) => {
+    const deleteTransition = useCallback((id: string) => {
         onChange({ ...data, transicoes: data.transicoes.filter(t => t.id !== id) });
         setSelection(null);
-    };
+    }, [data, onChange]);
+
+    const commitControlPointDraft = useCallback(() => {
+        const draft = controlPointDraftRef.current;
+        if (!draft) return;
+
+        const currentTransition = data.transicoes.find((t) => t.id === draft.transitionId);
+        controlPointDraftRef.current = null;
+
+        if (!currentTransition) return;
+
+        const previous = currentTransition.controlPoint;
+        const next = draft.controlPoint;
+        const changed = !previous
+            || Math.abs(previous.x - next.x) > 0.01
+            || Math.abs(previous.y - next.y) > 0.01;
+
+        if (!changed) return;
+
+        onChange({
+            ...data,
+            transicoes: data.transicoes.map((t) =>
+                t.id === draft.transitionId ? { ...t, controlPoint: next } : t
+            )
+        });
+    }, [data, onChange]);
 
     // Shortcuts
     useEffect(() => {
@@ -209,7 +315,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selection, selectedStateIds, data, readOnly, deleteState, deleteTransition]);
+    }, [selection, selectedStateIds, data, readOnly, deleteState, deleteTransition, onChange]);
 
     useEffect(() => {
         const closeMenu = () => setContextMenu(null);
@@ -217,7 +323,46 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         return () => window.removeEventListener('click', closeMenu);
     }, []);
 
-    const snapToGridValue = (value: number) => snapToGrid ? Math.round(value / GRID_SIZE) * GRID_SIZE : value;
+    // Global mouseup handler to commit drag even if mouse leaves window
+    useEffect(() => {
+        const handleGlobalMouseUp = () => {
+            if (isDraggingRef.current && dragTypeRef.current === 'state') {
+                // Commit drag positions to data
+                const newEstados = data.estados.map(s => {
+                    const override = dragPositionsRef.current[s.id];
+                    if (override) {
+                        return { ...s, x: override.x, y: override.y };
+                    }
+                    return s;
+                });
+
+                if (Object.keys(dragPositionsRef.current).length > 0) {
+                    onChange({ ...data, estados: newEstados });
+                }
+                dragPositionsRef.current = {};
+            }
+            if (isDraggingRef.current && dragTypeRef.current === 'controlPoint') {
+                commitControlPointDraft();
+            }
+            isDraggingRef.current = false;
+            dragTypeRef.current = 'pan';
+            dragTargetRef.current = null;
+            setCreatingTransition(null);
+            setIsSelecting(false);
+            scheduleRender();
+        };
+
+        window.addEventListener('mouseup', handleGlobalMouseUp);
+        window.addEventListener('blur', handleGlobalMouseUp);
+        return () => {
+            window.removeEventListener('mouseup', handleGlobalMouseUp);
+            window.removeEventListener('blur', handleGlobalMouseUp);
+        };
+    }, [data, onChange, commitControlPointDraft, scheduleRender]);
+
+    const snapToGridValue = useCallback((value: number) => (
+        snapToGrid ? Math.round(value / GRID_SIZE) * GRID_SIZE : value
+    ), [snapToGrid]);
 
     // Refs for zoom handler to avoid stale closure values
     const zoomRef = useRef(zoom);
@@ -262,13 +407,13 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
             const newPanX = mouseX - worldX * newZoom;
             const newPanY = mouseY - worldY * newZoom;
 
-            // Update zoom and pan atomically if possible
-            if (onTransformChange) {
-                onTransformChange(newZoom, { x: newPanX, y: newPanY });
+            // Update zoom and pan atomically if possible - use refs for callbacks
+            if (onTransformChangeRef.current) {
+                onTransformChangeRef.current(newZoom, { x: newPanX, y: newPanY });
             } else {
-                if (onZoomChange) onZoomChange(newZoom);
-                if (onPanChange) {
-                    onPanChange({ x: newPanX, y: newPanY });
+                if (onZoomChangeRef.current) onZoomChangeRef.current(newZoom);
+                if (onPanChangeRef.current) {
+                    onPanChangeRef.current({ x: newPanX, y: newPanY });
                 } else {
                     setPanInternal({ x: newPanX, y: newPanY });
                 }
@@ -277,7 +422,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
 
         container.addEventListener('wheel', handleWheel, { passive: false });
         return () => container.removeEventListener('wheel', handleWheel);
-    }, [onZoomChange, onPanChange, onTransformChange]);
+    }, []); // Empty deps - callbacks are accessed via refs
 
     // Smart position finding using golden angle spiral
     const findFreeSpot = useCallback((x: number, y: number): { x: number, y: number } => {
@@ -314,6 +459,25 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         return { x: x + MIN_STATE_SPACING + 20, y };
     }, [data.estados, snapToGrid]);
 
+    const createStateAtLogical = useCallback((rawX: number, rawY: number) => {
+        if (readOnly) return;
+
+        const targetX = snapToGridValue(rawX);
+        const targetY = snapToGridValue(rawY);
+        const freeSpot = findFreeSpot(targetX, targetY);
+
+        const newState: Estado = {
+            id: generateId('q'),
+            label: getNextStateLabel(data.estados),
+            x: freeSpot.x,
+            y: freeSpot.y,
+            isFinal: false,
+            isInicial: data.estados.length === 0
+        };
+
+        onChange({ ...data, estados: [...data.estados, newState] });
+    }, [data, findFreeSpot, onChange, readOnly, snapToGridValue]);
+
     // Track Ctrl key for cursor
     const [isCtrlPressed, setIsCtrlPressed] = useState(false);
     useEffect(() => {
@@ -323,17 +487,24 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         const handleKeyUp = (e: KeyboardEvent) => {
             if (e.key === 'Control') setIsCtrlPressed(false);
         };
+        // Reset on window blur (prevents stuck modifier)
+        const handleBlur = () => {
+            setIsCtrlPressed(false);
+        };
         window.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
+        window.addEventListener('blur', handleBlur);
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
+            window.removeEventListener('blur', handleBlur);
         };
     }, []);
 
     // --- Interaction Handlers ---
 
     const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+        containerRef.current?.focus({ preventScroll: true });
         if (onInteract) onInteract();
         const pos = getMousePos(e.nativeEvent as any, svgRef.current);
         const isTouch = 'touches' in e;
@@ -356,21 +527,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
             if (tool === 'state' && !readOnly) {
                 const rawX = (pos.x - currentPan.x) / zoom;
                 const rawY = (pos.y - currentPan.y) / zoom;
-
-                let targetX = snapToGridValue(rawX);
-                let targetY = snapToGridValue(rawY);
-
-                const freeSpot = findFreeSpot(targetX, targetY);
-
-                const newState: Estado = {
-                    id: generateId('q'),
-                    label: getNextStateLabel(data.estados),
-                    x: freeSpot.x,
-                    y: freeSpot.y,
-                    isFinal: false,
-                    isInicial: data.estados.length === 0
-                };
-                onChange({ ...data, estados: [...data.estados, newState] });
+                createStateAtLogical(rawX, rawY);
             } else if (tool === 'pointer') {
                 // Start Selection Box
                 if (!(e as React.MouseEvent).shiftKey) {
@@ -388,8 +545,20 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         }
     };
 
+    const handleDoubleClick = (e: React.MouseEvent) => {
+        if (readOnly) return;
+        if (tool !== 'pointer') return;
+        if ((e.target as Element).tagName !== 'svg') return;
+
+        const pos = getMousePos(e.nativeEvent, svgRef.current);
+        const logicalX = (pos.x - currentPan.x) / zoom;
+        const logicalY = (pos.y - currentPan.y) / zoom;
+        createStateAtLogical(logicalX, logicalY);
+    };
+
     const handleStateMouseDown = (e: React.MouseEvent | React.TouchEvent, stateId: string) => {
         e.stopPropagation();
+        containerRef.current?.focus({ preventScroll: true });
         if (readOnly) return;
         if (onInteract) onInteract();
 
@@ -439,9 +608,10 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         dragPositionsRef.current = {};
     };
 
-    const handleControlPointMouseDown = (e: React.MouseEvent, transId: string) => {
+    const handleControlPointMouseDown = useCallback((e: React.MouseEvent, transId: string) => {
         e.stopPropagation();
         e.preventDefault();
+        containerRef.current?.focus({ preventScroll: true });
         if (readOnly) return;
 
         const pos = getMousePos(e.nativeEvent, svgRef.current);
@@ -451,8 +621,16 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         dragTargetRef.current = transId;
         dragStartRef.current = { x: pos.x, y: pos.y };
 
+        const currentTransition = data.transicoes.find((t) => t.id === transId);
+        if (currentTransition?.controlPoint) {
+            controlPointDraftRef.current = { transitionId: transId, controlPoint: { ...currentTransition.controlPoint } };
+        } else {
+            controlPointDraftRef.current = null;
+        }
+
         setSelection({ type: 'transition', id: transId });
-    };
+        scheduleRender();
+    }, [readOnly, data.transicoes, scheduleRender]);
 
     const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
         const pos = getMousePos(e.nativeEvent as any, svgRef.current);
@@ -502,14 +680,8 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
                     };
 
                     const newControlPoint = calculateControlOffsetFromPoint(source, target, logicalMouse);
-
-                    // Update immediately for real-time feedback
-                    onChange({
-                        ...data,
-                        transicoes: data.transicoes.map(t =>
-                            t.id === transId ? { ...t, controlPoint: newControlPoint } : t
-                        )
-                    });
+                    controlPointDraftRef.current = { transitionId: transId, controlPoint: newControlPoint };
+                    scheduleRender();
                 }
             }
         } else if (creatingTransition) {
@@ -539,10 +711,14 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
                 }
                 dragPositionsRef.current = {};
             }
+            if (dragTypeRef.current === 'controlPoint') {
+                commitControlPointDraft();
+            }
 
             isDraggingRef.current = false;
             dragTypeRef.current = 'pan';
             dragTargetRef.current = null;
+            scheduleRender();
         } else if (creatingTransition) {
             const targetState = [...data.estados].reverse().find(s => {
                 const logicalMouse = creatingTransition.toPoint;
@@ -622,6 +798,8 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
 
     // Pre-calculate curvatures and label positions
     const { curvatures, labelPositions, labelTexts } = useMemo(() => {
+        // Used as an explicit recompute signal while dragging refs mutate outside React state.
+        void renderTick;
         const renderedStates = data.estados.map(s => getRenderState(s));
 
         // Calculate curvatures
@@ -654,7 +832,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         );
 
         return { curvatures, labelPositions, labelTexts };
-    }, [data, getRenderState]);
+    }, [data, getRenderState, renderTick]);
 
     const selectionDockStyle = useMemo(() => {
         if (!selection || readOnly) return undefined;
@@ -748,7 +926,10 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
             const target = getRenderState(targetBase);
 
             const curvature = curvatures.get(t.id) || 0;
-            const controlPointOffset = t.controlPoint ?? null;
+            const controlPointDraft = controlPointDraftRef.current?.transitionId === t.id
+                ? controlPointDraftRef.current.controlPoint
+                : null;
+            const controlPointOffset = controlPointDraft ?? t.controlPoint ?? null;
 
             const pathD = calculatePath(source, target, curvature, controlPointOffset);
 
@@ -760,7 +941,15 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
 
             const labelText = labelTexts.get(t.id) || '?';
             const labelWidth = calculateLabelWidth(labelText);
-            const labelPos = labelPositions.get(t.id) || { x: (source.x + target.x) / 2, y: (source.y + target.y) / 2 };
+            const labelAnchor = source.id === target.id
+                ? { x: source.x, y: source.y - (52 + Math.abs(curvature) * 0.5) }
+                : getQuadraticXY(0.5, source.x, source.y, controlPoint.x, controlPoint.y, target.x, target.y);
+            const labelPos = controlPointDraft
+                ? labelAnchor
+                : (labelPositions.get(t.id) || labelAnchor);
+            const connectorDx = labelPos.x - labelAnchor.x;
+            const connectorDy = labelPos.y - labelAnchor.y;
+            const shouldRenderConnector = Math.sqrt(connectorDx * connectorDx + connectorDy * connectorDy) > 14;
 
             elements.push(
                 <g
@@ -799,6 +988,18 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
 
                     {/* Label with smart positioning */}
                     <g transform={`translate(${labelPos.x}, ${labelPos.y})`}>
+                        {shouldRenderConnector && (
+                            <line
+                                x1={labelAnchor.x - labelPos.x}
+                                y1={labelAnchor.y - labelPos.y}
+                                x2={0}
+                                y2={0}
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeDasharray="3,3"
+                                className="text-muted pointer-events-none opacity-80"
+                            />
+                        )}
                         <rect
                             x={-labelWidth / 2}
                             y="-12"
@@ -855,7 +1056,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         }
 
         return elements;
-    }, [data, selection, selectedTransitionIds, activeTransitions, readOnly, curvatures, labelPositions, labelTexts, getRenderState]);
+    }, [data, selection, selectedTransitionIds, activeTransitions, readOnly, curvatures, labelPositions, labelTexts, getRenderState, handleControlPointMouseDown]);
 
     const creatingFromState = creatingTransition
         ? data.estados.find(e => e.id === creatingTransition.from)
@@ -873,7 +1074,10 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
     return (
         <div
             ref={containerRef}
-            className="w-full h-full relative overflow-hidden select-none bg-canvas"
+            className="w-full h-full relative overflow-hidden select-none bg-canvas focus:outline-none"
+            tabIndex={0}
+            data-automaton-editor="true"
+            aria-label="Canvas do autômato"
         >
             <div className={`absolute inset-0 bg-grid-pattern pointer-events-none ${snapToGrid ? 'grid-active' : 'opacity-60'}`} />
 
@@ -884,6 +1088,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
+                onDoubleClick={handleDoubleClick}
                 onContextMenu={handleContextMenu}
             >
                 <defs>
@@ -958,7 +1163,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
                                 {data.tipo === 'Moore' && s.output && (
                                     <g transform="translate(0, -36)">
                                         <rect x="-10" y="-8" width="20" height="16" rx="4" className="fill-[var(--surface-muted)] stroke-[var(--border-color)]" strokeWidth="1" />
-                                        <text dy="3" textAnchor="middle" className="text-[9px] font-bold fill-[var(--text-secondary)] font-mono">
+                                        <text dy="3" textAnchor="middle" className="text-[10px] font-bold fill-[var(--text-secondary)] font-mono">
                                             {s.output}
                                         </text>
                                     </g>
@@ -1031,22 +1236,9 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
                                     if (rect) {
                                         const mouseX = contextMenu.x - rect.left;
                                         const mouseY = contextMenu.y - rect.top;
-                                        let x = (mouseX - currentPan.x) / zoom;
-                                        let y = (mouseY - currentPan.y) / zoom;
-                                        if (snapToGrid) {
-                                            x = Math.round(x / GRID_SIZE) * GRID_SIZE;
-                                            y = Math.round(y / GRID_SIZE) * GRID_SIZE;
-                                        }
-                                        const freeSpot = findFreeSpot(x, y);
-                                        const newState: Estado = {
-                                            id: generateId('q'),
-                                            label: getNextStateLabel(data.estados),
-                                            x: freeSpot.x,
-                                            y: freeSpot.y,
-                                            isFinal: false,
-                                            isInicial: data.estados.length === 0
-                                        };
-                                        onChange({ ...data, estados: [...data.estados, newState] });
+                                        const x = (mouseX - currentPan.x) / zoom;
+                                        const y = (mouseY - currentPan.y) / zoom;
+                                        createStateAtLogical(x, y);
                                     }
                                 }
                             },
@@ -1054,9 +1246,9 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
                                 label: 'Resetar View',
                                 icon: <RotateCcw size={14} />,
                                 action: () => {
-                                    if (onFitToContent) onFitToContent();
+                                    if (onFitToContentRef.current) onFitToContentRef.current();
                                     else {
-                                        if (onZoomChange) onZoomChange(1);
+                                        if (onZoomChangeRef.current) onZoomChangeRef.current(1);
                                         setPan({ x: 0, y: 0 });
                                     }
                                 }
@@ -1086,7 +1278,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
                                 <>
                                     <div className="h-6 w-px bg-border"></div>
                                     <div className="flex flex-col gap-1">
-                                        <span className="ui-kicker-2xs text-muted">Saida</span>
+                                        <span className="ui-kicker-2xs text-muted">Saída</span>
                                         <input
                                             value={data.estados.find(e => e.id === selection.id)?.output ?? ''}
                                             onChange={(e) => onChange({
@@ -1118,7 +1310,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
                     ) : (
                         <div className="flex flex-col gap-1">
                             <span className="ui-kicker-2xs text-muted">
-                                {isTuringMachine ? 'Leitura/Escrita' : (data.tipo === 'AP' ? 'Rotulo' : 'Simbolo(s)')}
+                                {isTuringMachine ? 'Leitura/Escrita' : (data.tipo === 'AP' ? 'Rótulo' : 'Símbolo(s)')}
                             </span>
                             {isTuringMachine ? (
                                 <div className="flex gap-2 items-center">
@@ -1163,7 +1355,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
                                             ...data,
                                             transicoes: data.transicoes.map(t => t.id === selection.id ? { ...t, simbolo: EPSILON_SYMBOL } : t)
                                         })}
-                                        className="px-2 py-1.5 rounded-md text-xs font-bold text-ios-blue bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                                        className="px-2 py-1.5 rounded-md text-xs font-bold text-status-info bg-status-info-soft border border-status-info status-hover-info transition-colors"
                                         title={`Inserir ${EPSILON_SYMBOL}`}
                                     >
                                         {EPSILON_SYMBOL}
@@ -1176,7 +1368,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
                                                 transicoes: data.transicoes.map(t => t.id === selection.id ? { ...t, output: e.target.value } : t)
                                             })}
                                             className="w-16 bg-surface-muted rounded-md px-3 py-1.5 text-center font-mono font-bold text-sm outline-none focus:ring-2 ring-ios-blue/50 text-primary"
-                                            placeholder="saida"
+                                            placeholder="saída"
                                         />
                                     )}
                                 </div>
@@ -1185,8 +1377,28 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
                     )}
                 </div>
             )}
+
+            {!readOnly && showTransitionHint && selection?.type === 'transition' && !contextMenu && (
+                <div className="absolute left-1/2 top-6 -translate-x-1/2 z-[60] glass-panel px-4 py-3 rounded-2xl max-w-md">
+                    <div className="text-xs font-semibold text-primary">
+                        Dica rápida: arraste o ponto azul para curvar a transição.
+                    </div>
+                    <div className="text-xs text-secondary mt-1">
+                        O rótulo acompanha a curva e uma linha auxiliar aparece quando ele precisa se afastar.
+                    </div>
+                    <div className="mt-2 flex justify-end">
+                        <button
+                            onClick={dismissTransitionHint}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold text-ios-blue hover:bg-status-info-soft transition-colors"
+                        >
+                            Entendi
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 });
 
 AutomatonCanvas.displayName = 'AutomatonCanvas';
+

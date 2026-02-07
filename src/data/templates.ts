@@ -1,4 +1,4 @@
-import type { AutomatoData } from '../types';
+﻿import type { AutomatoData } from '../types';
 
 export interface AutomatonTemplate {
     id: string;
@@ -13,13 +13,13 @@ export const automatonTemplates: AutomatonTemplate[] = [
     {
         id: 'empty',
         name: 'Vazio',
-        description: 'Canvas em branco para criar seu autômato',
+        description: 'Canvas em branco para criar seu automato',
         category: 'basic',
         data: {
             tipo: 'AFD',
             estados: [],
             transicoes: [],
-            descricao: 'Novo Autômato'
+            descricao: 'Novo Automato'
         }
     },
     {
@@ -429,7 +429,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
     {
         id: 'exactly-one-a',
         name: 'Exatamente um a',
-        description: 'Strings com exatamente um símbolo a',
+        description: 'Strings com exatamente um simbolo a',
         category: 'string',
         data: {
             tipo: 'AFD',
@@ -495,7 +495,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
     {
         id: 'afn-epsilon',
         name: 'AFN-eps: União',
-        description: 'AFN com transições épsilon (a* | b*)',
+        description: 'AFN com transicoes épsilon (a* | b*)',
         category: 'advanced',
         data: {
             tipo: 'AFN',
@@ -628,7 +628,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
     {
         id: 'pda-anbn',
         name: 'AP: a^n b^n',
-        description: 'Autômato de pilha para a^n b^n',
+        description: 'Automato de pilha para a^n b^n',
         category: 'advanced',
         data: {
             tipo: 'AP',
@@ -753,7 +753,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
                 { id: 't1', de: 'q0', para: 'q0', simbolo: '0', output: '1', curvatura: -30 },
                 { id: 't2', de: 'q0', para: 'q0', simbolo: '1', output: '0', curvatura: 30 }
             ],
-            descricao: 'Transições rotuladas como entrada/saída.'
+            descricao: 'Transicoes rotuladas como entrada/saída.'
         }
     }
 ];
@@ -766,6 +766,7 @@ export const templateCategories = [
     { id: 'turing', name: 'Turing', icon: 'HardDrive' },
     { id: 'advanced', name: 'Avancados', icon: 'Zap' }
 ];
+
 
 
 

@@ -1,4 +1,4 @@
-import type { CourseModule } from '../../../types';
+﻿import type { CourseModule } from '../../../types';
 
 export const mod9: CourseModule = {
     id: 'mod9',
@@ -6,7 +6,7 @@ export const mod9: CourseModule = {
     lessons: [
         {
             id: 'l9-output',
-            title: 'Autômatos com saída',
+            title: 'Automatos com saída',
             description: 'Transdutores finitos.',
             content: [
                 {
@@ -16,7 +16,7 @@ export const mod9: CourseModule = {
                 {
                     type: 'definition',
                     title: 'Máquina de Mealy (sextupla)',
-                    content: 'M = (Σ, Q, δ, q0, F, Δ), com δ: Q × Σ → Q × Δ*. A saída é gerada na transição.'
+                    content: 'M = (Σ, Q, δ, q0, F, Δ), com δ: Q × Σ → Q × Δ*. A saída é gerada na transicao.'
                 },
                 {
                     type: 'definition',
@@ -37,3 +37,4 @@ export const mod9: CourseModule = {
         }
     ]
 };
+

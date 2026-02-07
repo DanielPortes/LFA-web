@@ -21,6 +21,37 @@ function pushStep(steps: ConversionStep[], title: string, detail: string): void 
     steps.push({ title, detail });
 }
 
+function unwrapOuterBraces(value: string): string {
+    let result = value.trim();
+    while (result.startsWith('{') && result.endsWith('}')) {
+        let depth = 0;
+        let wrapsWhole = true;
+        for (let i = 0; i < result.length; i += 1) {
+            const ch = result[i];
+            if (ch === '{') depth += 1;
+            if (ch === '}') depth -= 1;
+            if (depth === 0 && i < result.length - 1) {
+                wrapsWhole = false;
+                break;
+            }
+            if (depth < 0) {
+                wrapsWhole = false;
+                break;
+            }
+        }
+        if (!wrapsWhole || depth !== 0) break;
+        result = result.slice(1, -1).trim();
+    }
+    return result;
+}
+
+function normalizeStateLabel(value?: string): string {
+    const raw = value?.trim() ?? '';
+    if (!raw) return raw;
+    const unwrapped = unwrapOuterBraces(raw);
+    return unwrapped || raw;
+}
+
 /**
  * Minimize a DFA using Hopcroft's algorithm
  */
@@ -53,15 +84,12 @@ export function minimizeDfa(dfa: AutomatoData): AutomatoData {
     }
 
     // Include dead state if needed
-    if (!reachable.has(DEAD_STATE) && alphabet.length > 0) {
-        const hasMissing = dfa.estados.some(state =>
-            alphabet.some(symbol => !transitionMap.get(state.id)?.has(symbol))
-        );
-        if (hasMissing) {
-            reachable.add(DEAD_STATE);
-        }
+    const hasMissingTransitions = dfa.estados.some(state =>
+        alphabet.some(symbol => !transitionMap.get(state.id)?.has(symbol))
+    );
+    if (!reachable.has(DEAD_STATE) && alphabet.length > 0 && hasMissingTransitions) {
+        reachable.add(DEAD_STATE);
     }
-
     // Initial partitions: final vs non-final
     const finals = new Set(dfa.estados.filter(s => s.isFinal).map(s => s.id));
     const nonFinals = new Set(Array.from(reachable).filter(id => !finals.has(id)));
@@ -104,7 +132,7 @@ export function minimizeDfa(dfa: AutomatoData): AutomatoData {
     }
 
     // Build minimized automaton
-    const stateLabelMap = new Map(dfa.estados.map(s => [s.id, s.label || s.id]));
+    const stateLabelMap = new Map(dfa.estados.map(s => [s.id, normalizeStateLabel(s.label || s.id)]));
     const partitionIds = new Map<string, string>();
     const partitionRepresentatives = new Map<string, string>();
 
@@ -188,14 +216,13 @@ export function minimizeDfaWithSteps(dfa: AutomatoData): ConversionWithSteps {
         pushStep(steps, 'Inalcancaveis removidos', removed.join(', '));
     }
 
-    if (!reachable.has(DEAD_STATE) && alphabet.length > 0) {
-        const hasMissing = dfa.estados.some(state =>
-            alphabet.some(symbol => !transitionMap.get(state.id)?.has(symbol))
-        );
-        if (hasMissing) {
-            reachable.add(DEAD_STATE);
-        }
+    const hasMissingTransitions = dfa.estados.some(state =>
+        alphabet.some(symbol => !transitionMap.get(state.id)?.has(symbol))
+    );
+    if (!reachable.has(DEAD_STATE) && alphabet.length > 0 && hasMissingTransitions) {
+        reachable.add(DEAD_STATE);
     }
+    const addedDeadState = hasMissingTransitions && !dfa.estados.some(s => s.id === DEAD_STATE);
 
     const finals = new Set(dfa.estados.filter(s => s.isFinal).map(s => s.id));
     const nonFinals = new Set(Array.from(reachable).filter(id => !finals.has(id)));
@@ -243,7 +270,26 @@ export function minimizeDfaWithSteps(dfa: AutomatoData): ConversionWithSteps {
         }
     }
 
-    const stateLabelMap = new Map(dfa.estados.map(s => [s.id, s.label || s.id]));
+    const hasMerge = partitions.some(group => group.size > 1);
+    if (!hasMerge) {
+        pushStep(steps, 'Sem fusoes', 'Nenhum par de estados equivalente encontrado.');
+    }
+    if (hasMissingTransitions) {
+        pushStep(
+            steps,
+            'AFD incompleto',
+            addedDeadState
+                ? 'Estado morto adicionado para completar transicoes.'
+                : 'Transicoes faltantes direcionadas ao estado morto.'
+        );
+    }
+    const isMinimal = !hasMerge && removed.length === 0;
+    const needsCompletion = hasMissingTransitions;
+    if (isMinimal && !needsCompletion) {
+        pushStep(steps, 'AFD ja minimo', 'Nenhuma simplificacao necessaria.');
+    }
+
+    const stateLabelMap = new Map(dfa.estados.map(s => [s.id, normalizeStateLabel(s.label || s.id)]));
     const partitionIds = new Map<string, string>();
     const partitionRepresentatives = new Map<string, string>();
 
@@ -289,6 +335,8 @@ export function minimizeDfaWithSteps(dfa: AutomatoData): ConversionWithSteps {
             transicoes: mergeTransitions(minimizedTransitions),
             descricao: `AFD minimizado de ${dfa.descricao || 'AFD'}`
         },
-        steps
+        steps,
+        isMinimal,
+        needsCompletion
     };
 }

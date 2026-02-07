@@ -63,7 +63,7 @@ export const TuringTape: React.FC<TuringTapeProps> = ({
                             `}
                         >
                             {symbol === BLANK ? <span className="text-muted opacity-20">{BLANK}</span> : symbol}
-                            <span className="absolute bottom-0.5 right-1 text-[8px] text-muted opacity-50">{index}</span>
+                            <span className="absolute bottom-0.5 right-1 text-[10px] text-muted opacity-55">{index}</span>
                         </div>
                     );
                 })}

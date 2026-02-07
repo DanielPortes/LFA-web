@@ -3,6 +3,23 @@ import { X } from 'lucide-react';
 import { useDialog } from '../../hooks/useDialog';
 import type { BaseProps, ModalBaseProps, WithChildren } from './types';
 
+// Global modal counter to handle stacked modals correctly
+let openModalCount = 0;
+
+const lockScroll = () => {
+    openModalCount++;
+    if (openModalCount === 1) {
+        document.body.style.overflow = 'hidden';
+    }
+};
+
+const unlockScroll = () => {
+    openModalCount = Math.max(0, openModalCount - 1);
+    if (openModalCount === 0) {
+        document.body.style.overflow = 'unset';
+    }
+};
+
 interface ModalProps extends ModalBaseProps, WithChildren, BaseProps {
     title?: string;
 }
@@ -18,11 +35,11 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, 
             setIsVisible(true);
             // Small delay to allow render before animation starts
             requestAnimationFrame(() => setIsAnimating(true));
-            document.body.style.overflow = 'hidden';
+            lockScroll();
+            return () => unlockScroll();
         } else {
             setIsAnimating(false);
             const timer = setTimeout(() => setIsVisible(false), 300); // Match transition duration
-            document.body.style.overflow = 'unset';
             return () => clearTimeout(timer);
         }
     }, [isOpen]);
@@ -61,6 +78,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, 
                     <button
                         onClick={onClose}
                         className="p-2 rounded-full hover:bg-surface-muted text-secondary transition-colors"
+                        aria-label="Fechar"
                     >
                         <X size={20} />
                     </button>

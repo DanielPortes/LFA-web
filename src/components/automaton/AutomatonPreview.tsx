@@ -34,7 +34,7 @@ export const AutomatonPreview: React.FC<AutomatonPreviewProps> = ({ data, classN
             viewBox={viewBox}
             className={`w-full h-full ${className}`}
             role="img"
-            aria-label="Pre-visualizacao do automato"
+            aria-label="Pré-visualização do autômato"
         >
             <defs>
                 <marker id="preview-arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse">

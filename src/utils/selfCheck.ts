@@ -1,4 +1,4 @@
-import type { AutomatoData } from '../types';
+﻿import type { AutomatoData } from '../types';
 import { getEpsilonClosure, performStep } from './automatonLogic';
 import { nfaToDfa, regexToNfa } from './conversions';
 import { EPSILON_SYMBOL } from './symbols';
@@ -46,12 +46,12 @@ export const runSelfCheck = (): SelfCheckResult[] => {
         };
         const step = performStep(['q0'], 'a', automaton.transicoes);
         results.push({
-            name: 'Transição simples',
+            name: 'Transicao simples',
             ok: step.length === 1 && step[0] === 'q1',
             details: step.join(',')
         });
     } catch (e) {
-        results.push({ name: 'Transição simples', ok: false, details: String(e) });
+        results.push({ name: 'Transicao simples', ok: false, details: String(e) });
     }
 
     try {
@@ -67,3 +67,4 @@ export const runSelfCheck = (): SelfCheckResult[] => {
 
     return results;
 };
+

@@ -70,3 +70,53 @@ export const BREAKPOINTS = {
     XL: 1280,
     XXL: 1536
 } as const;
+
+// Simulator mode constants
+export const SIMULATOR_MODE = {
+    AUTOMATON: 'automaton',
+    GRAMMAR: 'grammar',
+} as const;
+
+export type SimulatorModeType = typeof SIMULATOR_MODE[keyof typeof SIMULATOR_MODE];
+
+// Tokenization mode constants
+export const TOKENIZATION_MODE = {
+    AUTO: 'auto',
+    CHAR: 'char',
+    SEPARATOR: 'separator',
+} as const;
+
+export type TokenizationModeType = typeof TOKENIZATION_MODE[keyof typeof TOKENIZATION_MODE];
+
+// Derivation strategy constants
+export const DERIVATION_STRATEGY = {
+    LEFTMOST: 'leftmost',
+    RIGHTMOST: 'rightmost',
+} as const;
+
+export type DerivationStrategyType = typeof DERIVATION_STRATEGY[keyof typeof DERIVATION_STRATEGY];
+
+// Element types for selection/interaction
+export const ELEMENT_TYPE = {
+    STATE: 'state',
+    TRANSITION: 'transition',
+    NONE: null,
+} as const;
+
+// Validation issue types
+export const VALIDATION_TYPE = {
+    ERROR: 'error',
+    WARNING: 'warning',
+    INFO: 'info',
+} as const;
+
+export type ValidationTypeValue = typeof VALIDATION_TYPE[keyof typeof VALIDATION_TYPE];
+
+// Theme constants
+export const THEME = {
+    LIGHT: 'light',
+    DARK: 'dark',
+    SYSTEM: 'system',
+} as const;
+
+export type ThemeType = typeof THEME[keyof typeof THEME];
