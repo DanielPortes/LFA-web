@@ -366,7 +366,7 @@ export function intersectionAutomata(a: AutomatoData, b: AutomatoData): Automato
         // Find the original keys and resolve
         productStates.forEach((s) => {
             if (t.de === s.id) {
-                const originalPair = Array.from(stateMap.entries()).find(([_, v]) => v === s.id)?.[0];
+                const originalPair = Array.from(stateMap.entries()).find(([, v]) => v === s.id)?.[0];
                 if (originalPair) {
                     const [aId, bId] = originalPair.split('::');
                     const nextA = mapA.get(aId)?.get(t.simbolo) ?? DEAD_STATE;

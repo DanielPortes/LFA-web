@@ -71,11 +71,9 @@ export const TemplatesGallery: React.FC<TemplatesGalleryProps> = ({ isOpen, onCl
                                     <h4 className="font-bold text-sm text-primary group-hover:text-ios-blue transition-colors">
                                         {template.name}
                                     </h4>
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase flex-shrink-0
-                                        ${template.data.tipo === 'AFD'
-                                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                                            : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                                        }`}>
+                                    <span className={`badge uppercase flex-shrink-0 ${
+                                        template.data.tipo === 'AFD' ? 'badge-info' : 'badge-accent'
+                                    }`}>
                                         {template.data.tipo}
                                     </span>
                                 </div>

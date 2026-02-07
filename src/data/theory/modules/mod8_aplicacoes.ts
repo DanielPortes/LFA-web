@@ -1,4 +1,4 @@
-import type { CourseModule } from '../../../types';
+﻿import type { CourseModule } from '../../../types';
 import { pacman_grafo_antes, pacman_grafo_depois } from '../automataDefs';
 
 export const mod8: CourseModule = {
@@ -24,7 +24,7 @@ export const mod8: CourseModule = {
                 {
                     type: 'definition',
                     title: 'Gramática de grafos',
-                    content: 'Assim como gramáticas de cadeias substituem um símbolo por uma sequência, gramáticas de grafos substituem um subgrafo por outro subgrafo, modelando estruturas complexas e sistemas concorrentes.'
+                    content: 'Assim como gramáticas de cadeias substituem um simbolo por uma sequência, gramáticas de grafos substituem um subgrafo por outro subgrafo, modelando estruturas complexas e sistemas concorrentes.'
                 },
                 {
                     type: 'example',
@@ -47,3 +47,4 @@ export const mod8: CourseModule = {
         }
     ]
 };
+

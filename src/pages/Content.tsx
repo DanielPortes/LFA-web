@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useId, useCallback } from 'react';
 import {
     ChevronRight,
     BookOpen,
@@ -176,6 +176,7 @@ const ContentBlockRenderer = ({ block, onSimulate, onExpand }: { block: ContentB
                                                     onClick={() => onExpand(block.automatoRef!)}
                                                     className="p-2 bg-surface-2 hover:bg-surface-1 text-primary rounded-lg backdrop-blur-sm transition-colors border border-default"
                                                     title="Expandir visualização"
+                                                    aria-label="Expandir visualização do autômato"
                                                 >
                                                     <Maximize2 size={16} />
                                                 </button>
@@ -192,13 +193,14 @@ const ContentBlockRenderer = ({ block, onSimulate, onExpand }: { block: ContentB
                                             <div className="ui-kicker text-ios-green text-center">Depois</div>
                                             <div className="h-72 bg-canvas rounded-2xl border-2 border-ios-green/20 overflow-hidden relative shadow-inner group-hover:shadow-md transition-shadow">
                                                 <div className="absolute top-2 right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                                    <button
-                                                        onClick={() => onExpand(block.automatoRef2!)}
-                                                        className="p-2 bg-surface-2 hover:bg-surface-1 text-primary rounded-lg backdrop-blur-sm transition-colors border border-default"
-                                                        title="Expandir visualização"
-                                                    >
-                                                        <Maximize2 size={16} />
-                                                    </button>
+                                                <button
+                                                    onClick={() => onExpand(block.automatoRef2!)}
+                                                    className="p-2 bg-surface-2 hover:bg-surface-1 text-primary rounded-lg backdrop-blur-sm transition-colors border border-default"
+                                                    title="Expandir visualização"
+                                                    aria-label="Expandir visualização do autômato"
+                                                >
+                                                    <Maximize2 size={16} />
+                                                </button>
                                                 </div>
                                                 <AutomatonPreview data={block.automatoRef2} />
                                             </div>
@@ -259,12 +261,12 @@ const ContentBlockRenderer = ({ block, onSimulate, onExpand }: { block: ContentB
 };
 
 export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, onSelectionChange }: ContentProps) => {
-    const getModuleById = (moduleId?: string) =>
-        courseModules.find(m => m.id === moduleId) ?? courseModules[0];
-    const getLessonById = (moduleId?: string, lessonId?: string) => {
+    const getModuleById = useCallback((moduleId?: string) =>
+        courseModules.find(m => m.id === moduleId) ?? courseModules[0], []);
+    const getLessonById = useCallback((moduleId?: string, lessonId?: string) => {
         const mod = getModuleById(moduleId);
         return mod.lessons.find(l => l.id === lessonId) ?? mod.lessons[0];
-    };
+    }, [getModuleById]);
 
     const initialModule = getModuleById(initialModuleId);
     const initialLesson = getLessonById(initialModule.id, initialLessonId);
@@ -274,6 +276,7 @@ export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, 
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const [selectedAutomaton, setSelectedAutomaton] = useState<AutomatoData | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const sidebarId = useId();
 
     const {
         progress,
@@ -321,7 +324,7 @@ export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, 
         const nextLesson = getLessonById(nextModule.id, initialLessonId);
         setActiveModuleId(prev => (prev === nextModule.id ? prev : nextModule.id));
         setActiveLessonId(prev => (prev === nextLesson.id ? prev : nextLesson.id));
-    }, [initialModuleId, initialLessonId]);
+    }, [initialModuleId, initialLessonId, getModuleById, getLessonById]);
 
     useEffect(() => {
         markLessonVisited(activeLessonId);
@@ -364,30 +367,67 @@ export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, 
             .find(({ lesson }) => lesson.id === progress.lastVisited)
         : null;
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return undefined;
+        if (!isSidebarOpen || window.innerWidth >= 768) return undefined;
+
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, [isSidebarOpen]);
+
+    useEffect(() => {
+        if (!isSidebarOpen) return undefined;
+        const onEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setSidebarOpen(false);
+            }
+        };
+        window.addEventListener('keydown', onEscape);
+        return () => window.removeEventListener('keydown', onEscape);
+    }, [isSidebarOpen]);
+
     return (
-        <div className="flex h-[calc(100vh-8rem)] relative overflow-hidden">
-            <div className="md:hidden fixed bottom-6 right-6 z-50">
+        <div className="relative flex w-full min-w-0 min-h-[calc(100dvh-9.5rem)] md:h-[calc(100dvh-9.5rem)] gap-4 md:gap-6 md:pb-4">
+            <div className="md:hidden fixed bottom-6 right-6 z-[60]">
                 <button
+                    type="button"
                     onClick={() => setSidebarOpen(!isSidebarOpen)}
-                    className="bg-ios-blue text-white p-4 rounded-full shadow-apple-xl flex items-center justify-center active:scale-95 transition-transform"
+                    aria-expanded={isSidebarOpen}
+                    aria-controls={sidebarId}
+                    aria-label={isSidebarOpen ? 'Fechar menu de conteúdo' : 'Abrir menu de conteúdo'}
+                    className="bg-ios-blue text-white p-4 rounded-full shadow-apple-xl flex items-center justify-center active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/75"
                 >
                     {isSidebarOpen ? <X size={24} /> : <ListFilter size={24} />}
                 </button>
             </div>
 
+            {isSidebarOpen && (
+                <button
+                    className="md:hidden fixed inset-0 z-30 bg-black/45 backdrop-blur-[2px]"
+                    onClick={() => setSidebarOpen(false)}
+                    aria-label="Fechar menu de conteúdo"
+                />
+            )}
+
             <aside className={`
-                fixed md:relative inset-y-0 left-0 z-40 w-80
-                bg-surface-1-95 backdrop-blur-2xl md:bg-transparent md:backdrop-blur-none
+                fixed md:relative top-[5.5rem] bottom-0 md:top-auto md:bottom-auto left-0 z-40 w-[88vw] max-w-[22rem]
+                md:w-[22rem] md:max-w-[22rem] md:min-w-[22rem]
+                ${isSidebarOpen ? 'bg-surface-1-95 backdrop-blur-2xl' : 'bg-transparent'}
+                md:bg-transparent md:backdrop-blur-none
                 border-r border-default md:border-r-0
                 transform transition-transform duration-300 ease-in-out
                 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-                flex flex-col h-full shadow-2xl md:shadow-none
-            `}>
-                <div className="md:glass-panel md:rounded-3xl h-full flex flex-col overflow-hidden shadow-sm md:mr-4">
-                    <div className="p-6 border-b border-default bg-surface-1 backdrop-blur-md sticky top-0 z-10">
+                flex flex-col md:h-full
+            `} id={sidebarId}>
+                <div className="glass-panel rounded-3xl h-full min-w-0 flex flex-col overflow-hidden shadow-apple-md">
+                    <div className="p-6 border-b border-default bg-surface-1/80 backdrop-blur-md sticky top-0 z-20 rounded-t-3xl">
                         <div className="flex items-center gap-2 mb-3">
-                            <div className="w-2 h-2 rounded-full bg-ios-green animate-pulse" />
-                            <h2 className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">DCC063 • LFA</h2>
+                            <div className="w-2 h-2 rounded-full bg-ios-green" />
+                            <h2 className="text-xs font-black text-secondary uppercase tracking-[0.2em]">DCC063 • LFA</h2>
                         </div>
                         <div className="text-2xl font-bold text-primary flex items-center gap-3">
                             <GraduationCap size={28} className="text-ios-blue" />
@@ -404,6 +444,7 @@ export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, 
                                         onClick={resetProgress}
                                         className="p-1 text-secondary hover:text-ios-red transition-colors"
                                         title="Resetar progresso"
+                                        aria-label="Resetar progresso"
                                     >
                                         <RotateCcw size={12} />
                                     </button>
@@ -420,7 +461,7 @@ export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, 
                         {lastVisitedLesson && lastVisitedLesson.lesson.id !== activeLessonId && (
                             <button
                                 onClick={() => handleNavigate(lastVisitedLesson.moduleId, lastVisitedLesson.lesson.id)}
-                                className="mt-4 w-full py-2 rounded-xl text-xs font-bold text-ios-blue bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                                className="mt-4 w-full py-2 rounded-xl text-xs font-bold text-status-info bg-status-info-soft border border-status-info hover:bg-ios-blue hover:text-white transition-colors"
                             >
                                 Continuar de onde parei
                             </button>
@@ -432,15 +473,16 @@ export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, 
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Buscar lição..."
+                                aria-label="Buscar lição"
                                 className="w-full px-3 py-2 rounded-xl bg-surface-2 border border-default text-sm font-medium text-primary outline-none focus:ring-2 ring-ios-blue/40 shadow-inner"
                             />
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto custom-scrollbar p-2 pb-20">
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-2 pb-6">
                         {filteredModules.map((module, modIdx) => (
                             <div key={module.id} className="mb-6 last:mb-0">
-                                <div className="px-4 py-3 flex items-center gap-3 sticky top-0 bg-surface-1-95 backdrop-blur z-10 border-b border-transparent rounded-t-xl">
+                                <div className="px-4 py-3 flex items-center gap-3 sticky top-0 bg-surface-1/90 backdrop-blur z-10 border-b border-transparent rounded-lg">
                                     <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center text-xs font-bold text-secondary font-mono">
                                         {modIdx + 1}
                                     </span>
@@ -459,18 +501,18 @@ export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, 
                                             <button
                                                 key={lesson.id}
                                                 onClick={() => handleNavigate(module.id, lesson.id)}
-                                                className={`group w-full text-left pl-10 pr-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 relative overflow-hidden flex items-center gap-2
+                                                className={`group w-full text-left pl-10 pr-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 relative overflow-hidden flex items-start gap-2
                                                     ${isActive
-                                                        ? 'text-ios-blue bg-blue-50/50 dark:bg-blue-900/20 font-bold shadow-sm'
+                                                        ? 'text-status-info bg-status-info-soft font-bold shadow-sm'
                                                         : 'text-secondary hover:text-primary hover:bg-black/5 dark:hover:bg-white/5'
                                                     }`}
                                             >
-                                                {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-ios-blue"></div>}
-                                                <span className="truncate flex-1">{lesson.title}</span>
+                                                {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-ios-blue rounded-r-full"></div>}
+                                                <span className="flex-1 leading-snug py-0.5">{lesson.title}</span>
                                                 {isCompleted ? (
-                                                    <CircleCheck size={14} strokeWidth={3} className="text-ios-green flex-shrink-0" />
+                                                    <CircleCheck size={14} strokeWidth={3} className="text-ios-green flex-shrink-0 mt-1" />
                                                 ) : (
-                                                    <Circle size={14} className="text-secondary flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    <Circle size={14} className="text-secondary flex-shrink-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                 )}
                                             </button>
                                         );
@@ -490,10 +532,10 @@ export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, 
 
             <main
                 id="main-content-scroll"
-                className="flex-1 overflow-y-auto custom-scrollbar scroll-smooth rounded-3xl glass-panel border border-transparent md:border-default"
+                className="flex-1 min-w-0 overflow-y-auto custom-scrollbar scroll-smooth rounded-2xl md:rounded-3xl glass-panel border border-transparent md:border-default pb-10"
             >
                 <div className="max-w-6xl mx-auto py-10 px-6 md:px-12 pb-32">
-                    <header className="mb-12 animate-fade-in">
+                    <header className="mb-12 animate-fade-in glass-card p-6 md:p-8">
                         <div className="flex flex-wrap items-center gap-2 ui-kicker text-secondary mb-6">
                             <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded-md">Módulo {courseModules.findIndex(m => m.id === activeModuleId) + 1}</span>
                             <ChevronRight size={10} />
@@ -596,3 +638,6 @@ export const ConteudoSection = ({ onSimulate, initialModuleId, initialLessonId, 
         </div>
     );
 };
+
+
+

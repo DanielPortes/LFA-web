@@ -1,15 +1,21 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Play, Trash2, Plus, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import type { AutomatoData } from '../../types';
 import { getEpsilonClosure, performStep } from '../../utils/automatonLogic';
 import { tokenizeInput } from '../../utils/symbols';
 import type { BaseProps } from './types';
 
+// Constants for limits
+const MAX_TEST_CASES = 100;
+const MAX_INPUT_LENGTH = 1000;
+const MAX_TOKENS = 500;
+
 interface TestCase {
     id: string;
     input: string;
     expected?: 'accept' | 'reject';
-    result?: 'accepted' | 'rejected' | 'running';
+    result?: 'accepted' | 'rejected' | 'running' | 'error';
+    error?: string;
 }
 
 interface BatchTestPanelProps extends BaseProps {
@@ -24,11 +30,25 @@ export const BatchTestPanel: React.FC<BatchTestPanelProps> = ({ automaton, onClo
     const [isRunning, setIsRunning] = useState(false);
     const [newInput, setNewInput] = useState('');
 
+    // Ref for cancellation
+    const cancelledRef = useRef(false);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            cancelledRef.current = true;
+        };
+    }, []);
+
     const addTestCase = () => {
         if (!newInput.trim() && newInput !== '') return;
+        // Limit number of test cases
+        if (testCases.length >= MAX_TEST_CASES) return;
+        // Limit input length
+        const input = newInput.slice(0, MAX_INPUT_LENGTH);
         setTestCases(prev => [
             ...prev,
-            { id: Date.now().toString(), input: newInput, expected: 'accept' }
+            { id: Date.now().toString(), input, expected: 'accept' }
         ]);
         setNewInput('');
     };
@@ -43,42 +63,73 @@ export const BatchTestPanel: React.FC<BatchTestPanelProps> = ({ automaton, onClo
         ));
     };
 
-    const simulateString = useCallback((input: string): 'accepted' | 'rejected' => {
-        const initialStates = automaton.estados.filter(e => e.isInicial).map(e => e.id);
-        let currentStates = getEpsilonClosure(initialStates, automaton.transicoes);
-
-        const tokens = tokenizeInput(input);
-        for (const symbol of tokens) {
-            currentStates = performStep(currentStates, symbol, automaton.transicoes);
-            if (currentStates.length === 0) {
-                return 'rejected';
+    const simulateString = useCallback((input: string): { result: 'accepted' | 'rejected' | 'error'; error?: string } => {
+        try {
+            const initialStates = automaton.estados.filter(e => e.isInicial).map(e => e.id);
+            if (initialStates.length === 0) {
+                return { result: 'error', error: 'Sem estado inicial' };
             }
+
+            let currentStates = getEpsilonClosure(initialStates, automaton.transicoes);
+
+            const tokens = tokenizeInput(input);
+
+            // Limit token count to prevent performance issues
+            if (tokens.length > MAX_TOKENS) {
+                return { result: 'error', error: `Muitos tokens (max ${MAX_TOKENS})` };
+            }
+
+            for (const symbol of tokens) {
+                currentStates = performStep(currentStates, symbol, automaton.transicoes);
+                if (currentStates.length === 0) {
+                    return { result: 'rejected' };
+                }
+            }
+
+            const hasFinal = currentStates.some(id =>
+                automaton.estados.find(e => e.id === id)?.isFinal
+            );
+
+            return { result: hasFinal ? 'accepted' : 'rejected' };
+        } catch (err) {
+            return { result: 'error', error: err instanceof Error ? err.message : 'Erro desconhecido' };
         }
-
-        const hasFinal = currentStates.some(id =>
-            automaton.estados.find(e => e.id === id)?.isFinal
-        );
-
-        return hasFinal ? 'accepted' : 'rejected';
     }, [automaton]);
 
     const runAllTests = async () => {
+        cancelledRef.current = false;
         setIsRunning(true);
 
         // Mark all as running
-        setTestCases(prev => prev.map(tc => ({ ...tc, result: 'running' as const })));
+        setTestCases(prev => prev.map(tc => ({ ...tc, result: 'running' as const, error: undefined })));
 
         // Run tests with small delay for visual feedback
         for (let i = 0; i < testCases.length; i++) {
-            await new Promise(resolve => setTimeout(resolve, 100));
+            // Check if cancelled (component unmounted or user cancelled)
+            if (cancelledRef.current) break;
 
-            const result = simulateString(testCases[i].input);
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            // Check again after timeout
+            if (cancelledRef.current) break;
+
+            const { result, error } = simulateString(testCases[i].input);
             setTestCases(prev => prev.map((tc, idx) =>
-                idx === i ? { ...tc, result } : tc
+                idx === i ? { ...tc, result, error } : tc
             ));
         }
 
+        if (!cancelledRef.current) {
+            setIsRunning(false);
+        }
+    };
+
+    const cancelTests = () => {
+        cancelledRef.current = true;
         setIsRunning(false);
+        setTestCases(prev => prev.map(tc =>
+            tc.result === 'running' ? { ...tc, result: undefined } : tc
+        ));
     };
 
     const clearResults = () => {
@@ -86,18 +137,20 @@ export const BatchTestPanel: React.FC<BatchTestPanelProps> = ({ automaton, onClo
     };
 
     const passedCount = testCases.filter(tc =>
-        tc.result && (
+        tc.result && tc.result !== 'error' && (
             (tc.expected === 'accept' && tc.result === 'accepted') ||
             (tc.expected === 'reject' && tc.result === 'rejected')
         )
     ).length;
 
     const failedCount = testCases.filter(tc =>
-        tc.result && (
+        tc.result && tc.result !== 'error' && (
             (tc.expected === 'accept' && tc.result === 'rejected') ||
             (tc.expected === 'reject' && tc.result === 'accepted')
         )
     ).length;
+
+    const errorCount = testCases.filter(tc => tc.result === 'error').length;
 
     const testedCount = testCases.filter(tc => tc.result && tc.result !== 'running').length;
 
@@ -123,6 +176,11 @@ export const BatchTestPanel: React.FC<BatchTestPanelProps> = ({ automaton, onClo
                     <span className="text-ios-red flex items-center gap-1">
                         <XCircle size={14} /> {failedCount} falhou
                     </span>
+                    {errorCount > 0 && (
+                        <span className="text-ios-orange flex items-center gap-1">
+                            ⚠ {errorCount} erro
+                        </span>
+                    )}
                     <span className="text-muted ml-auto">
                         {testedCount}/{testCases.length}
                     </span>
@@ -157,9 +215,11 @@ export const BatchTestPanel: React.FC<BatchTestPanelProps> = ({ automaton, onClo
                             <option value="reject" className="text-ios-red">Rejeita</option>
                         </select>
 
-                        <div className="w-6 flex items-center justify-center">
+                        <div className="w-6 flex items-center justify-center" title={tc.error || undefined}>
                             {tc.result === 'running' ? (
                                 <Loader2 size={14} className="text-ios-blue animate-spin" />
+                            ) : tc.result === 'error' ? (
+                                <span className="text-ios-orange text-sm" title={tc.error}>⚠</span>
                             ) : tc.result === 'accepted' ? (
                                 <CheckCircle2 size={14} className={
                                     tc.expected === 'accept' ? 'text-ios-green' : 'text-ios-red'
@@ -204,29 +264,29 @@ export const BatchTestPanel: React.FC<BatchTestPanelProps> = ({ automaton, onClo
 
             {/* Actions */}
             <div className="px-4 py-3 flex gap-2">
-                <button
-                    onClick={runAllTests}
-                    disabled={isRunning || testCases.length === 0}
-                    className="flex-1 py-2 rounded-xl bg-ios-blue text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-blue-600 transition-colors disabled:opacity-50"
-                >
-                    {isRunning ? (
-                        <>
-                            <Loader2 size={16} className="animate-spin" />
-                            Testando...
-                        </>
-                    ) : (
-                        <>
-                            <Play size={16} fill="currentColor" />
-                            Executar Todos
-                        </>
-                    )}
-                </button>
+                {isRunning ? (
+                    <button
+                        onClick={cancelTests}
+                        className="flex-1 py-2 rounded-xl bg-ios-red text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-600 transition-colors"
+                    >
+                        <XCircle size={16} />
+                        Cancelar
+                    </button>
+                ) : (
+                    <button
+                        onClick={runAllTests}
+                        disabled={testCases.length === 0}
+                        className="flex-1 py-2 rounded-xl bg-ios-blue text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-blue-600 transition-colors disabled:opacity-50"
+                    >
+                        <Play size={16} fill="currentColor" />
+                        Executar Todos
+                    </button>
+                )}
 
-                {testedCount > 0 && (
+                {testedCount > 0 && !isRunning && (
                     <button
                         onClick={clearResults}
-                        disabled={isRunning}
-                        className="py-2 px-4 rounded-xl bg-surface-muted text-secondary font-bold text-sm hover:bg-surface-soft transition-colors disabled:opacity-50"
+                        className="py-2 px-4 rounded-xl bg-surface-muted text-secondary font-bold text-sm hover:bg-surface-soft transition-colors"
                     >
                         Limpar
                     </button>

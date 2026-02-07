@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { Download, Trash2 } from 'lucide-react';
 import type { AutomatoData } from '../../types';
 import { Modal } from './Modal';
@@ -124,7 +124,7 @@ export const SavedAutomataModal: React.FC<SavedAutomataModalProps> = ({
                                     </button>
                                     <button
                                         onClick={() => handleDelete(item.id)}
-                                        className="p-2 rounded-xl text-ios-red hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                        className="p-2 rounded-xl text-status-danger status-hover-danger transition-colors"
                                         title="Excluir"
                                     >
                                         <Trash2 size={16} />
@@ -142,3 +142,5 @@ export const SavedAutomataModal: React.FC<SavedAutomataModalProps> = ({
         </Modal>
     );
 };
+
+

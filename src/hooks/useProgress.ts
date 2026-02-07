@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useLocalStorageState } from './useLocalStorageState';
 
 interface ExerciseProgress {
     completed: Record<string, boolean>;
@@ -17,7 +18,7 @@ const STORAGE_KEY = 'lfa-learning-progress';
 const LEGACY_LESSON_KEY = 'lfa-progress';
 const LEGACY_EXERCISE_KEY = 'lfa-exercises-progress';
 
-const defaultProgress: ProgressData = {
+const createDefaultProgress = (): ProgressData => ({
     completedLessons: [],
     currentLesson: null,
     lastVisited: null,
@@ -26,55 +27,68 @@ const defaultProgress: ProgressData = {
         completed: {},
         lastCategory: undefined
     }
+});
+
+const normalizeExercises = (value?: Partial<ExerciseProgress> | null): ExerciseProgress => {
+    const completed = value?.completed && typeof value.completed === 'object'
+        ? Object.fromEntries(
+            Object.entries(value.completed).map(([key, val]) => [key, Boolean(val)])
+        )
+        : {};
+    const lastCategory = typeof value?.lastCategory === 'string' ? value.lastCategory : undefined;
+    return { completed, lastCategory };
+};
+
+const normalizeProgress = (value?: Partial<ProgressData> | null): ProgressData => {
+    if (!value || typeof value !== 'object') return createDefaultProgress();
+    return {
+        completedLessons: Array.isArray(value.completedLessons) ? value.completedLessons.filter(Boolean) : [],
+        currentLesson: typeof value.currentLesson === 'string' ? value.currentLesson : null,
+        lastVisited: typeof value.lastVisited === 'string' ? value.lastVisited : null,
+        visitedLessons: Array.isArray(value.visitedLessons) ? value.visitedLessons.filter(Boolean) : [],
+        exercises: normalizeExercises(value.exercises)
+    };
+};
+
+const readStoredProgress = (): ProgressData => {
+    if (typeof window === 'undefined') return createDefaultProgress();
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            return normalizeProgress(JSON.parse(saved));
+        }
+        const legacyLessons = localStorage.getItem(LEGACY_LESSON_KEY);
+        const legacyExercises = localStorage.getItem(LEGACY_EXERCISE_KEY);
+        if (legacyLessons || legacyExercises) {
+            const parsedLessons = legacyLessons ? JSON.parse(legacyLessons) : null;
+            const parsedExercises = legacyExercises ? JSON.parse(legacyExercises) : null;
+            const next = normalizeProgress({
+                ...(parsedLessons && typeof parsedLessons === 'object' ? parsedLessons : {}),
+                exercises: parsedExercises && typeof parsedExercises === 'object' ? parsedExercises : undefined
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+            localStorage.removeItem(LEGACY_LESSON_KEY);
+            localStorage.removeItem(LEGACY_EXERCISE_KEY);
+            return next;
+        }
+    } catch (e) {
+        console.warn('Failed to load progress:', e);
+    }
+    return createDefaultProgress();
 };
 
 export function useProgress() {
-    const [progress, setProgress] = useState<ProgressData>(defaultProgress);
-
-    // Load from localStorage on mount
-    useEffect(() => {
-        try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                setProgress(JSON.parse(saved));
-                return;
-            }
-            const legacyLessons = localStorage.getItem(LEGACY_LESSON_KEY);
-            const legacyExercises = localStorage.getItem(LEGACY_EXERCISE_KEY);
-            if (legacyLessons || legacyExercises) {
-                const next = { ...defaultProgress };
-                if (legacyLessons) {
-                    const parsed = JSON.parse(legacyLessons) as Omit<ProgressData, 'exercises'>;
-                    next.completedLessons = parsed.completedLessons || [];
-                    next.currentLesson = parsed.currentLesson ?? null;
-                    next.lastVisited = parsed.lastVisited ?? null;
-                    next.visitedLessons = parsed.visitedLessons || [];
-                }
-                if (legacyExercises) {
-                    const parsed = JSON.parse(legacyExercises) as ExerciseProgress;
-                    next.exercises.completed = parsed.completed || {};
-                    next.exercises.lastCategory = parsed.lastCategory;
-                }
-                setProgress(next);
-                localStorage.removeItem(LEGACY_LESSON_KEY);
-                localStorage.removeItem(LEGACY_EXERCISE_KEY);
-            }
-        } catch (e) {
-            console.warn('Failed to load progress:', e);
-        }
-    }, []);
-
-    // Save to localStorage on change
-    useEffect(() => {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
-        } catch (e) {
-            console.warn('Failed to save progress:', e);
-        }
-    }, [progress]);
+    const [progress, setProgress] = useLocalStorageState<ProgressData>(
+        STORAGE_KEY,
+        readStoredProgress,
+        { readOnInit: false }
+    );
 
     const markLessonVisited = useCallback((lessonId: string) => {
         setProgress(prev => {
+            if (prev.visitedLessons.includes(lessonId) && prev.currentLesson === lessonId) {
+                return prev;
+            }
             if (prev.visitedLessons.includes(lessonId)) {
                 return { ...prev, currentLesson: lessonId, lastVisited: lessonId };
             }
@@ -85,7 +99,7 @@ export function useProgress() {
                 lastVisited: lessonId
             };
         });
-    }, []);
+    }, [setProgress]);
 
     const markLessonCompleted = useCallback((lessonId: string) => {
         setProgress(prev => {
@@ -95,7 +109,7 @@ export function useProgress() {
                 completedLessons: [...prev.completedLessons, lessonId]
             };
         });
-    }, []);
+    }, [setProgress]);
 
     const isLessonCompleted = useCallback((lessonId: string) => {
         return progress.completedLessons.includes(lessonId);
@@ -112,23 +126,27 @@ export function useProgress() {
 
     const resetProgress = useCallback(() => {
         setProgress(prev => ({
-            ...defaultProgress,
+            ...createDefaultProgress(),
             exercises: prev.exercises
         }));
-    }, []);
+    }, [setProgress]);
 
     const markExerciseCompleted = useCallback((categoryId: string, exerciseId: number) => {
-        setProgress(prev => ({
-            ...prev,
-            exercises: {
-                ...prev.exercises,
-                completed: {
-                    ...prev.exercises.completed,
-                    [`${categoryId}-${exerciseId}`]: true
+        setProgress(prev => {
+            const key = `${categoryId}-${exerciseId}`;
+            if (prev.exercises.completed[key]) return prev;
+            return {
+                ...prev,
+                exercises: {
+                    ...prev.exercises,
+                    completed: {
+                        ...prev.exercises.completed,
+                        [key]: true
+                    }
                 }
-            }
-        }));
-    }, []);
+            };
+        });
+    }, [setProgress]);
 
     const isExerciseCompleted = useCallback((categoryId: string, exerciseId: number | null | undefined) => {
         if (exerciseId == null) return false;
@@ -136,14 +154,17 @@ export function useProgress() {
     }, [progress.exercises.completed]);
 
     const setLastCategory = useCallback((categoryId: string) => {
-        setProgress(prev => ({
-            ...prev,
-            exercises: {
-                ...prev.exercises,
-                lastCategory: categoryId
-            }
-        }));
-    }, []);
+        setProgress(prev => {
+            if (prev.exercises.lastCategory === categoryId) return prev;
+            return {
+                ...prev,
+                exercises: {
+                    ...prev.exercises,
+                    lastCategory: categoryId
+                }
+            };
+        });
+    }, [setProgress]);
 
     const resetExercises = useCallback(() => {
         setProgress(prev => ({
@@ -153,7 +174,7 @@ export function useProgress() {
                 lastCategory: undefined
             }
         }));
-    }, []);
+    }, [setProgress]);
 
     return {
         progress,

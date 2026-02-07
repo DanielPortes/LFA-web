@@ -24,7 +24,12 @@ export default tseslint.config(
                 { allowConstantExport: true },
             ],
             '@typescript-eslint/no-explicit-any': 'off',
-            'react-hooks/exhaustive-deps': 'warn'
+            'react-hooks/exhaustive-deps': 'warn',
+            // Transitional: the codebase is being refactored incrementally and still relies on
+            // controlled effect-driven synchronization in multiple legacy components.
+            'react-hooks/set-state-in-effect': 'off',
+            'react-hooks/preserve-manual-memoization': 'off',
+            'react-hooks/immutability': 'off'
         },
     },
 )

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useUiSettings } from '../../hooks/UiSettingsContext';
+import { useUiSettings } from '../../hooks/useUiSettings';
 
 export const CustomCursor: React.FC = () => {
     const { cursorEnabled, effectiveReduceMotion } = useUiSettings();
@@ -9,8 +9,10 @@ export const CustomCursor: React.FC = () => {
 
     const [isHovering, setIsHovering] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
+    const [isPaused, setIsPaused] = useState(false);
     const isHoveringRef = useRef(isHovering);
     const isVisibleRef = useRef(isVisible);
+    const isPausedRef = useRef(isPaused);
     const [isCoarsePointer, setIsCoarsePointer] = useState(() => {
         if (typeof window !== 'undefined') {
             return window.matchMedia('(pointer: coarse)').matches;
@@ -35,6 +37,10 @@ export const CustomCursor: React.FC = () => {
         isHoveringRef.current = isHovering;
     }, [isHovering]);
 
+    useEffect(() => {
+        isPausedRef.current = isPaused;
+    }, [isPaused]);
+
     const handleMouseLeave = useCallback((e: MouseEvent) => {
         // Only hide if actually leaving the window
         const relatedTarget = e.relatedTarget as Node | null;
@@ -50,10 +56,30 @@ export const CustomCursor: React.FC = () => {
         const enabled = cursorEnabled && !effectiveReduceMotion && !isCoarsePointer;
         if (!enabled) {
             document.body.classList.remove('custom-cursor-active');
+            document.body.classList.remove('custom-cursor-paused');
             return;
         }
 
+        const setPausedState = (paused: boolean) => {
+            if (isPausedRef.current === paused) return;
+            isPausedRef.current = paused;
+            setIsPaused(paused);
+            document.body.classList.toggle('custom-cursor-paused', paused);
+        };
+
         const updatePosition = (e: MouseEvent) => {
+            const target = e.target as HTMLElement | null;
+            const paused = !!target?.closest('[data-native-cursor="true"]');
+            setPausedState(paused);
+
+            if (paused) {
+                if (isVisibleRef.current) {
+                    isVisibleRef.current = false;
+                    setIsVisible(false);
+                }
+                return;
+            }
+
             if (dotRef.current) {
                 dotRef.current.style.left = `${e.clientX}px`;
                 dotRef.current.style.top = `${e.clientY}px`;
@@ -70,6 +96,13 @@ export const CustomCursor: React.FC = () => {
 
         const handleMouseEnter = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
+            if (target.closest('[data-native-cursor="true"]')) {
+                if (isHoveringRef.current) {
+                    isHoveringRef.current = false;
+                    setIsHovering(false);
+                }
+                return;
+            }
             const nextHovering = !!(target.closest('button')
                 || target.closest('a')
                 || target.closest('.cursor-pointer')
@@ -92,6 +125,7 @@ export const CustomCursor: React.FC = () => {
             window.removeEventListener('mouseover', handleMouseEnter);
             document.removeEventListener('mouseleave', handleMouseLeave);
             document.body.classList.remove('custom-cursor-active');
+            document.body.classList.remove('custom-cursor-paused');
         };
     }, [cursorEnabled, effectiveReduceMotion, isCoarsePointer, handleMouseLeave]);
 

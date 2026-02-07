@@ -1,4 +1,4 @@
-import type { CourseModule } from '../../../types';
+﻿import type { CourseModule } from '../../../types';
 
 export const mod0: CourseModule = {
     id: 'mod0',
@@ -7,7 +7,7 @@ export const mod0: CourseModule = {
         {
             id: 'l0-intro',
             title: 'Alfabetos e Linguagens',
-            description: 'Antes de desenhar autômatos, precisamos definir a entrada.',
+            description: 'Antes de desenhar automatos, precisamos definir a entrada.',
             content: [
                 {
                     type: 'text',
@@ -15,14 +15,14 @@ export const mod0: CourseModule = {
                 },
                 {
                     type: 'definition',
-                    title: 'Símbolo',
+                    title: 'Simbolo',
                     content: 'Entidade abstrata básica, não definida formalmente. É o “átomo” a partir do qual palavras e linguagens são formadas.'
                 },
                 {
                     type: 'list',
                     title: 'Três abordagens de estudo (Blauth)',
                     content: [
-                        'Operacional (reconhecedor): autômatos finitos, de pilha e de Turing.',
+                        'Operacional (reconhecedor): automatos finitos, de pilha e de Turing.',
                         'Axiomática (gerador): gramáticas.',
                         'Denotacional/funcional: expressões regulares.'
                     ]
@@ -30,7 +30,7 @@ export const mod0: CourseModule = {
                 {
                     type: 'definition',
                     title: 'Conceitos básicos',
-                    content: '1. **Alfabeto (Σ):** conjunto finito de símbolos (pode ser vazio).\n2. **Palavra/cadeia (w):** sequência finita de símbolos de Σ.\n3. **Linguagem formal (L):** conjunto de palavras sobre um alfabeto.'
+                    content: '1. **Alfabeto (Σ):** conjunto finito de simbolos (pode ser vazio).\n2. **Palavra/cadeia (w):** sequência finita de simbolos de Σ.\n3. **Linguagem formal (L):** conjunto de palavras sobre um alfabeto.'
                 },
                 {
                     type: 'math-tip',
@@ -62,7 +62,7 @@ export const mod0: CourseModule = {
                     content: [
                         'Prefixo: x é prefixo de w se w = xy.',
                         'Sufixo: y é sufixo de w se w = xy.',
-                        'Subpalavra (subcadeia): sequência contígua de símbolos em w.'
+                        'Subpalavra (subcadeia): sequência contígua de simbolos em w.'
                     ]
                 },
                 {
@@ -90,7 +90,7 @@ export const mod0: CourseModule = {
                 {
                     type: 'definition',
                     title: 'Função parcial vs. total',
-                    content: 'Uma função f: A → B é **total** se está definida para todo a ∈ A. É **parcial** quando pode faltar valor para alguns elementos. Em autômatos, a função programa δ é parcial.'
+                    content: 'Uma função f: A → B é **total** se está definida para todo a ∈ A. É **parcial** quando pode faltar valor para alguns elementos. Em automatos, a função programa δ é parcial.'
                 },
                 {
                     type: 'math-tip',
@@ -175,7 +175,7 @@ export const mod0: CourseModule = {
             content: [
                 {
                     type: 'text',
-                    content: 'Uma linguagem pode ser descrita por enumeração, por propriedade, por gramática, por expressão regular ou por autômato. Em LFA provamos equivalências entre essas formas.'
+                    content: 'Uma linguagem pode ser descrita por enumeração, por propriedade, por gramática, por expressão regular ou por automato. Em LFA provamos equivalências entre essas formas.'
                 },
                 {
                     type: 'note',
@@ -187,14 +187,14 @@ export const mod0: CourseModule = {
                     title: 'Exercícios propostos',
                     content: [
                         'Descreva por propriedade a linguagem dos binários divisíveis por 4.',
-                        'Escreva em forma de conjunto a linguagem das palavras com exatamente dois símbolos a.',
+                        'Escreva em forma de conjunto a linguagem das palavras com exatamente dois simbolos a.',
                         'Transforme uma definição por propriedade em ER (quando possível).'
                     ]
                 },
                 {
                     type: 'definition',
                     title: 'Formas equivalentes',
-                    content: 'Enumeração, propriedade, ER, gramática regular e autômato podem descrever a mesma linguagem.'
+                    content: 'Enumeração, propriedade, ER, gramática regular e automato podem descrever a mesma linguagem.'
                 },
                 {
                     type: 'text',
@@ -204,15 +204,16 @@ export const mod0: CourseModule = {
         },
         {
             id: 'l0-glossario',
-            title: 'Glossário de símbolos (Blauth)',
+            title: 'Glossário de simbolos (Blauth)',
             description: 'Notações essenciais usadas no livro.',
             content: [
                 {
                     type: 'math-tip',
                     title: 'Tabela resumida',
-                    content: '• Σ: alfabeto de entrada.\n• Σ*: todas as palavras sobre Σ.\n• ε: palavra vazia (|ε| = 0).\n• ∅: conjunto vazio.\n• |w|: comprimento da palavra w.\n• 2^A: conjunto das partes de A.\n• δ: função programa (transição).\n• δ̂: função programa estendida.\n• ⇒, ⇒+: derivação (um ou mais passos).\n• L(G) = { w ∈ T* | S ⇒+ w }.\n• w^n: concatenação sucessiva.'
+                    content: '• Σ: alfabeto de entrada.\n• Σ*: todas as palavras sobre Σ.\n• ε: palavra vazia (|ε| = 0).\n• ∅: conjunto vazio.\n• |w|: comprimento da palavra w.\n• 2^A: conjunto das partes de A.\n• δ: função programa (transicao).\n• δ̂: função programa estendida.\n• ⇒, ⇒+: derivação (um ou mais passos).\n• L(G) = { w ∈ T* | S ⇒+ w }.\n• w^n: concatenação sucessiva.'
                 }
             ]
         }
     ]
 };
+

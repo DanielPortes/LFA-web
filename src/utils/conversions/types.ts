@@ -31,6 +31,8 @@ export interface ConversionWithSteps {
     automaton: AutomatoData;
     steps: ConversionStep[];
     warnings?: string[];
+    isMinimal?: boolean;
+    needsCompletion?: boolean;
 }
 
 /** Result of a language property check */

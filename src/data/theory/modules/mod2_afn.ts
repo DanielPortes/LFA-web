@@ -1,4 +1,4 @@
-import type { CourseModule } from '../../../types';
+﻿import type { CourseModule } from '../../../types';
 import { afd_termina_ab, afn_termina_ab, afne_blocos, afne_a_antes_b } from '../automataDefs';
 
 export const mod2: CourseModule = {
@@ -12,8 +12,8 @@ export const mod2: CourseModule = {
             content: [
                 {
                     type: 'definition',
-                    title: 'Função de transição do AFN',
-                    content: 'No AFN, δ: Q × Σ → 2^Q. Para um estado e um símbolo, a saída é um conjunto de possíveis estados.'
+                    title: 'Função de transicao do AFN',
+                    content: 'No AFN, δ: Q × Σ → 2^Q. Para um estado e um simbolo, a saída é um conjunto de possíveis estados.'
                 },
                 {
                     type: 'text',
@@ -40,29 +40,29 @@ export const mod2: CourseModule = {
         },
         {
             id: 'l2-afne',
-            title: 'Transições Vazias (AFN-ε)',
-            description: 'Mudando de estado sem ler símbolo.',
+            title: 'Transicoes Vazias (AFN-ε)',
+            description: 'Mudando de estado sem ler simbolo.',
             content: [
                 {
                     type: 'definition',
-                    title: 'Transição com ε',
-                    content: 'No AFN-ε, o símbolo ε **não** pertence ao alfabeto Σ. A função de transição é δ: Q × (Σ ∪ {ε}) → 2^Q.'
+                    title: 'Transicao com ε',
+                    content: 'No AFN-ε, o simbolo ε **não** pertence ao alfabeto Σ. A função de transicao é δ: Q × (Σ ∪ {ε}) → 2^Q.'
                 },
                 {
                     type: 'definition',
                     title: 'FECHO-ε (função fecho vazio)',
-                    content: 'FECHO-ε(q) é o menor conjunto que contém q e todos os estados atingíveis a partir de q usando apenas transições ε.'
+                    content: 'FECHO-ε(q) é o menor conjunto que contém q e todos os estados atingíveis a partir de q usando apenas transicoes ε.'
                 },
                 {
                     type: 'example',
                     title: 'Uso do ε',
-                    content: 'Usamos ε para ligar partes de autômatos e compor linguagens.',
+                    content: 'Usamos ε para ligar partes de automatos e compor linguagens.',
                     automatoRef: afne_blocos
                 },
                 {
                     type: 'example',
                     title: 'Exemplo do livro',
-                    content: 'L7 = { w | todo símbolo "a" antecede todo símbolo "b" }.',
+                    content: 'L7 = { w | todo simbolo "a" antecede todo simbolo "b" }.',
                     automatoRef: afne_a_antes_b
                 },
                 {
@@ -70,7 +70,7 @@ export const mod2: CourseModule = {
                     title: 'Cálculo do FECHO-ε',
                     content: [
                         'Inicie com o conjunto {q}.',
-                        'Enquanto houver transição ε para um novo estado, inclua-o.',
+                        'Enquanto houver transicao ε para um novo estado, inclua-o.',
                         'Pare quando o conjunto não mudar.'
                     ]
                 }
@@ -90,7 +90,7 @@ export const mod2: CourseModule = {
                     title: 'Algoritmo de construção de subconjuntos',
                     content: [
                         'Estado inicial: FECHO-ε({q0}).',
-                        'Para cada conjunto S e símbolo a, compute Move(S, a).',
+                        'Para cada conjunto S e simbolo a, compute Move(S, a).',
                         'Aplique FECHO-ε no resultado e crie novo estado.',
                         'Um conjunto é final se contém algum estado final do AFN.'
                     ]
@@ -108,3 +108,4 @@ export const mod2: CourseModule = {
         }
     ]
 };
+

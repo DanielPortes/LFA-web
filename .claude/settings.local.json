@@ -7,7 +7,10 @@
       "Bash(tree:*)",
       "Bash(wc -l \"D:\\\\Downloads\\\\LFA-web\\\\src\"/**/*.{ts,tsx})",
       "Bash(find:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npm test)"
     ]
   }
 }

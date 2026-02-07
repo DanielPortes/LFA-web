@@ -81,12 +81,14 @@ export function useAutomatonSimulation(
     const turingSeenRef = useRef<Set<string>>(new Set());
 
     // Safe automaton access
-    const safeData = automaton || {
-        tipo: 'AFD' as const,
-        estados: [],
-        transicoes: [],
-        descricao: 'Empty'
-    };
+    const safeData = useMemo<AutomatoData>(() => (
+        automaton || {
+            tipo: 'AFD' as const,
+            estados: [],
+            transicoes: [],
+            descricao: 'Empty'
+        }
+    ), [automaton]);
 
     // Computed properties
     const isPda = safeData.tipo === 'AP';
@@ -94,10 +96,12 @@ export function useAutomatonSimulation(
     const isTuring = safeData.tipo === 'MT' || safeData.tipo === 'ALL';
     const isMoore = safeData.tipo === 'Moore';
     const isMealy = safeData.tipo === 'Mealy';
+    const tokenizationMode = tokenizationConfig.mode;
+    const tokenizationSeparator = tokenizationConfig.separator;
 
     const inputTokens = useMemo(() =>
-        tokenizeInput(inputString, tokenizationConfig),
-        [inputString, tokenizationConfig]
+        tokenizeInput(inputString, { mode: tokenizationMode, separator: tokenizationSeparator }),
+        [inputString, tokenizationMode, tokenizationSeparator]
     );
 
     const alphabet = useMemo(() =>
@@ -134,10 +138,12 @@ export function useAutomatonSimulation(
     const buildInitialPdaConfigs = useCallback(() => {
         if (!safeData.estados || !safeData.transicoes) return [];
         const initialStates = safeData.estados.filter(e => e.isInicial).map(e => e.id);
-        const baseStack = safeData.simboloInicialPilha ? [safeData.simboloInicialPilha] : [];
+        // Use type narrowing - only PDA has simboloInicialPilha
+        const simboloInicialPilha = isPda && 'simboloInicialPilha' in safeData ? safeData.simboloInicialPilha : undefined;
+        const baseStack = simboloInicialPilha ? [simboloInicialPilha] : [];
         const configs = initialStates.map(id => ({ stateId: id, stack: [...baseStack] }));
         return getPdaEpsilonClosure(configs, safeData.transicoes);
-    }, [safeData]);
+    }, [safeData, isPda]);
 
     const findActiveTransitions = useCallback((fromStates: string[], symbol: string): string[] => {
         if (!symbol || !safeData.transicoes) return [];
@@ -165,6 +171,21 @@ export function useAutomatonSimulation(
         const stack = stackRaw ? stackRaw.split(',').filter(Boolean).join('') : 'vazio';
         return `${label} [${stack || 'vazio'}]`;
     }, [stateLabelMap]);
+
+    const rebuildTuringSeenFromHistory = useCallback((steps: SimulationStep[]) => {
+        if (!isTuring) {
+            turingSeenRef.current.clear();
+            return;
+        }
+
+        const rebuilt = new Set<string>();
+        steps.forEach((stepItem) => {
+            const stateId = stepItem.activeStates[0];
+            if (!stateId || !stepItem.tape) return;
+            rebuilt.add(buildTuringConfigKey(stateId, stepItem.tape, stepItem.headPos ?? 0));
+        });
+        turingSeenRef.current = rebuilt;
+    }, [isTuring]);
 
     // Reset simulation
     const resetSimulation = useCallback((fullReset = false) => {
@@ -262,7 +283,7 @@ export function useAutomatonSimulation(
             return { finished: true, accepted: false };
         }
 
-        let currentState = simulationState;
+        const currentState = simulationState;
 
         if (!currentState) {
             resetSimulation(false);
@@ -474,9 +495,27 @@ export function useAutomatonSimulation(
     }, [
         simulationState, hasInvalidInput, safeData, isTuring, isAll,
         isPda, isMoore, isMealy, history, config,
-        buildInitialPdaConfigs, findActiveTransitions, getMealyOutput,
-        transitionMap, resetSimulation
+        findActiveTransitions, getMealyOutput,
+        transitionMap, resetSimulation, inputTokens.length
     ]);
+
+    useEffect(() => {
+        if (!isPlaying) return;
+        if (hasInvalidInput) {
+            setIsPlaying(false);
+            return;
+        }
+
+        const delay = Math.max(50, speed);
+        const timer = window.setInterval(() => {
+            const result = step();
+            if (result.finished) {
+                setIsPlaying(false);
+            }
+        }, delay);
+
+        return () => window.clearInterval(timer);
+    }, [isPlaying, hasInvalidInput, speed, step]);
 
     // Step back
     const stepBack = useCallback(() => {
@@ -486,7 +525,8 @@ export function useAutomatonSimulation(
         setHistory(newHistory);
         setSimulationState(newHistory[newHistory.length - 1]);
         setActiveTransitions([]);
-    }, [history]);
+        rebuildTuringSeenFromHistory(newHistory);
+    }, [history, rebuildTuringSeenFromHistory]);
 
     // Go to start
     const goToStart = useCallback(() => {
@@ -496,11 +536,17 @@ export function useAutomatonSimulation(
         setHistory([firstStep]);
         setSimulationState(firstStep);
         setActiveTransitions([]);
-    }, [history]);
+        rebuildTuringSeenFromHistory([firstStep]);
+    }, [history, rebuildTuringSeenFromHistory]);
 
-    // Reset when automaton changes
+    const resetSimulationRef = useRef(resetSimulation);
     useEffect(() => {
-        resetSimulation(true);
+        resetSimulationRef.current = resetSimulation;
+    }, [resetSimulation]);
+
+    // Reset only when automaton source changes
+    useEffect(() => {
+        resetSimulationRef.current(true);
     }, [automaton]);
 
     return {

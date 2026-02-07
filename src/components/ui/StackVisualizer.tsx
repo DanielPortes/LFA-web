@@ -33,13 +33,13 @@ export const StackVisualizer: React.FC<StackVisualizerProps> = ({ stack, maxVisi
                 ))}
                 
                 {hiddenCount > 0 && (
-                     <div className="text-[10px] text-muted text-center py-1 mt-1 border-t border-default">
+                     <div className="text-xs text-muted text-center py-1 mt-1 border-t border-default">
                         + {hiddenCount} itens
                     </div>
                 )}
                 
                 {stack.length === 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center text-[10px] text-muted italic">
+                    <div className="absolute inset-0 flex items-center justify-center text-xs text-muted italic">
                         Vazia
                     </div>
                 )}

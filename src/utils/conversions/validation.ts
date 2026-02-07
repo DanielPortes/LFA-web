@@ -3,7 +3,8 @@
  * @module conversions/validation
  */
 
-import type { AutomatoData } from '../../types';
+import type { AutomatoData, APData } from '../../types';
+import { isAP } from '../../types';
 import { isEpsilonToken, matchesSymbol } from '../symbols';
 import { getPdaStackAlphabet, parsePdaTransition } from '../pda';
 import { getAlphabet } from './alphabet';
@@ -39,7 +40,7 @@ export function validateAutomaton(automaton: AutomatoData): ValidationIssue[] {
     });
 
     // Type-specific validations
-    if (automaton.tipo === 'AP') {
+    if (isAP(automaton)) {
         validatePda(automaton, issues);
     } else if (automaton.tipo === 'MT' || automaton.tipo === 'ALL') {
         validateTuringMachine(automaton, issues);
@@ -57,7 +58,7 @@ export function validateAutomaton(automaton: AutomatoData): ValidationIssue[] {
     return issues;
 }
 
-function validatePda(automaton: AutomatoData, issues: ValidationIssue[]): void {
+function validatePda(automaton: APData, issues: ValidationIssue[]): void {
     const stackAlphabet = automaton.alfabetoPilha && automaton.alfabetoPilha.length > 0
         ? automaton.alfabetoPilha
         : getPdaStackAlphabet(automaton.transicoes);

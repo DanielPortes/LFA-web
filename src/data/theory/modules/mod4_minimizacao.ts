@@ -1,4 +1,4 @@
-import type { CourseModule } from '../../../types';
+﻿import type { CourseModule } from '../../../types';
 
 export const mod4: CourseModule = {
     id: 'mod4',
@@ -7,7 +7,7 @@ export const mod4: CourseModule = {
         {
             id: 'l4-intro',
             title: 'Por que minimizar?',
-            description: 'Autômatos menores, mesma linguagem.',
+            description: 'Automatos menores, mesma linguagem.',
             content: [
                 {
                     type: 'text',
@@ -16,7 +16,7 @@ export const mod4: CourseModule = {
                 {
                     type: 'warning',
                     title: 'Pré-requisitos obrigatórios (Blauth)',
-                    content: '1) Ser determinístico (AFD).\n2) Remover estados inacessíveis.\n3) Tornar a função de transição total.\n\nSe houver transições indefinidas, crie o estado de erro d e direcione todas as arestas faltantes para ele.'
+                    content: '1) Ser determinístico (AFD).\n2) Remover estados inacessíveis.\n3) Tornar a função de transicao total.\n\nSe houver transicoes indefinidas, crie o estado de erro d e direcione todas as arestas faltantes para ele.'
                 }
             ]
         },
@@ -31,7 +31,7 @@ export const mod4: CourseModule = {
                     content: [
                         'Liste todos os pares {p, q}.',
                         'Marque os pares trivialmente não equivalentes (final vs. não final).',
-                        'Para pares não marcados e cada símbolo a, verifique {δ(p,a), δ(q,a)}.',
+                        'Para pares não marcados e cada simbolo a, verifique {δ(p,a), δ(q,a)}.',
                         'Se o destino estiver marcado, marque {p, q} e propague a marcação.'
                     ]
                 },
@@ -44,3 +44,4 @@ export const mod4: CourseModule = {
         }
     ]
 };
+
