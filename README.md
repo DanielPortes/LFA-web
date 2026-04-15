@@ -56,3 +56,15 @@ docker run --rm -e PORT=8080 -p 8080:8080 lfa-web
 - O estágio final já expõe um servidor HTTP pronto para SPA.
 - A porta é lida da variável de ambiente `PORT`, padrão `8080`.
 - Em ambientes com build por contêiner, não é necessário instalar Node manualmente no host.
+
+## CI/CD
+
+- `CI`: executa lint, testes, build e valida os alvos Docker `dev` e `production`.
+- `Deploy GitHub Pages`: publica a versão estática no GitHub Pages com `base path` ajustado para o nome do repositório.
+- `Publish Docker Image`: publica a imagem de produção no GHCR em `ghcr.io/danielportes/lfa-web`.
+
+URL esperada do site publicado:
+
+```text
+https://danielportes.github.io/LFA-web/
+```
