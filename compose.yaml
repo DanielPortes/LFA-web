@@ -1,0 +1,29 @@
+name: lfa-web
+
+services:
+  dev:
+    profiles: ["dev"]
+    build:
+      context: .
+      target: dev
+    ports:
+      - "${DEV_PORT:-5173}:5173"
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      HOST: "0.0.0.0"
+      PORT: "5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  prod:
+    profiles: ["prod"]
+    build:
+      context: .
+      target: production
+    environment:
+      PORT: "${PORT:-8080}"
+    ports:
+      - "${PORT:-8080}:${PORT:-8080}"
+    restart: unless-stopped

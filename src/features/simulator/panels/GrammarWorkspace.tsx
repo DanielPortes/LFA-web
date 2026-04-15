@@ -1,7 +1,7 @@
 import React from 'react';
 import { DerivationTreeVisualizer } from '../../../components/ui';
 import type { GrammarResult, GrammarTransformResult } from '../../../hooks/useGrammarSimulation';
-import { FileText, Play, RotateCcw, ListOrdered, Sparkles, BookOpen, Quote, Info, AlertTriangle, CheckCircle2, XCircle, X } from 'lucide-react';
+import { FileText, Play, RotateCcw, ListOrdered, Sparkles, BookOpen, Quote, Info, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 
 interface GrammarWorkspaceProps {
     modeSelector: React.ReactNode;

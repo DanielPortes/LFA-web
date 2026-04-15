@@ -1,73 +1,58 @@
-# React + TypeScript + Vite
+# LFA Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicação React + TypeScript + Vite para estudo e simulação de conteúdos de Linguagens Formais e Autômatos.
 
-Currently, two official plugins are available:
+## Requisitos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Node.js 22+
+- npm 10+
+- Docker 26+ com Docker Compose
 
-## React Compiler
+## Desenvolvimento local
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Build e validação
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
+npm run lint
+npm run test
 ```
+
+## Docker para desenvolvimento
+
+O alvo `dev` sobe o Vite com HMR acessível fora do contêiner.
+
+```bash
+docker compose --profile dev up --build
+```
+
+A aplicação fica disponível em `http://localhost:5173`.
+
+## Docker para produção
+
+O alvo `production` gera o build estático e publica a SPA em `nginx`, com fallback para `index.html` e `PORT` configurável para plataformas de host.
+
+```bash
+docker compose --profile prod up --build
+```
+
+Por padrão, a aplicação sobe em `http://localhost:8080`.
+
+Para executar sem Compose:
+
+```bash
+docker build --target production -t lfa-web .
+docker run --rm -e PORT=8080 -p 8080:8080 lfa-web
+```
+
+## Deploy em plataformas de host
+
+- Use o `Dockerfile` da raiz como fonte de build.
+- O estágio final já expõe um servidor HTTP pronto para SPA.
+- A porta é lida da variável de ambiente `PORT`, padrão `8080`.
+- Em ambientes com build por contêiner, não é necessário instalar Node manualmente no host.

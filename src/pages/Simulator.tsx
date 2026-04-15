@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useId, useMemo } from 'react';
 import { AutomatonEditor } from '../components/automaton';
-import type { AutomatoData, SimulationStep } from '../types';
-import { CheckCircle2, XCircle, X, Keyboard, History, ListOrdered, Info, Pencil, Sparkles, RotateCcw, LayoutList } from 'lucide-react';
+import type { AutomatoData } from '../types';
+import { XCircle, X, Keyboard, History, ListOrdered, Info, Sparkles, RotateCcw, LayoutList } from 'lucide-react';
 import { regexToNfa } from '../utils/conversions';
 import {
     StackVisualizer,
@@ -115,13 +115,11 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
         isMoore,
         isMealy,
         stateLabelMap,
-        transitionMap,
         setSpeed,
         setIsPlaying,
         resetSimulation,
         step,
-        stepBack,
-        formatPdaConfig
+        stepBack
     } = useAutomatonSimulation(
         safeData,
         inputString,
@@ -264,27 +262,6 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
     const formatStateList = useCallback((ids: string[] | undefined) => {
         if (!ids || ids.length === 0) return 'vazio';
         return ids.map(id => stateLabelMap.get(id) || id).join(', ');
-    }, [stateLabelMap]);
-
-    const formatTransitions = useCallback((ids: string[] | undefined) => {
-        if (!ids || ids.length === 0) return [];
-        return ids.map(id => {
-            const transition = transitionMap.get(id);
-            if (!transition) return id;
-            const fromLabel = stateLabelMap.get(transition.de) || transition.de;
-            const toLabel = stateLabelMap.get(transition.para) || transition.para;
-            const symbol = transition.simbolo?.trim() ? transition.simbolo : '?';
-            return `${fromLabel} -${symbol}-> ${toLabel}`;
-        });
-    }, [transitionMap, stateLabelMap]);
-
-    const formatConfigs = useCallback((configs: SimulationStep['activeConfigs']) => {
-        if (!configs || configs.length === 0) return 'vazio';
-        return configs.slice(0, 6).map(cfg => {
-            const label = stateLabelMap.get(cfg.stateId) || cfg.stateId;
-            const stackLabel = cfg.stack.length > 0 ? cfg.stack.join(' ') : 'eps';
-            return `${label} [${stackLabel}]`;
-        }).join(' | ');
     }, [stateLabelMap]);
 
     const stepCount = simulationState?.processedInput.length || 0;
