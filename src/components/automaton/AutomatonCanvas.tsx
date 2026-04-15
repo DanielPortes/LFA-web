@@ -1,11 +1,16 @@
 import React, { useRef, useState, useMemo, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import type { Estado, Transicao, AutomatoData, Tool } from '../../types';
-import { calculatePath, getMousePos, calculateControlPoint, calculateControlOffsetFromPoint, getQuadraticXY } from '../../utils/geometry';
-import { calculateOptimalCurvatures, calculateSmartLabelPositions, calculateLabelWidth } from '../../utils/layout';
-import { EPSILON_SYMBOL } from '../../utils/symbols';
+import { getMousePos, calculateControlOffsetFromPoint } from '../../utils/geometry';
+import { calculateOptimalCurvatures, calculateSmartLabelPositions } from '../../utils/layout';
 import { parseTuringTransition } from '../../utils/turingLogic';
-import { ContextMenu } from '../ui/ContextMenu';
-import { Trash2, Plus, RotateCcw, Check, Flag } from 'lucide-react';
+import {
+    CanvasContextMenu,
+    CanvasSelectionDock,
+    CanvasStateLayer,
+    CanvasTransitionLayer,
+    useCanvasKeyboard,
+    useCanvasViewport
+} from './canvas';
 
 interface CanvasProps {
     data: AutomatoData;
@@ -75,12 +80,17 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
     const dragStartRef = useRef({ x: 0, y: 0 });
     const dragInitialPanRef = useRef({ x: 0, y: 0 });
     const dragInitialStatesRef = useRef<Map<string, { x: number, y: number }>>(new Map());
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragMode, setDragMode] = useState<'state' | 'pan' | 'controlPoint'>('pan');
 
     // Use refs for drag positions to avoid re-renders
     const dragPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
+    const [dragPreviewPositions, setDragPreviewPositions] = useState<Record<string, { x: number; y: number }>>({});
     const [renderTick, setRenderTick] = useState(0);
     const rafRef = useRef<number | null>(null);
     const controlPointDraftRef = useRef<{ transitionId: string; controlPoint: { x: number; y: number } } | null>(null);
+    const [controlPointDraft, setControlPointDraft] = useState<{ transitionId: string; controlPoint: { x: number; y: number } } | null>(null);
+    const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
     const [showTransitionHint, setShowTransitionHint] = useState(() => {
         if (typeof window === 'undefined') return false;
         return localStorage.getItem(TRANSITION_HINT_STORAGE_KEY) !== '1';
@@ -90,6 +100,8 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         if (rafRef.current !== null) return;
         rafRef.current = requestAnimationFrame(() => {
             rafRef.current = null;
+            setDragPreviewPositions({ ...dragPositionsRef.current });
+            setControlPointDraft(controlPointDraftRef.current ? { ...controlPointDraftRef.current, controlPoint: { ...controlPointDraftRef.current.controlPoint } } : null);
             setRenderTick((n) => n + 1);
         });
     }, []);
@@ -103,152 +115,43 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
 
     // Get rendered position of a state (with drag offset applied)
     const getRenderState = useCallback((state: Estado): Estado => {
-        const override = dragPositionsRef.current[state.id];
+        const override = dragPreviewPositions[state.id];
         if (override) {
             return { ...state, x: override.x, y: override.y };
         }
         return state;
-    }, []);
+    }, [dragPreviewPositions]);
 
 
     const [creatingTransition, setCreatingTransition] = useState<{ from: string, toPoint: { x: number, y: number } } | null>(null);
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, type: 'canvas' | 'state' | 'transition', targetId?: string } | null>(null);
-
-    // Internal Pan state if not controlled
-    const [pan, setPanInternal] = useState({ x: 0, y: 0 });
-    const currentPan = externalPan ?? pan;
-
-    // Store callbacks in refs to avoid dependency issues
-    const onPanChangeRef = useRef(onPanChange);
-    const onZoomChangeRef = useRef(onZoomChange);
-    const onTransformChangeRef = useRef(onTransformChange);
-    const onFitToContentRef = useRef(onFitToContent);
-    const onFocusHandledRef = useRef(onFocusHandled);
-
-    useEffect(() => { onPanChangeRef.current = onPanChange; }, [onPanChange]);
-    useEffect(() => { onZoomChangeRef.current = onZoomChange; }, [onZoomChange]);
-    useEffect(() => { onTransformChangeRef.current = onTransformChange; }, [onTransformChange]);
-    useEffect(() => { onFitToContentRef.current = onFitToContent; }, [onFitToContent]);
-    useEffect(() => { onFocusHandledRef.current = onFocusHandled; }, [onFocusHandled]);
-
-    // Stable setPan function
-    const setPan = useCallback((newPan: { x: number; y: number }) => {
-        if (onPanChangeRef.current) {
-            onPanChangeRef.current(newPan);
-        } else {
-            setPanInternal(newPan);
-        }
-    }, []);
 
     // Selection Box
     const [isSelecting, setIsSelecting] = useState(false);
     const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
     const [selectionEnd, setSelectionEnd] = useState({ x: 0, y: 0 });
 
-    // Initial Center - run once when states appear
-    const hasAutoFitRef = useRef(false);
-    // Start from empty history to ensure first mount with preloaded states triggers centering.
-    const stateCountRef = useRef(0);
-    const stateIdsRef = useRef<Set<string>>(new Set());
-
-    useEffect(() => {
-        const prevCount = stateCountRef.current;
-        const currentCount = data.estados.length;
-        const prevIds = stateIdsRef.current;
-        const currentIds = new Set(data.estados.map((s) => s.id));
-        const overlapCount = [...currentIds].filter((id) => prevIds.has(id)).length;
-        const overlapRatio = prevCount > 0
-            ? overlapCount / Math.max(prevCount, currentCount || 1)
-            : 0;
-        const replacedMostStates = prevCount > 0 && currentCount > 0 && overlapRatio < 0.35;
-
-        stateCountRef.current = currentCount;
-        stateIdsRef.current = currentIds;
-
-        if (currentCount === 0) {
-            hasAutoFitRef.current = false;
-            return;
-        }
-        if (!svgRef.current) return;
-
-        const isInitialLoad = prevCount === 0 && currentCount > 0;
-        const shouldRefitForReplacement = replacedMostStates;
-        const isDefaultView = Math.abs(currentPan.x) < 0.5
-            && Math.abs(currentPan.y) < 0.5
-            && Math.abs(zoom - 1) < 0.001;
-
-        if (shouldRefitForReplacement) {
-            hasAutoFitRef.current = false;
-        }
-
-        if (!hasAutoFitRef.current && isDefaultView && (isInitialLoad || shouldRefitForReplacement)) {
-            hasAutoFitRef.current = true;
-            onFitToContentRef.current?.();
-        }
-    }, [data.estados, currentPan.x, currentPan.y, zoom]);
-
-    // Handle External Focus - use ref to avoid callback dependency loops
-    const focusHandledRef = useRef<string | null>(null);
-
-    useEffect(() => {
-        // Reset when focusStateId is cleared
-        if (!focusStateId) {
-            focusHandledRef.current = null;
-            return;
-        }
-        // Prevent handling the same focus twice
-        if (focusHandledRef.current === focusStateId) return;
-
-        const target = data.estados.find(s => s.id === focusStateId);
-        if (!target) return;
-
-        focusHandledRef.current = focusStateId;
-        setSelection({ type: 'state', id: target.id });
-        setSelectedStateIds([target.id]);
-
-        if (svgRef.current) {
-            const rect = svgRef.current.getBoundingClientRect();
-            const newPan = {
-                x: rect.width / 2 - target.x * zoom,
-                y: rect.height / 2 - target.y * zoom
-            };
-
-            const currentPanVal = panRef.current;
-            const panDelta = Math.abs(currentPanVal.x - newPan.x) + Math.abs(currentPanVal.y - newPan.y);
-
-            if (panDelta > 1) {
-                setPan(newPan);
-            }
-        }
-        onFocusHandledRef.current?.();
-    }, [focusStateId, data.estados, zoom, setPan]);
-
-    // Space key for panning
-    const isSpacePressed = useRef(false);
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.code === 'Space' && !e.repeat && !readOnly) {
-                isSpacePressed.current = true;
-            }
-        };
-        const handleKeyUp = (e: KeyboardEvent) => {
-            if (e.code === 'Space') {
-                isSpacePressed.current = false;
-            }
-        };
-        // Reset modifier on window blur (prevents stuck keys)
-        const handleBlur = () => {
-            isSpacePressed.current = false;
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-        window.addEventListener('blur', handleBlur);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('keyup', handleKeyUp);
-            window.removeEventListener('blur', handleBlur);
-        };
-    }, [readOnly]);
+    const {
+        currentPan,
+        resetViewport,
+        setPan,
+    } = useCanvasViewport({
+        data,
+        zoom,
+        externalPan,
+        onPanChange,
+        onZoomChange,
+        onTransformChange,
+        onFitToContent,
+        focusStateId,
+        onFocusHandled,
+        svgRef,
+        containerRef,
+        onFocusState: useCallback((focusedSelection) => {
+            setSelection(focusedSelection);
+            setSelectedStateIds([focusedSelection.id]);
+        }, []),
+    });
 
     const deleteState = useCallback((id: string) => {
         onChange({
@@ -270,6 +173,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
 
         const currentTransition = data.transicoes.find((t) => t.id === draft.transitionId);
         controlPointDraftRef.current = null;
+        setControlPointDraft(null);
 
         if (!currentTransition) return;
 
@@ -289,38 +193,55 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         });
     }, [data, onChange]);
 
-    // Shortcuts
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (readOnly) return;
-            if (e.target instanceof HTMLInputElement) return;
-
-            if (e.key === 'Delete' || e.key === 'Backspace') {
-                if (selection?.type === 'state') deleteState(selection.id);
-                else if (selection?.type === 'transition') deleteTransition(selection.id);
-                else if (selectedStateIds.length > 0) {
-                    const newEstados = data.estados.filter(e => !selectedStateIds.includes(e.id));
-                    const newTransicoes = data.transicoes.filter(t => !selectedStateIds.includes(t.de) && !selectedStateIds.includes(t.para));
-                    onChange({ ...data, estados: newEstados, transicoes: newTransicoes });
-                    setSelectedStateIds([]);
-                    setSelectedTransitionIds([]);
-                    setSelection(null);
-                }
-            }
-            if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
-                e.preventDefault();
-                setSelectedStateIds(data.estados.map(s => s.id));
-                setSelectedTransitionIds(data.transicoes.map(t => t.id));
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selection, selectedStateIds, data, readOnly, deleteState, deleteTransition, onChange]);
+    const { isCtrlPressed, isSpacePressed } = useCanvasKeyboard({
+        data,
+        readOnly,
+        selection,
+        selectedStateIds,
+        deleteState,
+        deleteTransition,
+        onChange,
+        onClearSelection: () => {
+            setSelectedStateIds([]);
+            setSelectedTransitionIds([]);
+            setSelection(null);
+        },
+        onSelectAll: (stateIds, transitionIds) => {
+            setSelectedStateIds(stateIds);
+            setSelectedTransitionIds(transitionIds);
+        }
+    });
 
     useEffect(() => {
         const closeMenu = () => setContextMenu(null);
         window.addEventListener('click', closeMenu);
         return () => window.removeEventListener('click', closeMenu);
+    }, []);
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const updateSize = () => {
+            setContainerSize({
+                width: container.clientWidth,
+                height: container.clientHeight
+            });
+        };
+
+        updateSize();
+
+        window.addEventListener('resize', updateSize);
+
+        const resizeObserver = typeof ResizeObserver !== 'undefined'
+            ? new ResizeObserver(updateSize)
+            : null;
+        resizeObserver?.observe(container);
+
+        return () => {
+            resizeObserver?.disconnect();
+            window.removeEventListener('resize', updateSize);
+        };
     }, []);
 
     // Global mouseup handler to commit drag even if mouse leaves window
@@ -340,12 +261,15 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
                     onChange({ ...data, estados: newEstados });
                 }
                 dragPositionsRef.current = {};
+                setDragPreviewPositions({});
             }
             if (isDraggingRef.current && dragTypeRef.current === 'controlPoint') {
                 commitControlPointDraft();
             }
             isDraggingRef.current = false;
+            setIsDragging(false);
             dragTypeRef.current = 'pan';
+            setDragMode('pan');
             dragTargetRef.current = null;
             setCreatingTransition(null);
             setIsSelecting(false);
@@ -363,66 +287,6 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
     const snapToGridValue = useCallback((value: number) => (
         snapToGrid ? Math.round(value / GRID_SIZE) * GRID_SIZE : value
     ), [snapToGrid]);
-
-    // Refs for zoom handler to avoid stale closure values
-    const zoomRef = useRef(zoom);
-    const panRef = useRef(currentPan);
-    useEffect(() => { zoomRef.current = zoom; }, [zoom]);
-    useEffect(() => { panRef.current = currentPan; }, [currentPan]);
-
-    // Zoom with Scroll Wheel - use native event listener for non-passive
-    // Attach wheel event with passive: false to enable preventDefault
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        const handleWheel = (e: WheelEvent) => {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const rect = container.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-
-            // Use refs for current values (avoid stale closures)
-            const currentZoom = zoomRef.current;
-            const currentPanVal = panRef.current;
-
-            // World position under mouse cursor
-            const worldX = (mouseX - currentPanVal.x) / currentZoom;
-            const worldY = (mouseY - currentPanVal.y) / currentZoom;
-
-            // Calculate zoom delta
-            const ZOOM_SENSITIVITY = 0.002;
-            const delta = -e.deltaY;
-            const scaleFactor = Math.exp(delta * ZOOM_SENSITIVITY);
-
-            let newZoom = currentZoom * scaleFactor;
-            newZoom = Math.max(0.25, Math.min(4, newZoom));
-
-            // Skip tiny changes
-            if (Math.abs(newZoom - currentZoom) < 0.001) return;
-
-            // Calculate new pan to keep world point under mouse
-            const newPanX = mouseX - worldX * newZoom;
-            const newPanY = mouseY - worldY * newZoom;
-
-            // Update zoom and pan atomically if possible - use refs for callbacks
-            if (onTransformChangeRef.current) {
-                onTransformChangeRef.current(newZoom, { x: newPanX, y: newPanY });
-            } else {
-                if (onZoomChangeRef.current) onZoomChangeRef.current(newZoom);
-                if (onPanChangeRef.current) {
-                    onPanChangeRef.current({ x: newPanX, y: newPanY });
-                } else {
-                    setPanInternal({ x: newPanX, y: newPanY });
-                }
-            }
-        };
-
-        container.addEventListener('wheel', handleWheel, { passive: false });
-        return () => container.removeEventListener('wheel', handleWheel);
-    }, []); // Empty deps - callbacks are accessed via refs
 
     // Smart position finding using golden angle spiral
     const findFreeSpot = useCallback((x: number, y: number): { x: number, y: number } => {
@@ -478,29 +342,6 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         onChange({ ...data, estados: [...data.estados, newState] });
     }, [data, findFreeSpot, onChange, readOnly, snapToGridValue]);
 
-    // Track Ctrl key for cursor
-    const [isCtrlPressed, setIsCtrlPressed] = useState(false);
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Control') setIsCtrlPressed(true);
-        };
-        const handleKeyUp = (e: KeyboardEvent) => {
-            if (e.key === 'Control') setIsCtrlPressed(false);
-        };
-        // Reset on window blur (prevents stuck modifier)
-        const handleBlur = () => {
-            setIsCtrlPressed(false);
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-        window.addEventListener('blur', handleBlur);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('keyup', handleKeyUp);
-            window.removeEventListener('blur', handleBlur);
-        };
-    }, []);
-
     // --- Interaction Handlers ---
 
     const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
@@ -508,7 +349,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         if (onInteract) onInteract();
         const pos = getMousePos(e.nativeEvent as any, svgRef.current);
         const isTouch = 'touches' in e;
-        const isSpace = isSpacePressed.current && !isTouch && (e as React.MouseEvent).button === 0;
+        const isSpace = isSpacePressed && !isTouch && (e as React.MouseEvent).button === 0;
         const isMiddle = !isTouch && ((e as React.MouseEvent).button === 1 || ((e as React.MouseEvent).button === 0 && (e as React.MouseEvent).ctrlKey));
 
         if (isMiddle || isSpace) {
@@ -516,7 +357,9 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
             const clientY = isTouch ? (e as unknown as React.TouchEvent).touches[0].clientY : (e as React.MouseEvent).clientY;
 
             isDraggingRef.current = true;
+            setIsDragging(true);
             dragTypeRef.current = 'pan';
+            setDragMode('pan');
             dragStartRef.current = { x: clientX, y: clientY };
             dragInitialPanRef.current = { x: currentPan.x, y: currentPan.y };
             return;
@@ -594,7 +437,9 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
 
         // Setup Dragging
         isDraggingRef.current = true;
+        setIsDragging(true);
         dragTypeRef.current = 'state';
+        setDragMode('state');
         dragTargetRef.current = stateId;
         dragStartRef.current = { x: pos.x, y: pos.y };
 
@@ -617,15 +462,19 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         const pos = getMousePos(e.nativeEvent, svgRef.current);
 
         isDraggingRef.current = true;
+        setIsDragging(true);
         dragTypeRef.current = 'controlPoint';
+        setDragMode('controlPoint');
         dragTargetRef.current = transId;
         dragStartRef.current = { x: pos.x, y: pos.y };
 
         const currentTransition = data.transicoes.find((t) => t.id === transId);
         if (currentTransition?.controlPoint) {
             controlPointDraftRef.current = { transitionId: transId, controlPoint: { ...currentTransition.controlPoint } };
+            setControlPointDraft({ transitionId: transId, controlPoint: { ...currentTransition.controlPoint } });
         } else {
             controlPointDraftRef.current = null;
+            setControlPointDraft(null);
         }
 
         setSelection({ type: 'transition', id: transId });
@@ -716,7 +565,9 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
             }
 
             isDraggingRef.current = false;
+            setIsDragging(false);
             dragTypeRef.current = 'pan';
+            setDragMode('pan');
             dragTargetRef.current = null;
             scheduleRender();
         } else if (creatingTransition) {
@@ -836,8 +687,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
 
     const selectionDockStyle = useMemo(() => {
         if (!selection || readOnly) return undefined;
-        const container = containerRef.current;
-        if (!container) return undefined;
+        if (containerSize.width === 0 || containerSize.height === 0) return undefined;
 
         let target: { x: number; y: number } | null = null;
         if (selection.type === 'state') {
@@ -859,8 +709,8 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         const dockWidth = 320;
         const dockHeight = 60;
         const padding = 16;
-        const containerWidth = container.clientWidth;
-        const containerHeight = container.clientHeight;
+        const containerWidth = containerSize.width;
+        const containerHeight = containerSize.height;
 
         // Calculate clamped X position considering dock width
         const minX = dockWidth / 2 + padding;
@@ -884,7 +734,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
             transform: `translate(-50%, ${shouldFlip ? '0' : '-100%'})`,
             maxWidth: `${containerWidth - padding * 2}px`
         };
-    }, [selection, readOnly, data.estados, labelPositions, currentPan, zoom, getRenderState]);
+    }, [selection, readOnly, data.estados, labelPositions, currentPan, zoom, getRenderState, containerSize]);
 
     const selectedTransition = selection?.type === 'transition'
         ? data.transicoes.find(t => t.id === selection.id) ?? null
@@ -913,150 +763,16 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         });
     };
 
-    // Render Transitions
-    const renderTransitions = useMemo(() => {
-        const elements: React.ReactElement[] = [];
-
-        for (const t of data.transicoes) {
-            const sourceBase = data.estados.find(e => e.id === t.de);
-            const targetBase = data.estados.find(e => e.id === t.para);
-            if (!sourceBase || !targetBase) continue;
-
-            const source = getRenderState(sourceBase);
-            const target = getRenderState(targetBase);
-
-            const curvature = curvatures.get(t.id) || 0;
-            const controlPointDraft = controlPointDraftRef.current?.transitionId === t.id
-                ? controlPointDraftRef.current.controlPoint
-                : null;
-            const controlPointOffset = controlPointDraft ?? t.controlPoint ?? null;
-
-            const pathD = calculatePath(source, target, curvature, controlPointOffset);
-
-            const isSelected = (selection?.type === 'transition' && selection.id === t.id) ||
-                              selectedTransitionIds.includes(t.id);
-            const isActive = activeTransitions.includes(t.id);
-
-            const controlPoint = calculateControlPoint(source, target, curvature, controlPointOffset);
-
-            const labelText = labelTexts.get(t.id) || '?';
-            const labelWidth = calculateLabelWidth(labelText);
-            const labelAnchor = source.id === target.id
-                ? { x: source.x, y: source.y - (52 + Math.abs(curvature) * 0.5) }
-                : getQuadraticXY(0.5, source.x, source.y, controlPoint.x, controlPoint.y, target.x, target.y);
-            const labelPos = controlPointDraft
-                ? labelAnchor
-                : (labelPositions.get(t.id) || labelAnchor);
-            const connectorDx = labelPos.x - labelAnchor.x;
-            const connectorDy = labelPos.y - labelAnchor.y;
-            const shouldRenderConnector = Math.sqrt(connectorDx * connectorDx + connectorDy * connectorDy) > 14;
-
-            elements.push(
-                <g
-                    key={t.id}
-                    className="group/trans"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setSelection({ type: 'transition', id: t.id });
-                        if (!(e.shiftKey || e.ctrlKey || e.metaKey)) {
-                            setSelectedTransitionIds([t.id]);
-                        } else {
-                            setSelectedTransitionIds(prev =>
-                                prev.includes(t.id) ? prev : [...prev, t.id]
-                            );
-                        }
-                    }}
-                    onContextMenu={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setContextMenu({ x: e.clientX, y: e.clientY, type: 'transition', targetId: t.id });
-                    }}
-                >
-                    {/* Invisible Wide Hit Area */}
-                    <path d={pathD} stroke="transparent" strokeWidth="20" fill="none" className="cursor-pointer" />
-
-                    {/* Visible Line */}
-                    <path
-                        d={pathD}
-                        className={`fill-none pointer-events-none
-                            ${isSelected ? 'stroke-ios-blue stroke-[3px] filter drop-shadow-md' :
-                                isActive ? 'stroke-ios-green stroke-[3px] animate-pulse' :
-                                    'stroke-[var(--stroke-idle)] stroke-2 group-hover/trans:stroke-[var(--stroke-hover)]'
-                            }`}
-                        markerEnd={`url(#${isSelected ? 'arrow-selected' : (isActive ? 'arrow-active' : 'arrow')})`}
-                    />
-
-                    {/* Label with smart positioning */}
-                    <g transform={`translate(${labelPos.x}, ${labelPos.y})`}>
-                        {shouldRenderConnector && (
-                            <line
-                                x1={labelAnchor.x - labelPos.x}
-                                y1={labelAnchor.y - labelPos.y}
-                                x2={0}
-                                y2={0}
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                                strokeDasharray="3,3"
-                                className="text-muted pointer-events-none opacity-80"
-                            />
-                        )}
-                        <rect
-                            x={-labelWidth / 2}
-                            y="-12"
-                            width={labelWidth}
-                            height="24"
-                            rx="8"
-                            strokeWidth="1.5"
-                            className={`cursor-pointer drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]
-                                ${isSelected ? 'fill-ios-blue stroke-ios-blue shadow-lg' :
-                                    isActive ? 'fill-ios-green stroke-ios-green' :
-                                        t.simbolo === '' ? 'fill-red-50 dark:fill-red-900/30 stroke-ios-red/50' :
-                                            'fill-[var(--canvas-surface)] stroke-[var(--stroke-idle)]'
-                                }`}
-                        />
-                        <text
-                            dy="5"
-                            textAnchor="middle"
-                            className={`text-[13px] font-mono font-bold select-none pointer-events-none
-                                ${isSelected || isActive ? 'fill-white' :
-                                    t.simbolo === '' ? 'fill-ios-red' :
-                                        'fill-[var(--text-primary)]'
-                                }`}
-                        >
-                            {labelText}
-                        </text>
-                    </g>
-
-                    {/* Control Handle (Only when selected) */}
-                    {isSelected && !readOnly && (
-                        <g
-                            onMouseDown={(e) => handleControlPointMouseDown(e, t.id)}
-                            style={{ cursor: 'grab' }}
-                        >
-                            {/* Larger invisible hit area for easier grabbing */}
-                            <circle
-                                cx={controlPoint.x}
-                                cy={controlPoint.y}
-                                r={14}
-                                fill="transparent"
-                                className="pointer-events-auto"
-                            />
-                            {/* Visible handle */}
-                            <circle
-                                cx={controlPoint.x}
-                                cy={controlPoint.y}
-                                r={7}
-                                className="fill-white stroke-ios-blue stroke-2 pointer-events-none"
-                                style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' }}
-                            />
-                        </g>
-                    )}
-                </g>
-            );
+    const handleSelectTransition = useCallback((transitionId: string, multi: boolean) => {
+        setSelection({ type: 'transition', id: transitionId });
+        if (!multi) {
+            setSelectedTransitionIds([transitionId]);
+            return;
         }
-
-        return elements;
-    }, [data, selection, selectedTransitionIds, activeTransitions, readOnly, curvatures, labelPositions, labelTexts, getRenderState, handleControlPointMouseDown]);
+        setSelectedTransitionIds((previous) => (
+            previous.includes(transitionId) ? previous : [...previous, transitionId]
+        ));
+    }, []);
 
     const creatingFromState = creatingTransition
         ? data.estados.find(e => e.id === creatingTransition.from)
@@ -1064,8 +780,8 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
     const creatingFromRender = creatingFromState ? getRenderState(creatingFromState) : null;
 
     const getCursorClass = () => {
-        if (dragTypeRef.current === 'pan' && isDraggingRef.current) return 'cursor-grabbing';
-        if (isCtrlPressed || isSpacePressed.current) return 'cursor-grab';
+        if (dragMode === 'pan' && isDragging) return 'cursor-grabbing';
+        if (isCtrlPressed || isSpacePressed) return 'cursor-grab';
         if (tool === 'state') return 'cursor-crosshair';
         if (tool === 'delete') return 'cursor-default';
         return '';
@@ -1104,7 +820,21 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
                 </defs>
 
                 <g transform={`translate(${currentPan.x}, ${currentPan.y}) scale(${zoom})`}>
-                    {renderTransitions}
+                    <CanvasTransitionLayer
+                        data={data}
+                        selection={selection}
+                        selectedTransitionIds={selectedTransitionIds}
+                        activeTransitions={activeTransitions}
+                        readOnly={readOnly}
+                        curvatures={curvatures}
+                        labelPositions={labelPositions}
+                        labelTexts={labelTexts}
+                        getRenderState={getRenderState}
+                        handleControlPointMouseDown={handleControlPointMouseDown}
+                        controlPointDraft={controlPointDraft}
+                        onSelectTransition={handleSelectTransition}
+                        onOpenContextMenu={setContextMenu}
+                    />
 
                     {creatingTransition && creatingFromRender && (
                         <line
@@ -1130,253 +860,45 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
                         />
                     )}
 
-                    {data.estados.map(s => {
-                        const renderState = getRenderState(s);
-                        const isSelected = (selection?.type === 'state' && selection.id === s.id) || selectedStateIds.includes(s.id);
-                        const isActive = activeStates.includes(s.id);
-                        return (
-                            <g
-                                key={s.id}
-                                id={`group-${s.id}`}
-                                transform={`translate(${renderState.x}, ${renderState.y})`}
-                                onMouseDown={(e) => handleStateMouseDown(e, s.id)}
-                                className="cursor-grab active:cursor-grabbing hover:brightness-110"
-                            >
-                                {s.isInicial && (
-                                    <path d="M -50 0 L -32 0" stroke="currentColor" strokeWidth="2" markerEnd="url(#arrow)" className="text-stroke-idle opacity-70" />
-                                )}
-                                <circle r="28" className="fill-transparent" />
-                                <circle
-                                    r={isSelected || isActive ? 28 : 26}
-                                    className={`
-                                        ${isActive ? 'fill-ios-green stroke-ios-green shadow-[0_0_20px_rgba(52,199,89,0.6)]' :
-                                            (isSelected ? 'fill-ios-blue stroke-ios-blue shadow-[0_0_15px_rgba(0,122,255,0.4)]' :
-                                                'fill-[var(--canvas-surface)] stroke-[var(--stroke-idle)]')}`}
-                                    strokeWidth={isSelected || isActive ? 2.5 : 2}
-                                />
-                                {s.isFinal && (
-                                    <circle r="22" fill="none" className={`pointer-events-none ${isActive || isSelected ? 'stroke-white' : 'stroke-[var(--stroke-idle)]'}`} strokeWidth="1.5" />
-                                )}
-                                <text dy="5" textAnchor="middle" className={`text-[13px] font-bold select-none pointer-events-none font-mono ${isActive || isSelected ? 'fill-white' : 'fill-[var(--text-primary)]'}`}>
-                                    {s.label}
-                                </text>
-                                {data.tipo === 'Moore' && s.output && (
-                                    <g transform="translate(0, -36)">
-                                        <rect x="-10" y="-8" width="20" height="16" rx="4" className="fill-[var(--surface-muted)] stroke-[var(--border-color)]" strokeWidth="1" />
-                                        <text dy="3" textAnchor="middle" className="text-[10px] font-bold fill-[var(--text-secondary)] font-mono">
-                                            {s.output}
-                                        </text>
-                                    </g>
-                                )}
-                            </g>
-                        );
-                    })}
+                    <CanvasStateLayer
+                        data={data}
+                        selection={selection}
+                        selectedStateIds={selectedStateIds}
+                        activeStates={activeStates}
+                        getRenderState={getRenderState}
+                        onStateMouseDown={handleStateMouseDown}
+                    />
                 </g>
             </svg>
 
-            {/* Context Menu */}
-            {contextMenu && (
-                <ContextMenu
-                    x={contextMenu.x}
-                    y={contextMenu.y}
-                    onClose={() => setContextMenu(null)}
-                    options={
-                        contextMenu.type === 'state' ? [
-                            {
-                                label: 'Inicial',
-                                icon: <Flag size={14} />,
-                                action: () => {
-                                    if (contextMenu.targetId) {
-                                        onChange({ ...data, estados: data.estados.map(s => s.id === contextMenu.targetId ? { ...s, isInicial: !s.isInicial } : s) });
-                                    }
-                                }
-                            },
-                            {
-                                label: 'Final',
-                                icon: <Check size={14} />,
-                                action: () => {
-                                    if (contextMenu.targetId) {
-                                        onChange({ ...data, estados: data.estados.map(s => s.id === contextMenu.targetId ? { ...s, isFinal: !s.isFinal } : s) });
-                                    }
-                                }
-                            },
-                            { separator: true, label: '', action: () => { } },
-                            {
-                                label: 'Excluir',
-                                icon: <Trash2 size={14} />,
-                                danger: true,
-                                action: () => {
-                                    if (contextMenu.targetId) deleteState(contextMenu.targetId);
-                                }
-                            }
-                        ] : contextMenu.type === 'transition' ? [
-                            {
-                                label: 'Resetar Curvatura',
-                                icon: <RotateCcw size={14} />,
-                                action: () => {
-                                    if (contextMenu.targetId) {
-                                        onChange({ ...data, transicoes: data.transicoes.map(t => t.id === contextMenu.targetId ? { ...t, curvatura: 0, controlPoint: null } : t) });
-                                    }
-                                }
-                            },
-                            {
-                                label: 'Excluir',
-                                icon: <Trash2 size={14} />,
-                                danger: true,
-                                action: () => {
-                                    if (contextMenu.targetId) deleteTransition(contextMenu.targetId);
-                                }
-                            }
-                        ] : [
-                            {
-                                label: 'Novo Estado',
-                                icon: <Plus size={14} />,
-                                action: () => {
-                                    const rect = svgRef.current?.getBoundingClientRect();
-                                    if (rect) {
-                                        const mouseX = contextMenu.x - rect.left;
-                                        const mouseY = contextMenu.y - rect.top;
-                                        const x = (mouseX - currentPan.x) / zoom;
-                                        const y = (mouseY - currentPan.y) / zoom;
-                                        createStateAtLogical(x, y);
-                                    }
-                                }
-                            },
-                            {
-                                label: 'Resetar View',
-                                icon: <RotateCcw size={14} />,
-                                action: () => {
-                                    if (onFitToContentRef.current) onFitToContentRef.current();
-                                    else {
-                                        if (onZoomChangeRef.current) onZoomChangeRef.current(1);
-                                        setPan({ x: 0, y: 0 });
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                />
-            )}
+            <CanvasContextMenu
+                contextMenu={contextMenu}
+                data={data}
+                svgRef={svgRef}
+                currentPan={currentPan}
+                zoom={zoom}
+                onClose={() => setContextMenu(null)}
+                onChange={onChange}
+                onDeleteState={deleteState}
+                onDeleteTransition={deleteTransition}
+                onCreateStateAtLogical={createStateAtLogical}
+                onResetView={resetViewport}
+            />
 
-            {/* Selection Dock */}
-            {!readOnly && selection && !contextMenu && !isDraggingRef.current && (
-                <div
-                    className="absolute glass-dock px-6 py-3 rounded-2xl flex items-center gap-5 animate-scale-in z-50"
-                    style={selectionDockStyle ?? { left: '50%', top: '5rem', transform: 'translateX(-50%)' }}
-                >
-                    {selection.type === 'state' ? (
-                        <>
-                            <div className="flex flex-col gap-1">
-                                <span className="ui-kicker-2xs text-muted">Nome</span>
-                                <input
-                                    value={data.estados.find(e => e.id === selection.id)?.label || ''}
-                                    onChange={(e) => onChange({ ...data, estados: data.estados.map(s => s.id === selection.id ? { ...s, label: e.target.value } : s) })}
-                                    className="w-16 bg-transparent border-b border-default px-1 py-0.5 text-center font-bold text-sm outline-none focus:border-ios-blue text-primary"
-                                />
-                            </div>
-                            {data.tipo === 'Moore' && (
-                                <>
-                                    <div className="h-6 w-px bg-border"></div>
-                                    <div className="flex flex-col gap-1">
-                                        <span className="ui-kicker-2xs text-muted">Saída</span>
-                                        <input
-                                            value={data.estados.find(e => e.id === selection.id)?.output ?? ''}
-                                            onChange={(e) => onChange({
-                                                ...data,
-                                                estados: data.estados.map(s => s.id === selection.id ? { ...s, output: e.target.value } : s)
-                                            })}
-                                            className="w-16 bg-transparent border-b border-default px-1 py-0.5 text-center font-mono font-bold text-sm outline-none focus:border-ios-blue text-primary"
-                                            placeholder="ex: 0"
-                                        />
-                                    </div>
-                                </>
-                            )}
-                            <div className="h-6 w-px bg-border"></div>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => onChange({ ...data, estados: data.estados.map(s => s.id === selection.id ? { ...s, isInicial: !s.isInicial } : s) })}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${data.estados.find(e => e.id === selection.id)?.isInicial ? 'bg-ios-blue border-ios-blue text-white' : 'bg-transparent border-default text-secondary hover:bg-surface-muted'}`}
-                                >
-                                    Inicial
-                                </button>
-                                <button
-                                    onClick={() => onChange({ ...data, estados: data.estados.map(s => s.id === selection.id ? { ...s, isFinal: !s.isFinal } : s) })}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${data.estados.find(e => e.id === selection.id)?.isFinal ? 'bg-ios-purple border-ios-purple text-white' : 'bg-transparent border-default text-secondary hover:bg-surface-muted'}`}
-                                >
-                                    Final
-                                </button>
-                            </div>
-                        </>
-                    ) : (
-                        <div className="flex flex-col gap-1">
-                            <span className="ui-kicker-2xs text-muted">
-                                {isTuringMachine ? 'Leitura/Escrita' : (data.tipo === 'AP' ? 'Rótulo' : 'Símbolo(s)')}
-                            </span>
-                            {isTuringMachine ? (
-                                <div className="flex gap-2 items-center">
-                                    <input
-                                        value={turingRead}
-                                        onChange={(e) => updateTuringTransition({ read: e.target.value })}
-                                        className="w-20 bg-surface-muted rounded-md px-3 py-1.5 text-center font-mono font-bold text-sm outline-none focus:ring-2 ring-ios-blue/50 text-primary"
-                                        placeholder="leitura"
-                                        autoFocus
-                                    />
-                                    <span className="text-xs text-muted">-&gt;</span>
-                                    <input
-                                        value={turingWrite}
-                                        onChange={(e) => updateTuringTransition({ write: e.target.value })}
-                                        className="w-20 bg-surface-muted rounded-md px-3 py-1.5 text-center font-mono font-bold text-sm outline-none focus:ring-2 ring-ios-blue/50 text-primary"
-                                        placeholder="escrita"
-                                    />
-                                    <select
-                                        value={turingDir}
-                                        onChange={(e) => updateTuringTransition({ direction: e.target.value as 'L' | 'R' | 'S' })}
-                                        className="bg-surface-muted rounded-md px-2 py-1.5 text-xs font-bold text-primary outline-none"
-                                    >
-                                        <option value="L">L</option>
-                                        <option value="R">R</option>
-                                        <option value="S">S</option>
-                                    </select>
-                                </div>
-                            ) : (
-                                <div className="flex gap-2 items-center">
-                                    <input
-                                        value={data.transicoes.find(t => t.id === selection.id)?.simbolo || ''}
-                                        onChange={(e) => onChange({
-                                            ...data,
-                                            transicoes: data.transicoes.map(t => t.id === selection.id ? { ...t, simbolo: e.target.value } : t)
-                                        })}
-                                        className={`w-32 bg-surface-muted rounded-md px-3 py-1.5 text-center font-mono font-bold text-sm outline-none focus:ring-2 ring-ios-blue/50 text-primary`}
-                                        placeholder={data.tipo === 'AP' ? 'ex: a, Z -> AZ' : 'ex: a,b'}
-                                        autoFocus
-                                    />
-                                    <button
-                                        onClick={() => onChange({
-                                            ...data,
-                                            transicoes: data.transicoes.map(t => t.id === selection.id ? { ...t, simbolo: EPSILON_SYMBOL } : t)
-                                        })}
-                                        className="px-2 py-1.5 rounded-md text-xs font-bold text-status-info bg-status-info-soft border border-status-info status-hover-info transition-colors"
-                                        title={`Inserir ${EPSILON_SYMBOL}`}
-                                    >
-                                        {EPSILON_SYMBOL}
-                                    </button>
-                                    {data.tipo === 'Mealy' && (
-                                        <input
-                                            value={data.transicoes.find(t => t.id === selection.id)?.output ?? ''}
-                                            onChange={(e) => onChange({
-                                                ...data,
-                                                transicoes: data.transicoes.map(t => t.id === selection.id ? { ...t, output: e.target.value } : t)
-                                            })}
-                                            className="w-16 bg-surface-muted rounded-md px-3 py-1.5 text-center font-mono font-bold text-sm outline-none focus:ring-2 ring-ios-blue/50 text-primary"
-                                            placeholder="saída"
-                                        />
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            )}
+            <CanvasSelectionDock
+                data={data}
+                selection={selection}
+                readOnly={readOnly}
+                contextMenuOpen={!!contextMenu}
+                isDragging={isDragging}
+                selectionDockStyle={selectionDockStyle}
+                onChange={onChange}
+                isTuringMachine={isTuringMachine}
+                turingRead={turingRead}
+                turingWrite={turingWrite}
+                turingDir={turingDir}
+                onUpdateTuringTransition={updateTuringTransition}
+            />
 
             {!readOnly && showTransitionHint && selection?.type === 'transition' && !contextMenu && (
                 <div className="absolute left-1/2 top-6 -translate-x-1/2 z-[60] glass-panel px-4 py-3 rounded-2xl max-w-md">

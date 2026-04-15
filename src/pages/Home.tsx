@@ -8,11 +8,31 @@ const classInfo = [
     { icon: Calendar, title: 'Quinta (quinzenal): 14h - 16h', subtitle: 'Atendimento (Sala 432)' }
 ];
 
-const timeline = [
-    { label: 'Prova 1', date: '24/11/2025', status: 'done', description: 'AFD, AFN, minimização, ER' },
-    { label: 'Prova 2', date: '12/01/2026', status: 'active', description: 'GLC, AP e propriedades' },
-    { label: 'Trabalho', date: '21/01/2026', status: 'next', description: 'Opcional' },
-    { label: '2ª Chamada', date: '19/01/2026', status: 'next', description: 'Conteúdo completo' }
+const learningJourney = [
+    {
+        label: 'Fundamentos',
+        eyebrow: 'Base',
+        status: 'done',
+        description: 'Alfabetos, linguagens, operações e notação formal.'
+    },
+    {
+        label: 'Autômatos Finitos',
+        eyebrow: 'Núcleo',
+        status: 'active',
+        description: 'AFD, AFN, equivalência, regex e minimização.'
+    },
+    {
+        label: 'Gramáticas e AP',
+        eyebrow: 'Expansão',
+        status: 'next',
+        description: 'GLC, derivação, normalização e autômatos com pilha.'
+    },
+    {
+        label: 'Máquinas e aplicações',
+        eyebrow: 'Fecho',
+        status: 'next',
+        description: 'MT, transdutores, hierarquia e aplicações práticas.'
+    }
 ] as const;
 
 export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => (
@@ -88,12 +108,12 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) 
                     <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-ios-indigo">
                         <Move size={20} />
                     </div>
-                    Cronograma de avaliações
+                    Trilha sugerida da disciplina
                 </h3>
 
                 <div className="relative flex flex-col md:flex-row gap-6 md:gap-0 md:justify-between md:items-start px-2 md:px-8">
                     <div className="absolute left-[19px] top-[10px] bottom-[10px] w-px bg-border md:left-12 md:right-12 md:top-[18px] md:bottom-auto md:h-0.5 md:w-auto" />
-                    {timeline.map((item) => (
+                    {learningJourney.map((item) => (
                         <div key={item.label} className="relative flex md:flex-col items-start md:items-center gap-4 md:w-1/4">
                             <div
                                 className={`w-10 h-10 rounded-full border-[3px] flex items-center justify-center shadow-sm transition-all duration-300 z-10 ${
@@ -116,7 +136,7 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) 
                                     {item.label}
                                 </span>
                                 <span className="ui-kicker-xs text-muted bg-surface-muted px-2 py-1 rounded-md inline-block mb-2">
-                                    {item.date}
+                                    {item.eyebrow}
                                 </span>
                                 <p className="text-xs text-muted leading-normal">{item.description}</p>
                             </div>

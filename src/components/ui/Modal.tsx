@@ -21,10 +21,28 @@ const unlockScroll = () => {
 };
 
 interface ModalProps extends ModalBaseProps, WithChildren, BaseProps {
-    title?: string;
+    title?: React.ReactNode;
+    hideHeader?: boolean;
+    header?: React.ReactNode;
+    bodyClassName?: string;
+    overlayClassName?: string;
+    labelledById?: string;
+    describedById?: string;
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, className = '' }) => {
+export const Modal: React.FC<ModalProps> = ({
+    isOpen,
+    onClose,
+    children,
+    title,
+    hideHeader = false,
+    header,
+    bodyClassName = '',
+    overlayClassName = '',
+    labelledById,
+    describedById,
+    className = ''
+}) => {
     const [isVisible, setIsVisible] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
     const titleId = useId();
@@ -47,7 +65,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, 
     if (!isVisible) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+        <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 ${overlayClassName}`}>
             {/* Backdrop */}
             <div
                 className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${isAnimating ? 'opacity-100' : 'opacity-0'
@@ -60,7 +78,8 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, 
                 ref={dialogRef}
                 role="dialog"
                 aria-modal="true"
-                aria-labelledby={title ? titleId : undefined}
+                aria-labelledby={labelledById ?? (!hideHeader && title ? titleId : undefined)}
+                aria-describedby={describedById}
                 tabIndex={-1}
                 className={`
                     relative w-full max-w-5xl max-h-[90vh] flex flex-col
@@ -71,21 +90,25 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, 
                 `}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-default">
-                    <h3 id={titleId} className="text-xl font-bold text-primary">
-                        {title}
-                    </h3>
-                    <button
-                        onClick={onClose}
-                        className="p-2 rounded-full hover:bg-surface-muted text-secondary transition-colors"
-                        aria-label="Fechar"
-                    >
-                        <X size={20} />
-                    </button>
-                </div>
+                {!hideHeader && (
+                    header ?? (
+                        <div className="flex items-center justify-between p-6 border-b border-default">
+                            <h3 id={titleId} className="text-xl font-bold text-primary">
+                                {title}
+                            </h3>
+                            <button
+                                onClick={onClose}
+                                className="p-2 rounded-full hover:bg-surface-muted text-secondary transition-colors"
+                                aria-label="Fechar"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                    )
+                )}
 
                 {/* Body */}
-                <div className="flex-1 overflow-auto p-6 custom-scrollbar">
+                <div className={`flex-1 overflow-auto p-6 custom-scrollbar ${bodyClassName}`}>
                     {children}
                 </div>
             </div>

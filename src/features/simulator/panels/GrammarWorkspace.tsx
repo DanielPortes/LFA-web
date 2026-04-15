@@ -341,12 +341,6 @@ export const GrammarWorkspace: React.FC<GrammarWorkspaceProps> = ({
                     </div>
                 </div>
             </div>
-
-            <style>{`
-                .btn-transform {
-                    @apply px-3 py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider border border-default bg-surface-2/50 hover:bg-ios-purple hover:text-white hover:border-ios-purple hover:shadow-lg hover:shadow-ios-purple/20 transition-all active:scale-95 text-secondary;
-                }
-            `}</style>
         </div>
     );
 };

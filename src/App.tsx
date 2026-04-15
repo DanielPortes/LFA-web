@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { ThemeProvider } from './hooks/ThemeContext';
 import type { AutomatoData, Tab } from './types';
 import { CustomCursor, SettingsModal, ToastProvider, Tutorial, useTutorial } from './components/ui';
@@ -8,9 +8,21 @@ import { PageAmbientBackground, TopNav } from './components/layout';
 import { useRouteState } from './features/navigation';
 
 import { HomeSection } from './pages/Home';
-import { ConteudoSection } from './pages/Content';
-import { ExerciciosSection } from './pages/Exercises';
-import { SimulatorPage } from './pages/Simulator';
+
+const ConteudoSection = lazy(async () => {
+    const module = await import('./pages/Content');
+    return { default: module.ConteudoSection };
+});
+
+const ExerciciosSection = lazy(async () => {
+    const module = await import('./pages/Exercises');
+    return { default: module.ExerciciosSection };
+});
+
+const SimulatorPage = lazy(async () => {
+    const module = await import('./pages/Simulator');
+    return { default: module.SimulatorPage };
+});
 
 const cloneAutomaton = (data: AutomatoData): AutomatoData => {
     if (typeof structuredClone === 'function') {
@@ -29,6 +41,8 @@ function MainApp() {
     const [showSettings, setShowSettings] = useState(false);
     const [ambientTransitionKey, setAmbientTransitionKey] = useState(0);
     const sharedAutomatonHandled = useRef(false);
+    const showAmbientBackground = route.tab !== 'simulador';
+    const showCustomCursor = route.tab !== 'simulador';
 
     useEffect(() => {
         if (sharedAutomatonHandled.current) return;
@@ -94,15 +108,33 @@ function MainApp() {
         });
     }, [updateRoute]);
 
+    const routeFallback = route.tab === 'simulador' ? (
+        <div className="flex h-[calc(100dvh-1.5rem)] items-center justify-center px-6">
+            <div className="glass-panel rounded-[32px] border border-default px-6 py-5 text-center shadow-apple-lg">
+                <p className="ui-kicker text-secondary">Carregando</p>
+                <p className="mt-2 text-sm text-primary">Preparando o simulador visual.</p>
+            </div>
+        </div>
+    ) : (
+        <div className="flex min-h-[40vh] items-center justify-center px-4">
+            <div className="glass-card max-w-md p-6 text-center">
+                <p className="ui-kicker text-secondary">Carregando</p>
+                <p className="mt-2 text-sm text-primary">Montando a próxima seção da plataforma.</p>
+            </div>
+        </div>
+    );
+
     return (
         <div className="min-h-screen flex flex-col pb-6 relative font-sans">
-            <PageAmbientBackground tab={route.tab} transitionKey={ambientTransitionKey} />
+            {showAmbientBackground && (
+                <PageAmbientBackground tab={route.tab} transitionKey={ambientTransitionKey} />
+            )}
 
             <a href="#main-content" className="skip-link">
                 Pular para o conteúdo principal
             </a>
 
-            <CustomCursor />
+            {showCustomCursor && <CustomCursor />}
 
             <TopNav
                 activeTab={route.tab}
@@ -123,30 +155,32 @@ function MainApp() {
                     <HomeSection onNavigate={handleTabChange} />
                 </div>
 
-                {route.tab === 'conteudo' && (
-                    <ConteudoSection
-                        onSimulate={handleSimulationRequest}
-                        initialModuleId={route.moduleId}
-                        initialLessonId={route.lessonId}
-                        onSelectionChange={handleContentSelectionChange}
-                    />
-                )}
+                <Suspense fallback={routeFallback}>
+                    {route.tab === 'conteudo' && (
+                        <ConteudoSection
+                            onSimulate={handleSimulationRequest}
+                            initialModuleId={route.moduleId}
+                            initialLessonId={route.lessonId}
+                            onSelectionChange={handleContentSelectionChange}
+                        />
+                    )}
 
-                {route.tab === 'exercicios' && (
-                    <ExerciciosSection
-                        onSimulate={handleSimulationRequest}
-                        initialCategoryId={route.categoryId}
-                        initialExerciseId={route.exerciseId}
-                        onSelectionChange={handleExerciseSelectionChange}
-                    />
-                )}
+                    {route.tab === 'exercicios' && (
+                        <ExerciciosSection
+                            onSimulate={handleSimulationRequest}
+                            initialCategoryId={route.categoryId}
+                            initialExerciseId={route.exerciseId}
+                            onSelectionChange={handleExerciseSelectionChange}
+                        />
+                    )}
 
-                {route.tab === 'simulador' && (
-                    <SimulatorPage
-                        initialData={pendingSimulatorData}
-                        onInitialDataConsumed={() => setPendingSimulatorData(undefined)}
-                    />
-                )}
+                    {route.tab === 'simulador' && (
+                        <SimulatorPage
+                            initialData={pendingSimulatorData}
+                            onInitialDataConsumed={() => setPendingSimulatorData(undefined)}
+                        />
+                    )}
+                </Suspense>
             </main>
 
             <Tutorial

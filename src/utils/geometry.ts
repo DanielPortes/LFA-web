@@ -55,7 +55,7 @@ export const getQuadraticXY = (t: number, sx: number, sy: number, cp1x: number, 
 };
 
 /**
- * Calculate the control point for edge curvature (legacy method)
+ * Calculate the symmetric fallback control point for a curved edge.
  */
 const calculateControlPointLegacy = (source: Estado, target: Estado, curvature: number) => {
     const mx = (source.x + target.x) / 2;

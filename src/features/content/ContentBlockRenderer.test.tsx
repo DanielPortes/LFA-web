@@ -1,0 +1,81 @@
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { ContentBlockRenderer } from './ContentBlockRenderer';
+import type { AutomatoData } from '../../types';
+
+vi.mock('../../components/automaton/AutomatonPreview', () => ({
+    AutomatonPreview: ({ data }: { data: AutomatoData }) => (
+        <div data-testid="automaton-preview">{data.tipo}</div>
+    )
+}));
+
+vi.mock('../../components/ui', () => ({
+    DerivationTreeVisualizer: ({ tree }: { tree: { symbol: string } }) => (
+        <div>Árvore {tree.symbol}</div>
+    )
+}));
+
+const automaton: AutomatoData = {
+    tipo: 'AFD',
+    estados: [],
+    transicoes: []
+};
+
+describe('ContentBlockRenderer', () => {
+    it('encaminha simulação e expansão a partir do bloco de exemplo', () => {
+        const onSimulate = vi.fn();
+        const onExpand = vi.fn();
+
+        render(
+            <ContentBlockRenderer
+                block={{
+                    type: 'example',
+                    title: 'AFD de exemplo',
+                    content: 'Um exemplo com automato expandível.',
+                    automatoRef: automaton
+                }}
+                onSimulate={onSimulate}
+                onExpand={onExpand}
+            />
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'SIMULAR' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Expandir visualização do autômato' }));
+
+        expect(onSimulate).toHaveBeenCalledWith(automaton);
+        expect(onExpand).toHaveBeenCalledWith(automaton);
+        expect(screen.getByText('AFD de exemplo')).toBeInTheDocument();
+        expect(screen.getByTestId('automaton-preview')).toHaveTextContent('AFD');
+    });
+
+    it('renderiza blocos especializados de lista e gramática interativa', () => {
+        render(
+            <>
+                <ContentBlockRenderer
+                    block={{
+                        type: 'list',
+                        title: 'Checklist',
+                        content: ['**Passo 1**', 'Passo 2']
+                    }}
+                    onExpand={vi.fn()}
+                />
+                <ContentBlockRenderer
+                    block={{
+                        type: 'interactive-grammar',
+                        title: 'Árvore',
+                        content: 'Veja a derivação.',
+                        grammarTreeData: {
+                            symbol: 'S',
+                            children: []
+                        }
+                    }}
+                    onExpand={vi.fn()}
+                />
+            </>
+        );
+
+        expect(screen.getByText('Checklist')).toBeInTheDocument();
+        expect(screen.getByText('Passo 1')).toBeInTheDocument();
+        expect(screen.getByText('Árvore S')).toBeInTheDocument();
+    });
+});

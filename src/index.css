@@ -22,6 +22,7 @@
     --shadow-apple-md: 0 12px 32px rgba(0, 0, 0, 0.06);
     --shadow-apple-lg: 0 20px 48px rgba(0, 0, 0, 0.08);
     --shadow-apple-xl: 0 32px 64px rgba(0, 0, 0, 0.12);
+    --shadow-apple-2xl: 0 40px 96px rgba(0, 0, 0, 0.14);
 }
 
 @layer base {
@@ -403,15 +404,28 @@
     .bg-surface-1 { background-color: var(--color-surface-1); }
     .bg-surface-2 { background-color: var(--color-surface-2); }
     .bg-surface-3 { background-color: var(--color-surface-3); }
+    .bg-surface-1\/50 { background-color: color-mix(in srgb, var(--color-surface-1) 50%, transparent); }
+    .bg-surface-1\/80 { background-color: color-mix(in srgb, var(--color-surface-1) 80%, transparent); }
+    .bg-surface-1\/90 { background-color: color-mix(in srgb, var(--color-surface-1) 90%, transparent); }
+    .bg-surface-1\/95 { background-color: color-mix(in srgb, var(--color-surface-1) 95%, transparent); }
+    .bg-surface-2\/30 { background-color: color-mix(in srgb, var(--color-surface-2) 30%, transparent); }
+    .bg-surface-2\/50 { background-color: color-mix(in srgb, var(--color-surface-2) 50%, transparent); }
     .bg-surface-1-95 { background-color: color-mix(in srgb, var(--color-surface-1) 95%, transparent); }
     .bg-surface-1-90 { background-color: color-mix(in srgb, var(--color-surface-1) 90%, transparent); }
     .bg-surface-muted { background-color: var(--color-surface-muted); }
+    .bg-surface-muted\/20 { background-color: color-mix(in srgb, var(--color-surface-muted) 20%, transparent); }
+    .bg-surface-muted\/30 { background-color: color-mix(in srgb, var(--color-surface-muted) 30%, transparent); }
+    .bg-surface-muted\/40 { background-color: color-mix(in srgb, var(--color-surface-muted) 40%, transparent); }
+    .bg-surface-muted\/50 { background-color: color-mix(in srgb, var(--color-surface-muted) 50%, transparent); }
+    .bg-surface-muted\/80 { background-color: color-mix(in srgb, var(--color-surface-muted) 80%, transparent); }
     .bg-surface-soft { background-color: var(--color-surface-soft); }
     .bg-surface-strong { background-color: var(--color-surface-strong); }
     .bg-surface-hover { background-color: var(--color-surface-hover); }
     .bg-canvas { background-color: var(--color-canvas); }
     .bg-canvas-surface { background-color: var(--color-canvas-surface); }
     .bg-border { background-color: var(--color-border); }
+    .bg-border\/40 { background-color: color-mix(in srgb, var(--color-border) 40%, transparent); }
+    .bg-border\/60 { background-color: color-mix(in srgb, var(--color-border) 60%, transparent); }
     .bg-border-strong { background-color: var(--color-border-strong); }
     .bg-app { background-color: var(--color-bg); }
     .bg-text-muted { background-color: var(--color-text-muted); }
@@ -429,6 +443,12 @@
 
     /* Core Border Tokens */
     .border-default { border-color: var(--color-border); }
+    .border-default\/20 { border-color: color-mix(in srgb, var(--color-border) 20%, transparent); }
+    .border-default\/30 { border-color: color-mix(in srgb, var(--color-border) 30%, transparent); }
+    .border-default\/40 { border-color: color-mix(in srgb, var(--color-border) 40%, transparent); }
+    .border-default\/50 { border-color: color-mix(in srgb, var(--color-border) 50%, transparent); }
+    .border-default\/60 { border-color: color-mix(in srgb, var(--color-border) 60%, transparent); }
+    .border-default\/80 { border-color: color-mix(in srgb, var(--color-border) 80%, transparent); }
     .border-strong { border-color: var(--color-border-strong); }
     .border-highlight { border-color: var(--color-border-highlight); }
 
@@ -524,6 +544,10 @@
         background-color: var(--color-surface-3);
         border-color: var(--color-border);
         border-top-color: var(--color-border-highlight);
+    }
+
+    .shadow-apple-2xl {
+        box-shadow: var(--shadow-apple-2xl);
     }
 
     /* Interactive Elements */
@@ -638,6 +662,14 @@
         background-color: color-mix(in srgb, var(--color-warning) 16%, transparent);
     }
 
+    .bg-status-warning-soft\/30 {
+        background-color: color-mix(in srgb, var(--color-warning) 30%, transparent);
+    }
+
+    .bg-status-warning-soft\/50 {
+        background-color: color-mix(in srgb, var(--color-warning) 50%, transparent);
+    }
+
     .bg-status-danger-soft {
         background-color: color-mix(in srgb, var(--color-danger) 14%, transparent);
     }
@@ -656,6 +688,10 @@
 
     .border-status-warning {
         border-color: color-mix(in srgb, var(--color-warning) 40%, transparent);
+    }
+
+    .border-status-warning\/30 {
+        border-color: color-mix(in srgb, var(--color-warning) 30%, transparent);
     }
 
     .border-status-danger {
@@ -728,6 +764,20 @@
         background-color: var(--color-surface-1);
         border-color: var(--color-border);
         box-shadow: var(--shadow-apple-xl);
+    }
+
+    .btn-transform {
+        @apply px-3 py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider border transition-all active:scale-95;
+        background-color: color-mix(in srgb, var(--color-surface-2) 50%, transparent);
+        border-color: var(--color-border);
+        color: var(--color-text-secondary);
+    }
+
+    .btn-transform:hover {
+        background-color: var(--color-ios-purple);
+        border-color: var(--color-ios-purple);
+        color: var(--color-text-inverse);
+        box-shadow: 0 16px 32px color-mix(in srgb, var(--color-ios-purple) 20%, transparent);
     }
 }
 

@@ -12,7 +12,6 @@ export { ParseTreeView } from './ParseTreeView';
 export { SavedAutomataModal } from './SavedAutomataModal';
 export { SettingsModal } from './SettingsModal';
 export { SimulationControls } from './SimulationControls';
-export { SimulationStatus } from './SimulationStatus';
 export { StackVisualizer } from './StackVisualizer';
 export { TemplatesGallery } from './TemplatesGallery';
 export { ToastProvider } from './Toast';

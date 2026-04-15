@@ -358,12 +358,12 @@ export function createAutomaton<T extends AutomatoTipo>(
 }
 
 // ============================================================================
-// Legacy Compatibility
+// Compatibilidade de dados serializados
 // ============================================================================
 
 /**
- * @deprecated Use the discriminated union AutomatoData instead
- * This interface is kept for backward compatibility during migration
+ * @deprecated Use a união discriminada AutomatoData nas áreas novas.
+ * Mantido apenas para desserialização de payloads antigos.
  */
 export interface LegacyAutomatoData {
     tipo: AutomatoTipo;
@@ -376,7 +376,7 @@ export interface LegacyAutomatoData {
     descricao?: string;
 }
 
-/** Convert legacy data to typed automaton */
+/** Normaliza payloads antigos para o formato tipado atual. */
 export function fromLegacy(data: LegacyAutomatoData): AutomatoData {
     switch (data.tipo) {
         case 'AP':
