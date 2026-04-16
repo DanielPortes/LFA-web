@@ -5,9 +5,14 @@ import { calculatePath, getLabelPosition } from '../../utils/geometry';
 interface AutomatonPreviewProps {
     data: AutomatoData;
     className?: string;
+    ariaLabel?: string;
 }
 
-export const AutomatonPreview: React.FC<AutomatonPreviewProps> = ({ data, className = '' }) => {
+export const AutomatonPreview: React.FC<AutomatonPreviewProps> = ({
+    data,
+    className = '',
+    ariaLabel = `Pré-visualização do autômato ${data.tipo}`
+}) => {
     const bounds = useMemo(() => {
         if (data.estados.length === 0) {
             return { minX: 0, minY: 0, maxX: 400, maxY: 240 };
@@ -24,7 +29,7 @@ export const AutomatonPreview: React.FC<AutomatonPreviewProps> = ({ data, classN
         return { minX, minY, maxX, maxY };
     }, [data.estados]);
 
-    const padding = 60;
+    const padding = 64;
     const width = Math.max(1, bounds.maxX - bounds.minX + padding * 2);
     const height = Math.max(1, bounds.maxY - bounds.minY + padding * 2);
     const viewBox = `${bounds.minX - padding} ${bounds.minY - padding} ${width} ${height}`;
@@ -34,7 +39,7 @@ export const AutomatonPreview: React.FC<AutomatonPreviewProps> = ({ data, classN
             viewBox={viewBox}
             className={`w-full h-full ${className}`}
             role="img"
-            aria-label="Pré-visualização do autômato"
+            aria-label={ariaLabel}
         >
             <defs>
                 <marker id="preview-arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse">
@@ -56,13 +61,14 @@ export const AutomatonPreview: React.FC<AutomatonPreviewProps> = ({ data, classN
                     const output = t.output ?? (rest.length > 0 ? rest.join('/').trim() : '');
                     label = output ? `${input}/${output}` : input;
                 }
+                const labelWidth = Math.max(32, label.length * 7 + 14);
 
                 return (
                     <g key={t.id}>
                         <path d={pathD} className="stroke-[var(--stroke-idle)] stroke-2 fill-none" markerEnd="url(#preview-arrow)" />
                         <g transform={`translate(${labelPos.x}, ${labelPos.y})`}>
                             <rect
-                                x="-14" y="-12" width="28" height="24" rx="8"
+                                x={-labelWidth / 2} y="-12" width={labelWidth} height="24" rx="8"
                                 className="fill-[var(--canvas-surface)] stroke-[var(--stroke-idle)] stroke-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]"
                             />
                             <text
@@ -79,13 +85,13 @@ export const AutomatonPreview: React.FC<AutomatonPreviewProps> = ({ data, classN
             {data.estados.map(s => (
                 <g key={s.id} transform={`translate(${s.x}, ${s.y})`}>
                     {s.isInicial && (
-                        <path d="M -50 0 L -32 0" stroke="currentColor" strokeWidth="2" markerEnd="url(#preview-arrow)" className="text-stroke-idle opacity-70" />
+                        <path d="M -46 0 L -28 0" stroke="currentColor" strokeWidth="2" markerEnd="url(#preview-arrow)" className="text-stroke-idle opacity-70" />
                     )}
 
-                    <circle r="26" className="fill-[var(--canvas-surface)] stroke-[var(--stroke-idle)] stroke-2" />
+                    <circle r="28" className="fill-[var(--canvas-surface)] stroke-[var(--stroke-idle)] stroke-2" />
 
                     {s.isFinal && (
-                        <circle r="22" fill="none" className="stroke-[var(--stroke-idle)]" strokeWidth="1.5" />
+                        <circle r="24" fill="none" className="stroke-[var(--stroke-idle)]" strokeWidth="1.5" />
                     )}
 
                     <text dy="5" textAnchor="middle" className="text-[12px] font-bold select-none pointer-events-none font-mono fill-[var(--text-primary)]">
@@ -93,6 +99,33 @@ export const AutomatonPreview: React.FC<AutomatonPreviewProps> = ({ data, classN
                     </text>
                 </g>
             ))}
+
+            {data.estados.length === 0 && (
+                <g transform={`translate(${bounds.minX + (bounds.maxX - bounds.minX + padding * 2) / 2}, ${bounds.minY + (bounds.maxY - bounds.minY + padding * 2) / 2})`}>
+                    <rect
+                        x="-92"
+                        y="-32"
+                        width="184"
+                        height="64"
+                        rx="20"
+                        className="fill-[var(--canvas-surface)] stroke-[var(--stroke-idle)]"
+                        opacity="0.85"
+                    />
+                    <text
+                        textAnchor="middle"
+                        className="fill-[var(--text-secondary)] font-bold text-[12px]"
+                    >
+                        Autômato vazio
+                    </text>
+                    <text
+                        dy="18"
+                        textAnchor="middle"
+                        className="fill-[var(--text-muted)] font-medium text-[10px]"
+                    >
+                        Nenhum estado foi definido.
+                    </text>
+                </g>
+            )}
         </svg>
     );
 };

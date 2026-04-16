@@ -787,15 +787,44 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         return '';
     };
 
+    const canvasSummary = `${data.tipo} com ${data.estados.length} estados, ${data.transicoes.length} transições e ${
+        activeStates.length
+    } estados ativos. Ferramenta atual: ${readOnly ? 'somente leitura' : tool}.`;
+
     return (
         <div
             ref={containerRef}
             className="w-full h-full relative overflow-hidden select-none bg-canvas focus:outline-none"
             tabIndex={0}
             data-automaton-editor="true"
-            aria-label="Canvas do autômato"
+            role="region"
+            aria-label={`Canvas do autômato ${data.tipo}`}
         >
-            <div className={`absolute inset-0 bg-grid-pattern pointer-events-none ${snapToGrid ? 'grid-active' : 'opacity-60'}`} />
+            <div className="sr-only" aria-live="polite">
+                {canvasSummary}
+            </div>
+            <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                    backgroundImage: [
+                        'linear-gradient(to right, color-mix(in srgb, var(--color-grid) 48%, transparent) 1px, transparent 1px)',
+                        'linear-gradient(to bottom, color-mix(in srgb, var(--color-grid) 48%, transparent) 1px, transparent 1px)',
+                    ].join(','),
+                    backgroundSize: '24px 24px',
+                    opacity: snapToGrid ? 0.5 : 0.22,
+                }}
+            />
+            <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                    backgroundImage: [
+                        'linear-gradient(to right, color-mix(in srgb, var(--color-grid-active) 70%, transparent) 1px, transparent 1px)',
+                        'linear-gradient(to bottom, color-mix(in srgb, var(--color-grid-active) 70%, transparent) 1px, transparent 1px)',
+                    ].join(','),
+                    backgroundSize: '96px 96px',
+                    opacity: snapToGrid ? 0.32 : 0.14,
+                }}
+            />
 
             <svg
                 ref={svgRef}

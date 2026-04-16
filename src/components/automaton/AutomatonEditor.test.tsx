@@ -63,4 +63,22 @@ describe('AutomatonEditor', () => {
         expect(screen.queryByRole('button', { name: 'Templates' })).not.toBeInTheDocument();
         expect(screen.queryByRole('button', { name: 'Mais' })).not.toBeInTheDocument();
     });
+
+    it('recolhe chrome persistente no modo compacto e abre overlays sob demanda', async () => {
+        await renderEditor({ compact: true });
+
+        expect(screen.queryByRole('button', { name: 'Templates' })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Abrir ferramentas do editor' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Abrir painel do editor' })).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Abrir ferramentas do editor' }));
+        expect(screen.getByRole('button', { name: 'Templates' })).toBeInTheDocument();
+    });
+
+    it('mantém o rail de ferramentas visível no modo workspace compacto', async () => {
+        await renderEditor({ compact: true, compactVariant: 'workspace' });
+
+        expect(screen.getByRole('button', { name: 'Templates' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Abrir inspetor do editor' })).toBeInTheDocument();
+    });
 });

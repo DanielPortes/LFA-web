@@ -8,6 +8,8 @@ interface EditorShellProps {
     minimap?: React.ReactNode;
     bottomBar?: React.ReactNode;
     modals?: React.ReactNode;
+    compact?: boolean;
+    overlays?: React.ReactNode;
 }
 
 export const EditorShell: React.FC<EditorShellProps> = ({
@@ -18,29 +20,38 @@ export const EditorShell: React.FC<EditorShellProps> = ({
     minimap,
     bottomBar,
     modals,
+    compact = false,
+    overlays,
 }) => (
-    <div className="relative grid h-full min-h-0 grid-cols-1 grid-rows-[auto,minmax(0,1fr),auto,auto] gap-3 bg-app p-3 lg:grid-cols-[auto,minmax(0,1fr),18rem] lg:grid-rows-[minmax(0,1fr),auto]">
-        {leftToolbar && (
-            <aside className="min-h-0 lg:row-span-2">
-                {leftToolbar}
-            </aside>
-        )}
-
-        <div className="relative min-h-[22rem] min-w-0 overflow-hidden rounded-[32px] border border-default bg-app shadow-apple-md lg:col-start-2">
+    <div
+        className={`relative h-full min-h-0 ${
+            compact ? 'bg-transparent' : 'bg-app/5 p-3 lg:p-4'
+        }`}
+    >
+        <div className={`relative min-h-0 overflow-hidden ${compact ? 'h-full min-h-[18rem]' : 'h-full min-h-[22rem] rounded-[28px] bg-canvas/35'}`}>
             {emptyState}
             {canvas}
             {minimap}
+            {overlays}
         </div>
 
-        {rightPanel && (
-            <aside className="min-h-0 lg:col-start-3 lg:row-start-1">
-                {rightPanel}
+        {!compact && leftToolbar && (
+            <aside className="pointer-events-none absolute left-4 top-4 z-20 flex">
+                <div className="pointer-events-auto">{leftToolbar}</div>
             </aside>
         )}
 
-        {bottomBar && (
-            <div className="lg:col-start-2 lg:row-start-2">
-                {bottomBar}
+        {!compact && rightPanel && (
+            <aside className="pointer-events-none absolute bottom-20 right-4 top-4 z-20 hidden lg:block">
+                <div className="pointer-events-auto h-full w-[18rem] max-h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
+                    {rightPanel}
+                </div>
+            </aside>
+        )}
+
+        {!compact && bottomBar && (
+            <div className="pointer-events-none absolute inset-x-4 bottom-4 z-20">
+                <div className="pointer-events-auto flex justify-center">{bottomBar}</div>
             </div>
         )}
 

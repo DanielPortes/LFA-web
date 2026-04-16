@@ -9,11 +9,13 @@ export interface SimulationInspectorItem {
 interface SimulationInspectorPanelProps {
     items: SimulationInspectorItem[];
     preferredItemId?: string;
+    className?: string;
 }
 
 export const SimulationInspectorPanel: React.FC<SimulationInspectorPanelProps> = ({
     items,
     preferredItemId,
+    className = '',
 }) => {
     const availableItems = useMemo(
         () => items.filter((item) => item.content !== null && item.content !== undefined),
@@ -44,7 +46,7 @@ export const SimulationInspectorPanel: React.FC<SimulationInspectorPanelProps> =
     const activeItem = availableItems.find((item) => item.id === activeItemId) ?? availableItems[0];
 
     return (
-        <div className="glass-panel rounded-[28px] border border-default bg-surface-1/90 p-3 shadow-apple-lg">
+        <div className={`min-h-0 ${className}`}>
             <div className="mb-3 flex flex-wrap gap-2">
                 {availableItems.map((item) => {
                     const active = item.id === activeItem.id;
@@ -64,7 +66,7 @@ export const SimulationInspectorPanel: React.FC<SimulationInspectorPanelProps> =
                     );
                 })}
             </div>
-            <div>{activeItem.content}</div>
+            <div className="min-h-0">{activeItem.content}</div>
         </div>
     );
 };

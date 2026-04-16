@@ -15,26 +15,28 @@ export const AutomatonWorkspace: React.FC<AutomatonWorkspaceProps> = ({
     bottomDock,
     showRightDock
 }) => (
-    <div className="flex-1 min-h-0 px-3 pb-3">
-        <div className={`mx-auto grid h-full min-h-0 max-w-[1500px] grid-cols-1 grid-rows-[auto,minmax(0,1fr),auto] gap-3 ${showRightDock ? 'lg:grid-cols-[minmax(0,1fr),22rem]' : ''}`}>
-            <div className={`flex flex-wrap items-start gap-2 ${showRightDock ? 'lg:col-start-1 lg:row-start-1' : ''}`}>
-                {topBar}
-            </div>
-
-            <div className={`min-h-0 overflow-hidden rounded-[32px] border border-default bg-app/50 shadow-apple-lg ${showRightDock ? 'lg:col-start-1 lg:row-start-2' : ''}`}>
+    <div data-testid="simulator-workspace" className="flex-1 min-h-0 px-3 pb-3 sm:px-4 sm:pb-4 lg:px-5 lg:pb-5 2xl:px-6 2xl:pb-6">
+        <div className="relative h-full min-h-[calc(100dvh-92px)] overflow-hidden rounded-[28px] border border-default bg-canvas shadow-apple-xl sm:min-h-[calc(100dvh-104px)] lg:min-h-[calc(100dvh-116px)]">
+            <div className="absolute inset-0 min-h-0">
                 {editor}
             </div>
 
+            <div className="pointer-events-none absolute left-4 top-4 z-30 flex max-w-[420px] flex-col gap-2">
+                {topBar}
+            </div>
+
             {showRightDock && rightDock && (
-                <aside className="min-h-0 lg:col-start-2 lg:row-span-2 lg:row-start-1">
-                    <div className="h-full lg:max-h-full lg:overflow-y-auto lg:overflow-x-hidden lg:custom-scrollbar lg:pr-1">
+                <aside className="pointer-events-none absolute bottom-4 right-4 top-4 z-30 hidden md:block">
+                    <div className="pointer-events-auto h-full max-h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
                         {rightDock}
                     </div>
                 </aside>
             )}
 
-            <div className={`${showRightDock ? 'lg:col-start-1 lg:row-start-3' : ''}`}>
-                {bottomDock}
+            <div className="pointer-events-none absolute inset-x-4 bottom-4 z-30">
+                <div className="pointer-events-auto mx-auto w-full max-w-[1040px]">
+                    {bottomDock}
+                </div>
             </div>
         </div>
     </div>

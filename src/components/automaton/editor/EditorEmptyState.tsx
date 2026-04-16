@@ -8,7 +8,8 @@ export const EditorEmptyState: React.FC = () => (
                 <Plus size={28} />
             </div>
             <p className="text-sm font-bold text-primary">Canvas pronto para construir</p>
-            <p className="mt-1 text-xs text-secondary">Pressione `S` e clique no canvas para criar estados.</p>
+            <p className="mt-1 text-xs text-secondary">Pressione `S` e clique no canvas para criar o primeiro estado.</p>
+            <p className="mt-2 text-[11px] text-muted">Ou abra Templates para carregar um modelo inicial.</p>
         </div>
     </div>
 );

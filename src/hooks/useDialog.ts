@@ -25,9 +25,11 @@ export const useDialog = (isOpen: boolean, onClose: () => void) => {
         if (!isOpen) return;
 
         const previouslyFocused = document.activeElement as HTMLElement | null;
-        const focusables = getFocusableElements(dialogRef.current);
-        const first = focusables[0] || dialogRef.current;
-        first?.focus();
+        const focusFrame = window.requestAnimationFrame(() => {
+            const focusables = getFocusableElements(dialogRef.current);
+            const first = focusables[0] || dialogRef.current;
+            first?.focus();
+        });
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
@@ -59,6 +61,7 @@ export const useDialog = (isOpen: boolean, onClose: () => void) => {
 
         document.addEventListener('keydown', handleKeyDown);
         return () => {
+            window.cancelAnimationFrame(focusFrame);
             document.removeEventListener('keydown', handleKeyDown);
             previouslyFocused?.focus();
         };

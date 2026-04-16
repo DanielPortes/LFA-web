@@ -6,7 +6,9 @@ describe('SimulationDock', () => {
     it('prioriza um único inspetor lateral por vez quando o layout é side/top_side', () => {
         render(
             <SimulationDock
-                showRightDock={true}
+                desktopInspector={true}
+                inspectorOpen={true}
+                onCloseInspector={() => {}}
                 regexImportPanel={<span>REGEX</span>}
                 warningsPanel={<span>WARNINGS</span>}
                 detailsPanel={<span>DETAILS</span>}
@@ -28,8 +30,8 @@ describe('SimulationDock', () => {
         );
 
         expect(within(screen.getByTestId('right')).getByText('WARNINGS')).toBeInTheDocument();
-        expect(within(screen.getByTestId('right')).queryByText('TAPE')).not.toBeInTheDocument();
-        expect(within(screen.getByTestId('right')).queryByText('DETAILS')).not.toBeInTheDocument();
+        expect(within(screen.getByTestId('right')).getByRole('button', { name: 'Fita' })).toBeInTheDocument();
+        expect(within(screen.getByTestId('right')).queryByRole('button', { name: 'Histórico' })).not.toBeInTheDocument();
         expect(within(screen.getByTestId('bottom')).getByText('REGEX')).toBeInTheDocument();
         expect(within(screen.getByTestId('bottom')).getByText('CONTROLS')).toBeInTheDocument();
         expect(within(screen.getByTestId('bottom')).queryByText('WARNINGS')).not.toBeInTheDocument();
@@ -38,7 +40,9 @@ describe('SimulationDock', () => {
     it('traz um inspetor tabulado para baixo quando o layout é bottom', () => {
         render(
             <SimulationDock
-                showRightDock={false}
+                desktopInspector={false}
+                inspectorOpen={true}
+                onCloseInspector={() => {}}
                 regexImportPanel={<span>REGEX</span>}
                 warningsPanel={<span>WARNINGS</span>}
                 detailsPanel={<span>DETAILS</span>}
@@ -60,7 +64,7 @@ describe('SimulationDock', () => {
         );
 
         expect(within(screen.getByTestId('right')).queryByText('TAPE')).not.toBeInTheDocument();
-        expect(within(screen.getByTestId('bottom')).getByText('DETAILS')).toBeInTheDocument();
+        expect(within(screen.getByTestId('bottom')).getByText('WARNINGS')).toBeInTheDocument();
         const bottom = within(screen.getByTestId('bottom'));
 
         expect(bottom.getByRole('button', { name: 'Histórico' })).toBeInTheDocument();
@@ -74,7 +78,9 @@ describe('SimulationDock', () => {
     it('abre o histórico como inspetor preferencial quando ele está habilitado', () => {
         render(
             <SimulationDock
-                showRightDock={false}
+                desktopInspector={false}
+                inspectorOpen={true}
+                onCloseInspector={() => {}}
                 regexImportPanel={<span>REGEX</span>}
                 warningsPanel={<span>WARNINGS</span>}
                 detailsPanel={<span>DETAILS</span>}
@@ -90,7 +96,7 @@ describe('SimulationDock', () => {
             </SimulationDock>
         );
 
-        expect(within(screen.getByTestId('bottom')).getByText('DETAILS')).toBeInTheDocument();
-        expect(within(screen.getByTestId('bottom')).queryByText('TAPE')).not.toBeInTheDocument();
+        expect(within(screen.getByTestId('bottom')).getByText('TAPE')).toBeInTheDocument();
+        expect(within(screen.getByTestId('bottom')).queryByText('WARNINGS')).not.toBeInTheDocument();
     });
 });

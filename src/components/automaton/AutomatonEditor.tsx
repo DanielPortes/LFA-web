@@ -1,7 +1,7 @@
 import React, { lazy, useState, useRef, useEffect, useCallback } from 'react';
 import type { AutomatoData, Tool, APData } from '../../types';
 import { AutomatonCanvas } from './AutomatonCanvas';
-import { MousePointer2, Plus, ArrowUpRight, Trash2 } from 'lucide-react';
+import { MousePointer2, Plus, ArrowUpRight, Trash2, SlidersHorizontal, Wrench, X } from 'lucide-react';
 import { useHistory } from '../../hooks/useHistory';
 import { useToast } from '../ui';
 import { useUiSettings } from '../../hooks/useUiSettings';
@@ -36,6 +36,7 @@ interface EditorProps {
     viewState?: { zoom: number; pan: { x: number; y: number } };
     onViewStateChange?: (zoom: number, pan: { x: number; y: number }) => void;
     compact?: boolean;
+    compactVariant?: 'workspace' | 'modal';
     fitRequestToken?: number;
 }
 
@@ -51,6 +52,7 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
     viewState,
     onViewStateChange,
     compact = false,
+    compactVariant = 'modal',
     fitRequestToken
 }) => {
     const [localTool, setTool] = useState<Tool>('pointer');
@@ -101,6 +103,9 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
         if (typeof window === 'undefined') return false;
         return localStorage.getItem(EDITOR_COACH_STORAGE_KEY) !== '1';
     });
+    const [showCompactTools, setShowCompactTools] = useState(false);
+    const [showCompactInspector, setShowCompactInspector] = useState(false);
+    const isWorkspaceCompact = compact && compactVariant === 'workspace';
 
     const {
         state: historyState,
@@ -485,87 +490,200 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
     const validationIssues = validateAutomaton(data);
     const hasErrors = validationIssues.some((issue) => issue.type === 'error');
     const warningCount = validationIssues.length;
+    const compactLauncherClass =
+        'glass-panel inline-flex h-11 items-center gap-2 rounded-2xl border border-default bg-surface-1/90 px-3 text-xs font-black text-secondary shadow-apple-md transition-all hover:text-primary hover:bg-surface-1';
+
+    const fileInputElement = (
+        <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            onChange={handleImport}
+            className="hidden"
+            aria-label="Importar autômato em JSON"
+        />
+    );
+
+    const primaryToolbar = (
+        <EditorPrimaryToolbar
+            readOnly={readOnly}
+            tools={tools}
+            activeTool={tool}
+            modifierHeld={modifierHeld}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            showUtilities={showUtilities}
+            showCoachMarks={showCoachMarks}
+            onSelectTool={handleSelectTool}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            onOpenTemplates={() => setShowTemplates(true)}
+            onOpenLibrary={() => setShowLibrary(true)}
+            onToggleUtilities={() => setShowUtilities((current) => !current)}
+            onToggleCoachMarks={() => setShowCoachMarks((current) => !current)}
+            onDismissCoachMarks={dismissCoachMarks}
+            onTriggerImport={() => fileInputRef.current?.click()}
+            onOpenGrammarImport={openGrammarImport}
+            onExportJson={exportData}
+            onShare={handleShare}
+            onExportPng={handleExportPNG}
+            onExportSvg={handleExportSVG}
+        />
+    );
+
+    const diagnosticsPanel = (
+        <EditorDiagnosticsPanel
+            data={data}
+            pdaProps={pdaProps}
+            readOnly={readOnly}
+            snapToGrid={snapToGrid}
+            showUtilities={showUtilities}
+            showProps={showProps}
+            showValidation={showValidation}
+            showBatchTest={showBatchTest}
+            showTable={showTable}
+            showEquivalents={showEquivalents}
+            validationIssues={validationIssues}
+            hasErrors={hasErrors}
+            warningCount={warningCount}
+            alphabetInput={alphabetInput}
+            stackAlphabetInput={stackAlphabetInput}
+            stackStartSymbol={stackStartSymbol}
+            onToggleProps={() => setShowProps((current) => !current)}
+            onTypeChange={handleTypeChange}
+            onAutoAlphabet={handleAutoAlphabet}
+            onAlphabetInputChange={setAlphabetInput}
+            onAlphabetFocus={() => setIsEditingAlphabet(true)}
+            onAlphabetCommit={commitAlphabet}
+            onStackAlphabetInputChange={setStackAlphabetInput}
+            onStackAlphabetFocus={() => setIsEditingStackAlphabet(true)}
+            onStackAlphabetCommit={commitStackAlphabet}
+            onStackStartChange={setStackStartSymbol}
+            onStackStartFocus={() => setIsEditingStackStart(true)}
+            onStackStartCommit={commitStackStart}
+            onToggleSnapToGrid={() => setSnapToGrid(!snapToGrid)}
+            onMagicLayout={handleMagicLayout}
+            onToggleValidation={() => setShowValidation((current) => !current)}
+            onToggleBatchTest={handleToggleBatchTest}
+            onToggleTable={handleToggleTable}
+            onToggleEquivalents={() => setShowEquivalents((current) => !current)}
+            onFocusState={(stateId) => setFocusStateId(stateId)}
+            onLoadEquivalent={(equivalent) => {
+                loadAutomatonIntoEditor(equivalent, {
+                    successMessage: 'Autômato equivalente carregado.'
+                });
+            }}
+            onConvertToDFA={handleConvertToDFA}
+            onEliminateEpsilon={handleEliminateEpsilon}
+            onMinimizeDfa={handleMinimizeDfa}
+            onMooreToMealy={handleMooreToMealy}
+            onMealyToMoore={handleMealyToMoore}
+        />
+    );
+
+    const compactInspector = showCompactInspector ? (
+        <div className={`pointer-events-auto overflow-y-auto custom-scrollbar ${isWorkspaceCompact ? 'w-[min(22rem,calc(100vw-2rem))] max-h-[min(70vh,calc(100%-6rem))]' : 'w-[20rem] max-w-[min(20rem,calc(100vw-2rem))] max-h-[calc(100%-3.5rem)] pr-1'}`}>
+            {diagnosticsPanel}
+        </div>
+    ) : null;
+
+    const compactOverlays = compact ? (
+        <div className="pointer-events-none absolute inset-0 z-20">
+            {fileInputElement}
+
+            {isWorkspaceCompact ? (
+                <>
+                    {!readOnly && (
+                        <>
+                            <div className="pointer-events-auto absolute left-4 top-24 hidden md:block">
+                                {primaryToolbar}
+                            </div>
+
+                            <div className="pointer-events-auto absolute left-4 top-24 md:hidden">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCompactTools((current) => !current)}
+                                    className={compactLauncherClass}
+                                    aria-label={showCompactTools ? 'Fechar ferramentas do editor' : 'Abrir ferramentas do editor'}
+                                    aria-expanded={showCompactTools}
+                                >
+                                    {showCompactTools ? <X size={16} /> : <Wrench size={16} />}
+                                    <span>{showCompactTools ? 'Fechar' : 'Ferramentas'}</span>
+                                </button>
+                            </div>
+
+                            {showCompactTools && (
+                                <div className="pointer-events-auto absolute left-4 top-[7.25rem] max-h-[calc(100%-8rem)] overflow-y-auto overflow-x-visible custom-scrollbar md:hidden">
+                                    {primaryToolbar}
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    <div className="pointer-events-auto absolute right-4 top-4 flex flex-col items-end gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowCompactInspector((current) => !current)}
+                            className={compactLauncherClass}
+                            aria-label={showCompactInspector ? 'Fechar inspetor do editor' : 'Abrir inspetor do editor'}
+                            aria-expanded={showCompactInspector}
+                        >
+                            {showCompactInspector ? <X size={16} /> : <SlidersHorizontal size={16} />}
+                            <span>{showCompactInspector ? 'Fechar painel' : 'Inspetor'}</span>
+                        </button>
+
+                        {compactInspector}
+                    </div>
+                </>
+            ) : (
+                <div className="absolute inset-x-2 top-2 flex items-start justify-between gap-3">
+                    <div className="pointer-events-auto flex flex-col items-start gap-2">
+                        {!readOnly && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCompactTools((current) => !current)}
+                                    className={compactLauncherClass}
+                                    aria-label={showCompactTools ? 'Fechar ferramentas do editor' : 'Abrir ferramentas do editor'}
+                                    aria-expanded={showCompactTools}
+                                >
+                                    {showCompactTools ? <X size={16} /> : <Wrench size={16} />}
+                                    <span>{showCompactTools ? 'Fechar' : 'Ferramentas'}</span>
+                                </button>
+
+                                {showCompactTools && (
+                                    <div className="max-h-[calc(100%-3.5rem)] overflow-y-auto overflow-x-visible custom-scrollbar pr-1">
+                                        {primaryToolbar}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+
+                    <div className="pointer-events-auto flex flex-col items-end gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowCompactInspector((current) => !current)}
+                            className={compactLauncherClass}
+                            aria-label={showCompactInspector ? 'Fechar painel do editor' : 'Abrir painel do editor'}
+                            aria-expanded={showCompactInspector}
+                        >
+                            {showCompactInspector ? <X size={16} /> : <SlidersHorizontal size={16} />}
+                            <span>{showCompactInspector ? 'Fechar painel' : 'Painel'}</span>
+                        </button>
+
+                        {compactInspector}
+                    </div>
+                </div>
+            )}
+        </div>
+    ) : fileInputElement;
 
     return (
         <EditorShell
-            leftToolbar={(
-                <>
-                    <input ref={fileInputRef} type="file" accept=".json" onChange={handleImport} className="hidden" />
-                    <EditorPrimaryToolbar
-                        readOnly={readOnly}
-                        tools={tools}
-                        activeTool={tool}
-                        modifierHeld={modifierHeld}
-                        canUndo={canUndo}
-                        canRedo={canRedo}
-                        showUtilities={showUtilities}
-                        showCoachMarks={showCoachMarks}
-                        onSelectTool={handleSelectTool}
-                        onUndo={handleUndo}
-                        onRedo={handleRedo}
-                        onOpenTemplates={() => setShowTemplates(true)}
-                        onOpenLibrary={() => setShowLibrary(true)}
-                        onToggleUtilities={() => setShowUtilities((current) => !current)}
-                        onToggleCoachMarks={() => setShowCoachMarks((current) => !current)}
-                        onDismissCoachMarks={dismissCoachMarks}
-                        onTriggerImport={() => fileInputRef.current?.click()}
-                        onOpenGrammarImport={openGrammarImport}
-                        onExportJson={exportData}
-                        onShare={handleShare}
-                        onExportPng={handleExportPNG}
-                        onExportSvg={handleExportSVG}
-                    />
-                </>
-            )}
-            rightPanel={(
-                <EditorDiagnosticsPanel
-                    data={data}
-                    pdaProps={pdaProps}
-                    readOnly={readOnly}
-                    snapToGrid={snapToGrid}
-                    showUtilities={showUtilities}
-                    showProps={showProps}
-                    showValidation={showValidation}
-                    showBatchTest={showBatchTest}
-                    showTable={showTable}
-                    showEquivalents={showEquivalents}
-                    validationIssues={validationIssues}
-                    hasErrors={hasErrors}
-                    warningCount={warningCount}
-                    alphabetInput={alphabetInput}
-                    stackAlphabetInput={stackAlphabetInput}
-                    stackStartSymbol={stackStartSymbol}
-                    onToggleProps={() => setShowProps((current) => !current)}
-                    onTypeChange={handleTypeChange}
-                    onAutoAlphabet={handleAutoAlphabet}
-                    onAlphabetInputChange={setAlphabetInput}
-                    onAlphabetFocus={() => setIsEditingAlphabet(true)}
-                    onAlphabetCommit={commitAlphabet}
-                    onStackAlphabetInputChange={setStackAlphabetInput}
-                    onStackAlphabetFocus={() => setIsEditingStackAlphabet(true)}
-                    onStackAlphabetCommit={commitStackAlphabet}
-                    onStackStartChange={setStackStartSymbol}
-                    onStackStartFocus={() => setIsEditingStackStart(true)}
-                    onStackStartCommit={commitStackStart}
-                    onToggleSnapToGrid={() => setSnapToGrid(!snapToGrid)}
-                    onMagicLayout={handleMagicLayout}
-                    onToggleValidation={() => setShowValidation((current) => !current)}
-                    onToggleBatchTest={handleToggleBatchTest}
-                    onToggleTable={handleToggleTable}
-                    onToggleEquivalents={() => setShowEquivalents((current) => !current)}
-                    onFocusState={(stateId) => setFocusStateId(stateId)}
-                    onLoadEquivalent={(equivalent) => {
-                        loadAutomatonIntoEditor(equivalent, {
-                            successMessage: 'Autômato equivalente carregado.'
-                        });
-                    }}
-                    onConvertToDFA={handleConvertToDFA}
-                    onEliminateEpsilon={handleEliminateEpsilon}
-                    onMinimizeDfa={handleMinimizeDfa}
-                    onMooreToMealy={handleMooreToMealy}
-                    onMealyToMoore={handleMealyToMoore}
-                />
-            )}
+            compact={compact}
+            leftToolbar={compact ? undefined : <>{fileInputElement}{primaryToolbar}</>}
+            rightPanel={compact ? undefined : diagnosticsPanel}
             emptyState={data.estados.length === 0 ? <EditorEmptyState /> : undefined}
             canvas={(
                 <AutomatonCanvas
@@ -588,8 +706,8 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                     onFocusHandled={() => setFocusStateId(null)}
                 />
             )}
-            minimap={showMinimap && data.estados.length > 3 ? (
-                <div className="absolute bottom-16 left-16 sm:left-20 z-10 opacity-70 hover:opacity-100 transition-opacity hover:z-30">
+            minimap={showMinimap && data.estados.length > 6 ? (
+                <div className={`absolute z-10 opacity-70 transition-opacity hover:z-30 hover:opacity-100 ${isWorkspaceCompact ? 'bottom-28 left-4 lg:bottom-32' : compact ? 'bottom-4 left-4' : 'bottom-16 left-16 sm:left-20'}`}>
                     <Minimap
                         data={data}
                         viewport={viewport}
@@ -610,6 +728,7 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                     onZoomReset={handleZoomReset}
                 />
             )}
+            overlays={compact ? compactOverlays : undefined}
             modals={(
                 <EditorModalStack
                     lazyTemplatesGallery={LazyTemplatesGallery}

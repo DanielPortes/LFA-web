@@ -24,8 +24,8 @@ interface SimulationControlsDockProps {
     isTuring: boolean;
     stepCount: number;
     totalSteps: number;
-    showDetails: boolean;
-    onToggleDetails: () => void;
+    inspectorOpen: boolean;
+    onToggleInspector: () => void;
     onPlay: () => void;
     onPause: () => void;
     onStep: () => void;
@@ -56,8 +56,8 @@ export const SimulationControlsDock: React.FC<SimulationControlsDockProps> = ({
     isTuring,
     stepCount,
     totalSteps,
-    showDetails,
-    onToggleDetails,
+    inspectorOpen,
+    onToggleInspector,
     onPlay,
     onPause,
     onStep,
@@ -92,6 +92,7 @@ export const SimulationControlsDock: React.FC<SimulationControlsDockProps> = ({
                         onChange={(event) => setInputTokenization(event.target.value as 'auto' | 'char' | 'separator')}
                         className="text-[10px] font-black uppercase tracking-widest bg-transparent px-3 py-1 text-secondary outline-none cursor-pointer hover:text-primary transition-colors"
                         title="Modo de leitura da entrada"
+                        aria-label="Modo de leitura da entrada"
                     >
                         <option value="auto">Auto</option>
                         <option value="char">Carac.</option>
@@ -104,6 +105,7 @@ export const SimulationControlsDock: React.FC<SimulationControlsDockProps> = ({
                             className="w-10 text-xs font-mono font-black bg-white dark:bg-black/40 rounded-xl px-2 py-1 text-center text-ios-blue border border-ios-blue/30 shadow-inner outline-none mx-1"
                             title="Símbolo separador"
                             placeholder="|"
+                            aria-label="Símbolo separador da entrada"
                         />
                     )}
                 </div>
@@ -114,6 +116,7 @@ export const SimulationControlsDock: React.FC<SimulationControlsDockProps> = ({
                     onClick={clearInput}
                     className="ml-3 p-2 rounded-full text-muted hover:text-ios-red hover:bg-ios-red/10 transition-all active:scale-90"
                     title="Limpar entrada"
+                    aria-label="Limpar entrada"
                 >
                     <X size={20} strokeWidth={3} />
                 </button>
@@ -146,6 +149,7 @@ export const SimulationControlsDock: React.FC<SimulationControlsDockProps> = ({
                     onClick={onResetToEditor}
                     className="p-3 rounded-[20px] bg-surface-muted text-secondary hover:text-ios-blue hover:bg-ios-blue/10 hover:border-ios-blue/30 border border-transparent transition-all active:scale-90"
                     title="Reiniciar e voltar ao editor"
+                    aria-label="Reiniciar e voltar ao editor"
                 >
                     <RotateCcw size={22} />
                 </button>
@@ -154,13 +158,14 @@ export const SimulationControlsDock: React.FC<SimulationControlsDockProps> = ({
                 {isTuring ? `H:${simulationState?.headPos ?? 0}` : `${stepCount}/${totalSteps}`}
             </div>
             <button
-                onClick={onToggleDetails}
+                onClick={onToggleInspector}
                 className={`p-3 rounded-[20px] transition-all border-2 active:scale-95 ${
-                    showDetails
+                    inspectorOpen
                         ? 'bg-ios-blue text-white shadow-xl shadow-blue-500/40 border-ios-blue'
                         : 'bg-surface-muted text-secondary hover:text-primary hover:bg-surface-hover border-transparent'
                 }`}
-                title="Ver histórico detalhado da execução"
+                title={inspectorOpen ? 'Fechar inspetor da simulação' : 'Abrir inspetor da simulação'}
+                aria-label={inspectorOpen ? 'Fechar inspetor da simulação' : 'Abrir inspetor da simulação'}
             >
                 <ListOrdered size={22} strokeWidth={2.5} />
             </button>

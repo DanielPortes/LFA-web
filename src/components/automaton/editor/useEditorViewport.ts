@@ -13,6 +13,7 @@ interface UseEditorViewportOptions {
 
 const DEFAULT_VIEWPORT: EditorViewport = { x: 0, y: 0, width: 800, height: 600 };
 const DEFAULT_PAN = { x: 0, y: 0 };
+const FIT_STATE_RADIUS = 56;
 
 export const useEditorViewport = ({
     canvasRef,
@@ -32,6 +33,7 @@ export const useEditorViewport = ({
     const panRef = useRef(pan);
     const onViewStateChangeRef = useRef(onViewStateChange);
     const lastFitRequestRef = useRef<number | undefined>(undefined);
+    const lastFitTransformRef = useRef<{ zoom: number; pan: { x: number; y: number } } | null>(null);
 
     useEffect(() => {
         zoomRef.current = zoom;
@@ -101,18 +103,20 @@ export const useEditorViewport = ({
         let maxY = -Infinity;
 
         inputStates.forEach((state) => {
-            minX = Math.min(minX, state.x);
-            minY = Math.min(minY, state.y);
-            maxX = Math.max(maxX, state.x);
-            maxY = Math.max(maxY, state.y);
+            minX = Math.min(minX, state.x - FIT_STATE_RADIUS);
+            minY = Math.min(minY, state.y - FIT_STATE_RADIUS);
+            maxX = Math.max(maxX, state.x + FIT_STATE_RADIUS);
+            maxY = Math.max(maxY, state.y + FIT_STATE_RADIUS);
         });
 
-        const padding = 150;
-        const contentWidth = (maxX - minX) + padding;
-        const contentHeight = (maxY - minY) + padding;
+        const padding = Math.min(160, Math.max(96, Math.min(viewWidth, viewHeight) * 0.18));
+        const rawContentWidth = maxX - minX;
+        const rawContentHeight = maxY - minY;
+        const contentWidth = Math.max(rawContentWidth, 220) + padding * 2;
+        const contentHeight = Math.max(rawContentHeight, 220) + padding * 2;
         const zoomX = viewWidth / contentWidth;
         const zoomY = viewHeight / contentHeight;
-        const nextZoom = Math.max(0.3, Math.min(1.5, Math.min(zoomX, zoomY)));
+        const nextZoom = Math.max(0.22, Math.min(1.6, Math.min(zoomX, zoomY)));
         const centerX = (minX + maxX) / 2;
         const centerY = (minY + maxY) / 2;
 
@@ -127,11 +131,13 @@ export const useEditorViewport = ({
 
     const fitToContent = useCallback(() => {
         if (!canvasRef.current || states.length === 0) {
+            lastFitTransformRef.current = { zoom: 1, pan: DEFAULT_PAN };
             handleTransformChange(1, DEFAULT_PAN);
             return;
         }
 
         const { zoom: nextZoom, pan: nextPan } = calculateFitTransform(states);
+        lastFitTransformRef.current = { zoom: nextZoom, pan: nextPan };
         handleTransformChange(nextZoom, nextPan);
     }, [calculateFitTransform, canvasRef, handleTransformChange, states]);
 
@@ -154,13 +160,25 @@ export const useEditorViewport = ({
 
             const rect = canvasRef.current.getBoundingClientRect();
             setViewport({ x: 0, y: 0, width: rect.width, height: rect.height });
+
+            const lastFit = lastFitTransformRef.current;
+            if (!lastFit || states.length === 0) return;
+
+            const currentZoom = zoomRef.current;
+            const currentPan = panRef.current;
+            const panDelta = Math.abs(currentPan.x - lastFit.pan.x) + Math.abs(currentPan.y - lastFit.pan.y);
+            const zoomDelta = Math.abs(currentZoom - lastFit.zoom);
+
+            if (zoomDelta < 0.02 && panDelta < 2) {
+                requestAnimationFrame(() => fitToContent());
+            }
         };
 
         updateViewport();
         window.addEventListener('resize', updateViewport);
 
         return () => window.removeEventListener('resize', updateViewport);
-    }, [canvasRef]);
+    }, [canvasRef, fitToContent, states.length]);
 
     return {
         zoom,
