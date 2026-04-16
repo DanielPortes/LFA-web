@@ -13,6 +13,8 @@ jobs:
   quality:
     name: Lint, test and build
     runs-on: ubuntu-latest
+    env:
+      TEST_MAX_OLD_SPACE_SIZE: 6144
 
     steps:
       - name: Check out repository
@@ -31,7 +33,7 @@ jobs:
         run: npm run lint
 
       - name: Run tests
-        run: npm run test
+        run: npm run test:ci
 
       - name: Build application
         run: npm run build

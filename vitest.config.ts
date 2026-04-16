@@ -5,7 +5,13 @@ export default defineConfig({
     plugins: [react()],
     test: {
         globals: true,
-        environment: 'jsdom',
+        environment: 'node',
+        environmentMatchGlobs: [
+            ['src/**/*.{test,a11y}.tsx', 'jsdom'],
+            ['src/hooks/useAutomatonSimulation.test.ts', 'jsdom'],
+            ['src/components/automaton/canvas/useCanvasViewport.test.ts', 'jsdom'],
+            ['src/components/automaton/editor/useEditorViewport.test.ts', 'jsdom'],
+        ],
         setupFiles: ['./src/test/setup.ts'],
         include: ['src/**/*.{test,spec}.{ts,tsx}'],
         coverage: {

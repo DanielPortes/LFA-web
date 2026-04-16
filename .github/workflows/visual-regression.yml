@@ -1,0 +1,43 @@
+name: Visual Regression
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  snapshots:
+    name: Generate Playwright snapshots
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Generate snapshot baselines
+        run: npm run test:e2e:update
+
+      - name: Upload Playwright snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-snapshots
+          path: |
+            tests/e2e/**/*.png
+            tests/e2e/**/__screenshots__/**
+            tests/e2e/**/__snapshots__/**
+            test-results/**
+            playwright-report/**
