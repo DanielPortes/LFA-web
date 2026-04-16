@@ -24,6 +24,11 @@ const SimulatorPage = lazy(async () => {
     return { default: module.SimulatorPage };
 });
 
+const GrammarPage = lazy(async () => {
+    const module = await import('./pages/Grammar');
+    return { default: module.GrammarPage };
+});
+
 const cloneAutomaton = (data: AutomatoData): AutomatoData => {
     if (typeof structuredClone === 'function') {
         return structuredClone(data);
@@ -41,8 +46,9 @@ function MainApp() {
     const [showSettings, setShowSettings] = useState(false);
     const [ambientTransitionKey, setAmbientTransitionKey] = useState(0);
     const sharedAutomatonHandled = useRef(false);
-    const showAmbientBackground = route.tab !== 'simulador';
-    const showCustomCursor = route.tab !== 'simulador';
+    const isWorkspaceTab = route.tab === 'simulador' || route.tab === 'gramatica';
+    const showAmbientBackground = !isWorkspaceTab;
+    const showCustomCursor = !isWorkspaceTab;
 
     useEffect(() => {
         if (sharedAutomatonHandled.current) return;
@@ -108,11 +114,39 @@ function MainApp() {
         });
     }, [updateRoute]);
 
-    const routeFallback = route.tab === 'simulador' ? (
-        <div className="flex h-[calc(100dvh-1.5rem)] items-center justify-center px-6">
+    const handleOpenExerciseFromContent = useCallback((categoryId: string, exerciseId: number) => {
+        if (route.tab !== 'exercicios') {
+            triggerAmbientTransition();
+        }
+
+        updateRoute({
+            tab: 'exercicios',
+            categoryId,
+            exerciseId,
+            moduleId: null,
+            lessonId: null
+        });
+    }, [route.tab, triggerAmbientTransition, updateRoute]);
+
+    const handleOpenTheoryFromExercises = useCallback((moduleId: string, lessonId: string) => {
+        if (route.tab !== 'conteudo') {
+            triggerAmbientTransition();
+        }
+
+        updateRoute({
+            tab: 'conteudo',
+            moduleId,
+            lessonId,
+            categoryId: null,
+            exerciseId: null
+        });
+    }, [route.tab, triggerAmbientTransition, updateRoute]);
+
+    const routeFallback = isWorkspaceTab ? (
+        <div className="flex h-full min-h-[70vh] items-center justify-center px-6 pt-24">
             <div className="glass-panel rounded-[32px] border border-default px-6 py-5 text-center shadow-apple-lg">
                 <p className="ui-kicker text-secondary">Carregando</p>
-                <p className="mt-2 text-sm text-primary">Preparando o simulador visual.</p>
+                <p className="mt-2 text-sm text-primary">Preparando o laboratório visual.</p>
             </div>
         </div>
     ) : (
@@ -125,7 +159,7 @@ function MainApp() {
     );
 
     return (
-        <div className="min-h-screen flex flex-col pb-6 relative font-sans">
+        <div className={`min-h-screen flex flex-col relative font-sans ${isWorkspaceTab ? 'pb-0' : 'pb-6'}`}>
             {showAmbientBackground && (
                 <PageAmbientBackground tab={route.tab} transitionKey={ambientTransitionKey} />
             )}
@@ -146,8 +180,8 @@ function MainApp() {
             <main
                 id="main-content"
                 className={`relative z-10 transition-all duration-500 ${
-                    route.tab === 'simulador'
-                        ? 'flex-1 min-h-0 w-full max-w-none mx-0 px-0 mt-0'
+                    isWorkspaceTab
+                        ? 'flex flex-col flex-1 min-h-0 w-full max-w-none mx-0 px-0 mt-0 overflow-hidden'
                         : 'flex-1 w-full max-w-[1600px] mx-auto px-4 md:px-8 mt-28 md:mt-32'
                 }`}
             >
@@ -159,6 +193,7 @@ function MainApp() {
                     {route.tab === 'conteudo' && (
                         <ConteudoSection
                             onSimulate={handleSimulationRequest}
+                            onOpenExercise={handleOpenExerciseFromContent}
                             initialModuleId={route.moduleId}
                             initialLessonId={route.lessonId}
                             onSelectionChange={handleContentSelectionChange}
@@ -168,6 +203,7 @@ function MainApp() {
                     {route.tab === 'exercicios' && (
                         <ExerciciosSection
                             onSimulate={handleSimulationRequest}
+                            onOpenTheory={handleOpenTheoryFromExercises}
                             initialCategoryId={route.categoryId}
                             initialExerciseId={route.exerciseId}
                             onSelectionChange={handleExerciseSelectionChange}
@@ -179,6 +215,10 @@ function MainApp() {
                             initialData={pendingSimulatorData}
                             onInitialDataConsumed={() => setPendingSimulatorData(undefined)}
                         />
+                    )}
+
+                    {route.tab === 'gramatica' && (
+                        <GrammarPage />
                     )}
                 </Suspense>
             </main>

@@ -7,7 +7,6 @@ export * from './components/SimulationControlsDock';
 export * from './components/SimulationDock';
 export * from './components/SimulationHistoryPanel';
 export * from './components/SimulationInspectorPanel';
-export * from './components/SimulatorModeSelector';
 export * from './components/SimulatorStatusBar';
 export * from './components/SimulationTapePanel';
 export * from './components/SimulationWarningsPanel';

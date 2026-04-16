@@ -36,6 +36,17 @@ describe('routeState', () => {
         });
     });
 
+    it('aceita a aba dedicada de gramática na URL', () => {
+        expect(parseRouteState('?tab=gramatica&module=mod-1&lesson=lesson-2')).toEqual({
+            tab: 'gramatica',
+            moduleId: undefined,
+            lessonId: undefined,
+            categoryId: undefined,
+            exerciseId: null,
+            layout: undefined,
+        });
+    });
+
     it('serializa apenas os campos válidos da aba ativa', () => {
         expect(serializeRouteState({
             tab: 'exercicios',

@@ -32,6 +32,7 @@ export const TabTypes = {
     CONTEUDO: 'conteudo',
     EXERCICIOS: 'exercicios',
     SIMULADOR: 'simulador',
+    GRAMATICA: 'gramatica',
 } as const;
 
 export type Tab = typeof TabTypes[keyof typeof TabTypes];
@@ -266,12 +267,57 @@ export const ExerciseMode = {
 
 export type ExerciseModeType = typeof ExerciseMode[keyof typeof ExerciseMode];
 
+export const ExercisePattern = {
+    CONSTRUCTION: 'construction',
+    SIMULATION: 'simulation',
+    CONVERSION: 'conversion',
+    PROOF: 'proof',
+    DEBUGGING: 'debugging',
+    CLASSIFICATION: 'classification',
+} as const;
+
+export type ExercisePatternType = typeof ExercisePattern[keyof typeof ExercisePattern];
+
+export interface ExerciseHint {
+    id: string;
+    level: 1 | 2 | 3;
+    text: string;
+}
+
+export interface ExerciseCommonMistake {
+    id: string;
+    title: string;
+    symptom: string;
+    correction: string;
+}
+
+export interface GuidedSolutionStep {
+    id: string;
+    title: string;
+    explanation: string;
+    expectedStudentAction?: string;
+    checkpointQuestion?: string;
+}
+
+export interface ExerciseMetadata {
+    learningGoal: string;
+    pattern: ExercisePatternType;
+    prerequisites?: string[];
+    theoryRefs?: string[];
+    recommendation?: 'required' | 'recommended' | 'challenge';
+}
+
 export interface Exercicio {
     id: number;
     pergunta: string;
     dica?: string;
+    dicas?: ExerciseHint[];
+    estrategia?: string;
     respostaTexto?: string;
     respostaAutomato?: AutomatoData;
+    guidedSolution?: GuidedSolutionStep[];
+    commonMistakes?: ExerciseCommonMistake[];
+    metadata?: ExerciseMetadata;
     testes?: TestCase[];
     nivel: ExerciseLevelType;
     mode?: ExerciseModeType;
@@ -298,6 +344,38 @@ export interface GrammarTree {
     children: GrammarTree[];
 }
 
+export const LessonStatus = {
+    DRAFT: 'draft',
+    REVIEWED: 'reviewed',
+    CANONICAL: 'canonical',
+} as const;
+
+export type LessonStatusType = typeof LessonStatus[keyof typeof LessonStatus];
+
+export interface LessonReference {
+    id: string;
+    label: string;
+    citation: string;
+    locator?: string;
+    note?: string;
+}
+
+export interface CommonMistake {
+    title: string;
+    explanation: string;
+    correction: string;
+}
+
+export interface LessonObjective {
+    id: string;
+    text: string;
+}
+
+export interface LessonSummaryPoint {
+    id: string;
+    text: string;
+}
+
 export const ContentBlockType = {
     TEXT: 'text',
     DEFINITION: 'definition',
@@ -309,6 +387,14 @@ export const ContentBlockType = {
     WARNING: 'warning',
     MATH_TIP: 'math-tip',
     INTERACTIVE_GRAMMAR: 'interactive-grammar',
+    COMPARISON: 'comparison',
+    PROOF_OUTLINE: 'proof-outline',
+    COMMON_MISTAKE: 'common-mistake',
+    CHECKPOINT: 'checkpoint',
+    MINI_EXERCISE: 'mini-exercise',
+    EXERCISE_SOLUTION_STEP: 'exercise-solution-step',
+    REFERENCE: 'reference',
+    SUMMARY: 'summary',
 } as const;
 
 export type ContentBlockTypeValue = typeof ContentBlockType[keyof typeof ContentBlockType];
@@ -317,6 +403,7 @@ export interface ContentBlock {
     type: ContentBlockTypeValue;
     content: string | string[];
     title?: string;
+    exerciseRef?: string;
     automatoRef?: AutomatoData;
     automatoRef2?: AutomatoData;
     grammarTreeData?: GrammarTree;
@@ -326,6 +413,17 @@ export interface Lesson {
     id: string;
     title: string;
     description: string;
+    objectives?: LessonObjective[];
+    prerequisites?: string[];
+    keywords?: string[];
+    estimatedMinutes?: number;
+    references?: LessonReference[];
+    commonMistakes?: CommonMistake[];
+    summary?: LessonSummaryPoint[];
+    exerciseRefs?: string[];
+    status?: LessonStatusType;
+    lastReviewedAt?: string;
+    reviewedBy?: string;
     content: ContentBlock[];
 }
 

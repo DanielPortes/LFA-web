@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useId, useMemo } from 'react';
 import { AutomatonEditor } from '../components/automaton/AutomatonEditor';
 import type { AutomatoData } from '../types';
-import { Sparkles } from 'lucide-react';
+import { Code, Sparkles } from 'lucide-react';
 import { regexToNfa } from '../utils/conversions';
 import {
     useToast,
@@ -10,20 +10,16 @@ import { useUiSettings } from '../hooks/useUiSettings';
 import { useLocalStorageState } from '../hooks/useLocalStorageState';
 import { SIMULATOR_STORAGE_KEY } from '../constants/storage';
 import { useAutomatonSimulation } from '../hooks/useAutomatonSimulation';
-import { useGrammarSimulation } from '../hooks/useGrammarSimulation';
 import {
     AutomatonWorkspace,
-    GrammarWorkspaceShell,
     RegexImportCard,
     SimulationControlsDock,
     SimulationDock,
     SimulationHistoryPanel,
-    SimulatorModeSelector,
     SimulatorStatusBar,
     SimulationTapePanel,
     SimulationWarningsPanel
 } from '../features/simulator';
-import type { SimulatorLayout } from '../features/simulator/types';
 import { isEditableTarget, isTargetWithin, useWindowKeyboard } from '../features/shortcuts';
 
 interface SimulatorProps {
@@ -48,7 +44,6 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
         initialData ?? emptyAutomaton,
         { readOnInit: !initialData }
     );
-    const [simulatorMode, setSimulatorMode] = useState<'automaton' | 'grammar'>('automaton');
     const [isDesktopViewport, setIsDesktopViewport] = useState(() => {
         if (typeof window === 'undefined') return true;
         return window.matchMedia('(min-width: 1024px)').matches;
@@ -79,13 +74,12 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
     const [regexImport, setRegexImport] = useState('');
     const [regexImportError, setRegexImportError] = useState<string | null>(null);
     const [showRegexImport, setShowRegexImport] = useState(false);
-    const [showDetails, setShowDetails] = useState(false);
+    const [inspectorOpen, setInspectorOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const regexImportErrorId = useId();
 
     const { addToast } = useToast();
     const {
-        simulatorLayout,
         inputTokenization,
         inputSeparator,
         setInputTokenization,
@@ -124,31 +118,11 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
         tokenizationConfig
     );
 
-    // Grammar Simulation Hook
-    const {
-        grammarSource,
-        grammarInput,
-        grammarResult,
-        grammarWarnings,
-        grammarLimits,
-        grammarStrategy,
-        grammarTransform,
-        setGrammarSource,
-        setGrammarInput,
-        setGrammarLimits,
-        setGrammarStrategy,
-        runDerivation,
-        runTransform,
-        clearTransform,
-        clearResult
-    } = useGrammarSimulation(tokenizationConfig);
-
     useEffect(() => {
         if (!initialData) return;
         setData(typeof structuredClone === 'function'
             ? structuredClone(initialData)
             : JSON.parse(JSON.stringify(initialData)));
-        setSimulatorMode('automaton');
         requestAnimationFrame(() => requestCanvasCenter());
         onInitialDataConsumed?.();
     }, [initialData, onInitialDataConsumed, requestCanvasCenter, setData]);
@@ -162,20 +136,13 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
         return () => media.removeEventListener('change', onChange);
     }, []);
 
-    useEffect(() => {
-        if (simulatorMode !== 'automaton') return;
-        requestAnimationFrame(() => requestCanvasCenter());
-    }, [simulatorMode, requestCanvasCenter]);
-
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setInputString(e.target.value);
     };
     
     useEffect(() => {
-        if (simulatorMode === 'automaton') {
-             resetSimulation(false);
-        }
-    }, [inputTokens, simulatorMode, resetSimulation]);
+        resetSimulation(false);
+    }, [inputTokens, resetSimulation]);
 
     const clearInput = () => {
         setInputString('');
@@ -189,7 +156,6 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
         try {
             const nfa = regexToNfa(trimmed);
             setData(nfa);
-            setSimulatorMode('automaton');
             setRegexImportError(null);
             setShowRegexImport(false);
             requestAnimationFrame(() => requestCanvasCenter());
@@ -203,7 +169,6 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
 
     useWindowKeyboard({
         onKeyDown: (event) => {
-            if (simulatorMode !== 'automaton') return;
             const target = event.target;
 
             if (target === inputRef.current) {
@@ -267,8 +232,6 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
 
     const stepCount = simulationState?.processedInput.length || 0;
     const totalSteps = inputTokens.length;
-    const preferredLayout: SimulatorLayout = isDesktopViewport ? simulatorLayout : 'bottom';
-    const showRightDock = preferredLayout === 'side' || preferredLayout === 'top_side';
     const simulationStatus = simulationState?.status ?? 'idle';
     const hasAlphabetForInput = inputTokens.length === 0 || alphabet.length > 0 || isTuring || isAll;
     const canPlay = !hasInvalidInput && hasAlphabetForInput;
@@ -280,11 +243,16 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
             ? 'Defina o alfabeto de entrada no autômato antes de iniciar a simulação.'
             : null;
 
-    const modeSelector = (
-        <SimulatorModeSelector
-            mode={simulatorMode}
-            onChange={setSimulatorMode}
-        />
+    const workspaceHeader = (
+        <div className="glass-panel pointer-events-auto flex items-center gap-3 rounded-2xl border border-default bg-surface-1/90 px-4 py-3 shadow-apple-md">
+            <div className="rounded-xl bg-ios-blue/10 p-2 text-ios-blue">
+                <Code size={16} />
+            </div>
+            <div>
+                <div className="ui-kicker-xs text-primary">Simulador de autômatos</div>
+                <div className="text-[11px] text-secondary">Editor e execução lado a lado na área completa</div>
+            </div>
+        </div>
     );
 
     const statsPanel = (
@@ -358,7 +326,7 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
 
     const detailsPanel = (
         <SimulationHistoryPanel
-            showDetails={showDetails}
+            showDetails={inspectorOpen}
             history={history}
             alphabet={alphabet}
             formatStateList={formatStateList}
@@ -387,8 +355,8 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
             isTuring={isTuring}
             stepCount={stepCount}
             totalSteps={totalSteps}
-            showDetails={showDetails}
-            onToggleDetails={() => setShowDetails((value) => !value)}
+            inspectorOpen={inspectorOpen}
+            onToggleInspector={() => setInspectorOpen((value) => !value)}
             onPlay={() => {
                 if (!simulationState || simulationState.status !== 'running') {
                     resetSimulation();
@@ -411,70 +379,59 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
     );
 
     const topBar = (
-        <>
-            {modeSelector}
+        <div className="flex max-w-[420px] flex-col gap-2">
+            {workspaceHeader}
             {statsPanel}
-        </>
+        </div>
     );
 
     return (
-        <div className="relative h-[calc(100dvh-1.5rem)] w-full pt-[4.75rem] md:pt-[5.5rem] animate-fade-in flex flex-col overflow-hidden" data-native-cursor="true">
-            {simulatorMode === 'automaton' ? (
-                <SimulationDock
-                    showRightDock={showRightDock}
-                    regexImportPanel={regexImportPanel}
-                    warningsPanel={warningsPanel}
-                    detailsPanel={detailsPanel}
-                    tapePanel={tapePanel}
-                    controlsBar={controlsBar}
-                    disableReason={disableReason}
-                    isPda={isPda}
-                    showWarningsPanel={Boolean(disableReason || isPda)}
-                    showDetailsPanel={showDetails}
-                    showTapePanel={inputTokens.length > 0 || isTuring}
-                >
-                    {({ rightDock, bottomDock }) => (
-                        <AutomatonWorkspace
-                            editor={(
-                                <AutomatonEditor
-                                    data={safeData}
-                                    onChange={setData}
-                                    activeStates={simulationState?.activeStates}
-                                    activeTransitions={activeTransitions}
-                                    readOnly={!!simulationState && simulationState.processedInput.length > 0}
-                                    viewState={viewState}
-                                    onViewStateChange={handleViewStateChange}
-                                    compact
-                                    fitRequestToken={fitRequestToken}
-                                />
-                            )}
-                            topBar={topBar}
-                            showRightDock={showRightDock}
-                            rightDock={rightDock}
-                            bottomDock={bottomDock}
-                        />
-                    )}
-                </SimulationDock>
-            ) : (
-                <GrammarWorkspaceShell
-                    modeSelector={modeSelector}
-                    grammarSource={grammarSource}
-                    grammarInput={grammarInput}
-                    grammarWarnings={grammarWarnings}
-                    grammarStrategy={grammarStrategy}
-                    grammarLimits={grammarLimits}
-                    grammarResult={grammarResult}
-                    grammarTransform={grammarTransform}
-                    setGrammarSource={setGrammarSource}
-                    setGrammarInput={setGrammarInput}
-                    setGrammarStrategy={setGrammarStrategy}
-                    setGrammarLimits={setGrammarLimits}
-                    runDerivation={runDerivation}
-                    runTransform={runTransform}
-                    clearTransform={clearTransform}
-                    clearResult={clearResult}
-                />
-            )}
+        <div className="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden pb-3 pt-20 animate-fade-in sm:pt-[5.5rem] lg:pt-24" data-native-cursor="true">
+            <div className="sr-only" aria-live="polite">
+                {`Simulação ${simulationStatus}. ${safeData.estados.length} estados, ${safeData.transicoes.length} transições. ${
+                    simulationState?.activeStates.length
+                        ? `Estados ativos: ${formatStateList(simulationState.activeStates)}.`
+                        : 'Nenhum estado ativo.'
+                }`}
+            </div>
+            <SimulationDock
+                desktopInspector={isDesktopViewport}
+                inspectorOpen={inspectorOpen}
+                onCloseInspector={() => setInspectorOpen(false)}
+                regexImportPanel={regexImportPanel}
+                warningsPanel={warningsPanel}
+                detailsPanel={detailsPanel}
+                tapePanel={tapePanel}
+                controlsBar={controlsBar}
+                disableReason={disableReason}
+                isPda={isPda}
+                showWarningsPanel={Boolean(disableReason || isPda)}
+                showDetailsPanel={history.length > 1 || hasSimulationProgress}
+                showTapePanel={inputTokens.length > 0 || isTuring}
+            >
+                {({ rightDock, bottomDock }) => (
+                    <AutomatonWorkspace
+                        editor={(
+                            <AutomatonEditor
+                                data={safeData}
+                                onChange={setData}
+                                activeStates={simulationState?.activeStates}
+                                activeTransitions={activeTransitions}
+                                readOnly={!!simulationState && simulationState.processedInput.length > 0}
+                                viewState={viewState}
+                                onViewStateChange={handleViewStateChange}
+                                compact
+                                compactVariant="workspace"
+                                fitRequestToken={fitRequestToken}
+                            />
+                        )}
+                        topBar={topBar}
+                        showRightDock={isDesktopViewport && inspectorOpen}
+                        rightDock={rightDock}
+                        bottomDock={bottomDock}
+                    />
+                )}
+            </SimulationDock>
         </div>
     );
 };

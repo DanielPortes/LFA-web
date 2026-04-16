@@ -19,7 +19,7 @@ export interface RoutePatch {
     layout?: SimulatorLayout | null;
 }
 
-const VALID_TABS: Tab[] = ['home', 'conteudo', 'exercicios', 'simulador'];
+const VALID_TABS: Tab[] = ['home', 'conteudo', 'exercicios', 'simulador', 'gramatica'];
 const VALID_LAYOUTS: SimulatorLayout[] = ['bottom', 'side', 'top_side'];
 
 const isTab = (value: string | null): value is Tab =>

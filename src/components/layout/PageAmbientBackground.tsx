@@ -38,6 +38,13 @@ const AMBIENT_PRESETS: Record<Tab, AmbientPreset> = {
         orbA: 'radial-gradient(circle, rgba(148,163,184,0.1), rgba(148,163,184,0))',
         orbB: 'radial-gradient(circle, rgba(148,163,184,0.08), rgba(148,163,184,0))',
         orbC: 'radial-gradient(circle, rgba(148,163,184,0.06), rgba(148,163,184,0))'
+    },
+    gramatica: {
+        intensity: 0.16,
+        mesh: 'radial-gradient(circle at 18% 22%, rgba(168,85,247,0.16), transparent 46%), radial-gradient(circle at 82% 18%, rgba(99,102,241,0.12), transparent 42%), radial-gradient(circle at 56% 80%, rgba(217,70,239,0.1), transparent 44%)',
+        orbA: 'radial-gradient(circle, rgba(168,85,247,0.2), rgba(168,85,247,0))',
+        orbB: 'radial-gradient(circle, rgba(99,102,241,0.16), rgba(99,102,241,0))',
+        orbC: 'radial-gradient(circle, rgba(217,70,239,0.14), rgba(217,70,239,0))'
     }
 };
 
@@ -51,7 +58,7 @@ export const PageAmbientBackground = ({ tab, transitionKey }: PageAmbientBackgro
     const [isTransitioning, setIsTransitioning] = useState(false);
 
     const preset = AMBIENT_PRESETS[tab];
-    const staticMode = effectiveReduceMotion || focusMode || tab === 'simulador';
+    const staticMode = effectiveReduceMotion || focusMode || tab === 'simulador' || tab === 'gramatica';
 
     useEffect(() => {
         if (transitionKey === 0 || staticMode) {

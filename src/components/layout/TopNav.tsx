@@ -1,6 +1,6 @@
 import type { Tab } from '../../types';
 import { useTheme } from '../../hooks/ThemeContext';
-import { Book, Code, HelpCircle, Home, Moon, PenTool, SlidersHorizontal, Sun } from 'lucide-react';
+import { Book, Code, FileText, HelpCircle, Home, Moon, PenTool, SlidersHorizontal, Sun } from 'lucide-react';
 
 interface TopNavProps {
     activeTab: Tab;
@@ -11,9 +11,10 @@ interface TopNavProps {
 
 const menuItems = [
     { id: 'home' as const, label: 'Início', icon: Home },
-    { id: 'conteudo' as const, label: 'Material', icon: Book },
+    { id: 'conteudo' as const, label: 'Trilha', icon: Book },
     { id: 'exercicios' as const, label: 'Exercícios', icon: PenTool },
     { id: 'simulador' as const, label: 'Simulador', icon: Code },
+    { id: 'gramatica' as const, label: 'Gramática', icon: FileText },
 ];
 
 const actionButtonClass =
@@ -23,7 +24,7 @@ export const TopNav = ({ activeTab, onTabChange, onShowTutorial, onShowSettings 
     const { theme, toggleTheme } = useTheme();
 
     return (
-        <header className="fixed top-3 md:top-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100vw-1rem)] max-w-[940px] glass-panel rounded-2xl md:rounded-full px-3 py-1.5 flex items-center gap-2 shadow-apple-lg">
+        <header className="fixed top-3 md:top-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100vw-1rem)] max-w-[1080px] glass-panel rounded-2xl md:rounded-full px-3 py-1.5 flex items-center gap-2 shadow-apple-lg">
             <nav
                 className="flex items-center gap-1 overflow-x-auto max-w-[calc(100%-9.5rem)] sm:max-w-[calc(100%-10.5rem)] [scrollbar-width:none] [-ms-overflow-style:none] snap-x snap-mandatory"
                 aria-label="Navegação principal"
