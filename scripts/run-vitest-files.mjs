@@ -9,20 +9,35 @@ const mode = process.argv[2];
 const maxOldSpaceSize = process.env.TEST_MAX_OLD_SPACE_SIZE?.trim()
     || (process.env.CI ? '6144' : '3072');
 
-const suffix = mode === 'ui'
-    ? '.test.tsx'
-    : mode === 'logic'
-        ? '.test.ts'
-        : mode === 'a11y'
-            ? '.a11y.test.tsx'
-        : null;
+const domBackedTsTests = new Set([
+    'src/components/automaton/canvas/useCanvasViewport.test.ts',
+    'src/components/automaton/editor/useEditorViewport.test.ts',
+    'src/hooks/useAutomatonSimulation.test.ts',
+]);
 
-if (!suffix) {
+if (!['logic', 'ui', 'a11y'].includes(mode)) {
     console.error('Modo inválido. Use "logic", "ui" ou "a11y".');
     process.exit(1);
 }
 
 const files = [];
+
+const normalizePath = (filePath) => filePath.replace(/\\/g, '/');
+const isAccessibilityTest = (filePath) => filePath.endsWith('.a11y.test.tsx');
+const isUiTest = (filePath) => filePath.endsWith('.test.tsx') && !isAccessibilityTest(filePath);
+const isLogicTest = (filePath) => filePath.endsWith('.test.ts');
+
+const shouldInclude = (relativePath) => {
+    if (mode === 'a11y') {
+        return isAccessibilityTest(relativePath);
+    }
+
+    if (mode === 'ui') {
+        return isUiTest(relativePath) || domBackedTsTests.has(relativePath);
+    }
+
+    return isLogicTest(relativePath) && !domBackedTsTests.has(relativePath);
+};
 
 const walk = (directory) => {
     for (const entry of readdirSync(directory)) {
@@ -34,8 +49,10 @@ const walk = (directory) => {
             continue;
         }
 
-        if (!fullPath.endsWith(suffix)) continue;
-        files.push(relative(repoRoot, fullPath));
+        const repoRelativePath = normalizePath(relative(repoRoot, fullPath));
+
+        if (!shouldInclude(repoRelativePath)) continue;
+        files.push(repoRelativePath);
     }
 };
 
@@ -43,9 +60,11 @@ walk(srcRoot);
 files.sort((a, b) => a.localeCompare(b));
 
 if (files.length === 0) {
-    console.error(`Nenhum arquivo ${suffix} encontrado.`);
+    console.error(`Nenhum arquivo encontrado para o modo "${mode}".`);
     process.exit(1);
 }
+
+const environment = mode === 'logic' ? 'node' : 'jsdom';
 
 const result = spawnSync(
     process.execPath,
@@ -53,6 +72,8 @@ const result = spawnSync(
         `--max-old-space-size=${maxOldSpaceSize}`,
         vitestEntrypoint,
         'run',
+        '--environment',
+        environment,
         '--pool=threads',
         '--maxWorkers=1',
         ...files,
