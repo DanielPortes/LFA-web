@@ -29,12 +29,14 @@ const ExerciseDataState = ({ message }: { message: string }) => (
 const LoadedExercisesSection = ({
     exerciseDatabase,
     onSimulate,
+    onOpenTheory,
     initialCategoryId,
     initialExerciseId,
     onSelectionChange
 }: {
     exerciseDatabase: ExerciseDatabase;
     onSimulate: (data: AutomatoData) => void;
+    onOpenTheory?: (moduleId: string, lessonId: string) => void;
     initialCategoryId?: string;
     initialExerciseId?: number | null;
     onSelectionChange?: (categoryId: string, exerciseId: number | null) => void;
@@ -217,8 +219,10 @@ const LoadedExercisesSection = ({
 
             <ExerciseSolverModal
                 isOpen={selection.solvingExercise !== null && selection.currentExercise !== null}
+                exercise={selection.currentExercise}
                 exerciseId={selection.solvingExercise}
                 question={selection.currentExercise?.pergunta ?? null}
+                onOpenTheory={onOpenTheory}
                 solverMode={selection.solverMode}
                 userAutomaton={selection.userAutomaton}
                 onAutomatonChange={selection.setUserAutomaton}
@@ -275,11 +279,13 @@ const LoadedExercisesSection = ({
 
 export const ExerciciosSection = ({
     onSimulate,
+    onOpenTheory,
     initialCategoryId,
     initialExerciseId,
     onSelectionChange
 }: {
     onSimulate: (data: AutomatoData) => void;
+    onOpenTheory?: (moduleId: string, lessonId: string) => void;
     initialCategoryId?: string;
     initialExerciseId?: number | null;
     onSelectionChange?: (categoryId: string, exerciseId: number | null) => void;
@@ -298,6 +304,7 @@ export const ExerciciosSection = ({
         <LoadedExercisesSection
             exerciseDatabase={exerciseDatabase}
             onSimulate={onSimulate}
+            onOpenTheory={onOpenTheory}
             initialCategoryId={initialCategoryId}
             initialExerciseId={initialExerciseId}
             onSelectionChange={onSelectionChange}

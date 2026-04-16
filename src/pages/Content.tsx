@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { resolveExerciseRefs } from '../data/learningConnections';
 import type { AutomatoData, CourseModule } from '../types';
 import { useProgress } from '../hooks/useProgress';
 import { ContentPreviewModal } from '../features/content/ContentPreviewModal';
@@ -6,11 +7,13 @@ import { ContentSidebar } from '../features/content/ContentSidebar';
 import { LessonContent } from '../features/content/LessonContent';
 import { LessonHeader } from '../features/content/LessonHeader';
 import { LessonNavigator } from '../features/content/LessonNavigator';
+import { LessonSupportPanel } from '../features/content/LessonSupportPanel';
 import { useContentSelection } from '../features/content/useContentSelection';
 import { useCourseModulesData } from '../features/content/useCourseModulesData';
 
 interface ContentProps {
     onSimulate?: (data: AutomatoData) => void;
+    onOpenExercise?: (categoryId: string, exerciseId: number) => void;
     initialModuleId?: string;
     initialLessonId?: string;
     onSelectionChange?: (moduleId: string, lessonId: string) => void;
@@ -28,6 +31,7 @@ const ContentDataState = ({ message }: { message: string }) => (
 const LoadedContentSection = ({
     modules,
     onSimulate,
+    onOpenExercise,
     initialModuleId,
     initialLessonId,
     onSelectionChange
@@ -68,6 +72,7 @@ const LoadedContentSection = ({
         markLessonVisited,
         onSelectionChange
     });
+    const relatedExercises = resolveExerciseRefs(activeLesson.exerciseRefs);
 
     return (
         <div className="relative flex w-full min-w-0 gap-4 md:gap-6 pb-8">
@@ -104,6 +109,12 @@ const LoadedContentSection = ({
                         moduleTitle={activeModule.title}
                         lessonTitle={activeLesson.title}
                         lessonDescription={activeLesson.description}
+                        objectives={activeLesson.objectives}
+                        prerequisites={activeLesson.prerequisites}
+                        keywords={activeLesson.keywords}
+                        estimatedMinutes={activeLesson.estimatedMinutes}
+                        references={activeLesson.references}
+                        status={activeLesson.status}
                         isSidebarOpen={isSidebarOpen}
                         sidebarId={sidebarId}
                         onOpenSidebar={openSidebar}
@@ -113,6 +124,18 @@ const LoadedContentSection = ({
                         blocks={activeLesson.content}
                         onSimulate={onSimulate}
                         onExpand={setSelectedAutomaton}
+                        onOpenExercise={(exerciseRef) => {
+                            const exercise = resolveExerciseRefs([exerciseRef])[0];
+                            if (!exercise || !onOpenExercise) return;
+                            onOpenExercise(exercise.categoryId, exercise.exerciseId);
+                        }}
+                    />
+
+                    <LessonSupportPanel
+                        summary={activeLesson.summary}
+                        commonMistakes={activeLesson.commonMistakes}
+                        relatedExercises={relatedExercises}
+                        onOpenExercise={onOpenExercise}
                     />
 
                     <LessonNavigator
@@ -128,6 +151,7 @@ const LoadedContentSection = ({
             <ContentPreviewModal
                 automaton={selectedAutomaton}
                 onClose={clearSelectedAutomaton}
+                onSimulate={onSimulate}
             />
         </div>
     );
@@ -135,6 +159,7 @@ const LoadedContentSection = ({
 
 export const ConteudoSection = ({
     onSimulate,
+    onOpenExercise,
     initialModuleId,
     initialLessonId,
     onSelectionChange
@@ -153,6 +178,7 @@ export const ConteudoSection = ({
         <LoadedContentSection
             modules={modules}
             onSimulate={onSimulate}
+            onOpenExercise={onOpenExercise}
             initialModuleId={initialModuleId}
             initialLessonId={initialLessonId}
             onSelectionChange={onSelectionChange}

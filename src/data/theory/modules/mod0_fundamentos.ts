@@ -1,4 +1,8 @@
-﻿import type { CourseModule } from '../../../types';
+import type { CourseModule } from '../../../types';
+import { createLessonReference } from '../../bibliography';
+
+const blauthCap1 = createLessonReference('blauth', 'Cap. 1');
+const blauthCap2 = createLessonReference('blauth', 'Cap. 2');
 
 export const mod0: CourseModule = {
     id: 'mod0',
@@ -7,7 +11,33 @@ export const mod0: CourseModule = {
         {
             id: 'l0-intro',
             title: 'Alfabetos e Linguagens',
-            description: 'Antes de desenhar automatos, precisamos definir a entrada.',
+            description: 'Antes de desenhar autômatos, precisamos definir a entrada e a linguagem com precisão.',
+            objectives: [
+                { id: 'l0-intro-obj-1', text: 'Distinguir alfabeto, palavra e linguagem formal.' },
+                { id: 'l0-intro-obj-2', text: 'Interpretar corretamente ε, Σ* e ∅ em definições e provas.' },
+                { id: 'l0-intro-obj-3', text: 'Ler descrições formais do tipo L = { w ∈ Σ* | ... }.' }
+            ],
+            prerequisites: [
+                'Leitura básica de conjuntos e notação matemática elementar.'
+            ],
+            keywords: ['alfabeto', 'palavra', 'linguagem', 'Σ*', 'ε', '∅'],
+            estimatedMinutes: 18,
+            references: [blauthCap1],
+            commonMistakes: [
+                {
+                    title: 'Confundir ε, {ε} e ∅',
+                    explanation: 'ε é uma palavra, {ε} é uma linguagem com uma única palavra e ∅ é a linguagem vazia.',
+                    correction: 'Sempre pergunte se o objeto em questão é símbolo, palavra ou conjunto de palavras.'
+                }
+            ],
+            summary: [
+                { id: 'l0-intro-sum-1', text: 'Linguagens são conjuntos de palavras sobre um alfabeto.' },
+                { id: 'l0-intro-sum-2', text: 'Σ* representa todas as palavras finitas possíveis sobre Σ.' },
+                { id: 'l0-intro-sum-3', text: 'A distinção entre ε, {ε} e ∅ é central em toda a disciplina.' }
+            ],
+            status: 'canonical',
+            reviewedBy: 'Codex',
+            lastReviewedAt: '2026-04-15',
             content: [
                 {
                     type: 'text',
@@ -22,7 +52,7 @@ export const mod0: CourseModule = {
                     type: 'list',
                     title: 'Três abordagens de estudo (Blauth)',
                     content: [
-                        'Operacional (reconhecedor): automatos finitos, de pilha e de Turing.',
+                        'Operacional (reconhecedor): autômatos finitos, de pilha e de Turing.',
                         'Axiomática (gerador): gramáticas.',
                         'Denotacional/funcional: expressões regulares.'
                     ]
@@ -30,7 +60,7 @@ export const mod0: CourseModule = {
                 {
                     type: 'definition',
                     title: 'Conceitos básicos',
-                    content: '1. **Alfabeto (Σ):** conjunto finito de simbolos (pode ser vazio).\n2. **Palavra/cadeia (w):** sequência finita de simbolos de Σ.\n3. **Linguagem formal (L):** conjunto de palavras sobre um alfabeto.'
+                    content: '1. **Alfabeto (Σ):** conjunto finito de símbolos (pode ser vazio).\n2. **Palavra/cadeia (w):** sequência finita de símbolos de Σ.\n3. **Linguagem formal (L):** conjunto de palavras sobre um alfabeto.'
                 },
                 {
                     type: 'math-tip',
@@ -62,7 +92,7 @@ export const mod0: CourseModule = {
                     content: [
                         'Prefixo: x é prefixo de w se w = xy.',
                         'Sufixo: y é sufixo de w se w = xy.',
-                        'Subpalavra (subcadeia): sequência contígua de simbolos em w.'
+                        'Subpalavra (subcadeia): sequência contígua de símbolos em w.'
                     ]
                 },
                 {
@@ -76,6 +106,31 @@ export const mod0: CourseModule = {
             id: 'l0-matematica',
             title: 'Conjuntos, Relações e Funções',
             description: 'Ferramentas de matemática discreta usadas em LFA.',
+            objectives: [
+                { id: 'l0-mat-obj-1', text: 'Reconhecer relações de equivalência e de ordem em exemplos formais.' },
+                { id: 'l0-mat-obj-2', text: 'Distinguir funções totais e parciais em definições de máquinas.' }
+            ],
+            prerequisites: [
+                'Noções básicas de conjuntos e operações elementares.'
+            ],
+            keywords: ['relação', 'equivalência', 'ordem', 'função total', 'função parcial'],
+            estimatedMinutes: 14,
+            references: [blauthCap1],
+            commonMistakes: [
+                {
+                    title: 'Ler toda função como total',
+                    explanation: 'Em LFA, o tipo da função não basta para dizer se ela está definida em todos os pontos do domínio.',
+                    correction: 'Verifique explicitamente se a definição exige totalidade ou se permite omissões.'
+                }
+            ],
+            summary: [
+                { id: 'l0-mat-sum-1', text: 'Relações de equivalência particionam conjuntos em classes.' },
+                { id: 'l0-mat-sum-2', text: 'Ordens parciais e totais modelam comparabilidade entre elementos.' },
+                { id: 'l0-mat-sum-3', text: 'Funções totais e parciais reaparecem nas definições de transição.' }
+            ],
+            status: 'reviewed',
+            reviewedBy: 'Codex',
+            lastReviewedAt: '2026-04-15',
             content: [
                 {
                     type: 'definition',
@@ -90,7 +145,7 @@ export const mod0: CourseModule = {
                 {
                     type: 'definition',
                     title: 'Função parcial vs. total',
-                    content: 'Uma função f: A → B é **total** se está definida para todo a ∈ A. É **parcial** quando pode faltar valor para alguns elementos. Em automatos, a função programa δ é parcial.'
+                    content: 'Uma função f: A → B é **total** se está definida para todo a ∈ A. É **parcial** quando pode faltar valor para alguns elementos. Em autômatos, a função programa δ pode ser total ou parcial, dependendo do modelo e da convenção adotada.'
                 },
                 {
                     type: 'math-tip',
@@ -102,7 +157,31 @@ export const mod0: CourseModule = {
         {
             id: 'l0-logica',
             title: 'Lógica e Demonstrações',
-            description: 'Como argumentar com rigor matemático.',
+            description: 'Como argumentar com rigor matemático em definições, construções e provas.',
+            objectives: [
+                { id: 'l0-log-obj-1', text: 'Identificar proposições, conectivos e estruturas de implicação.' },
+                { id: 'l0-log-obj-2', text: 'Escolher entre prova direta, contraposição, absurdo e indução.' }
+            ],
+            prerequisites: [
+                'Leitura de proposições e símbolos lógicos básicos.'
+            ],
+            keywords: ['proposição', 'implicação', 'contraposição', 'absurdo', 'indução'],
+            estimatedMinutes: 13,
+            references: [blauthCap2],
+            commonMistakes: [
+                {
+                    title: 'Escolher a técnica de prova sem olhar a estrutura do problema',
+                    explanation: 'Muitos erros vêm de tentar indução quando a propriedade pede contraposição, ou absurdo quando basta construção direta.',
+                    correction: 'Pergunte primeiro qual objeto varia: palavra, derivação, máquina ou hipótese lógica.'
+                }
+            ],
+            summary: [
+                { id: 'l0-log-sum-1', text: 'A forma lógica da afirmação ajuda a escolher a estratégia de prova.' },
+                { id: 'l0-log-sum-2', text: 'Indução é especialmente frequente em comprimento de palavras e número de passos.' }
+            ],
+            status: 'reviewed',
+            reviewedBy: 'Codex',
+            lastReviewedAt: '2026-04-15',
             content: [
                 {
                     type: 'list',
@@ -136,7 +215,32 @@ export const mod0: CourseModule = {
         {
             id: 'l0-operacoes',
             title: 'Operações com Linguagens',
-            description: 'União, concatenação, fecho e potência.',
+            description: 'União, concatenação, fecho e potência como ferramentas de construção.',
+            objectives: [
+                { id: 'l0-op-obj-1', text: 'Calcular manualmente concatenações, uniões e potências de linguagens pequenas.' },
+                { id: 'l0-op-obj-2', text: 'Distinguir operações sobre palavras de operações sobre linguagens.' }
+            ],
+            prerequisites: [
+                'Alfabetos, palavras e linguagem formal.',
+                'Noções básicas de conjuntos.'
+            ],
+            keywords: ['união', 'concatenação', 'fecho de Kleene', 'potência', 'L*'],
+            estimatedMinutes: 16,
+            references: [blauthCap1],
+            commonMistakes: [
+                {
+                    title: 'Assumir que concatenação é comutativa',
+                    explanation: 'L1L2 e L2L1 costumam gerar conjuntos diferentes porque a ordem das palavras importa.',
+                    correction: 'Monte exemplos pequenos e compare explicitamente os resultados.'
+                }
+            ],
+            summary: [
+                { id: 'l0-op-sum-1', text: 'Operações em linguagens geram novas linguagens sobre o mesmo ou sobre alfabetos compatíveis.' },
+                { id: 'l0-op-sum-2', text: 'L* sempre contém ε e concatenação não é comutativa.' }
+            ],
+            status: 'reviewed',
+            reviewedBy: 'Codex',
+            lastReviewedAt: '2026-04-15',
             content: [
                 {
                     type: 'definition',
@@ -171,11 +275,35 @@ export const mod0: CourseModule = {
         {
             id: 'l0-representacao',
             title: 'Representações de Linguagens',
-            description: 'A mesma linguagem, formas diferentes.',
+            description: 'A mesma linguagem pode ser descrita por propriedade, gramática, expressão regular ou autômato.',
+            objectives: [
+                { id: 'l0-rep-obj-1', text: 'Relacionar diferentes representações para a mesma linguagem.' },
+                { id: 'l0-rep-obj-2', text: 'Preparar a transição para autômatos, gramáticas e expressões regulares.' }
+            ],
+            prerequisites: [
+                'Alfabetos, palavras e operações com linguagens.'
+            ],
+            keywords: ['representação', 'propriedade', 'ER', 'autômato', 'gramática'],
+            estimatedMinutes: 12,
+            references: [blauthCap1],
+            commonMistakes: [
+                {
+                    title: 'Tratar representação e linguagem como se fossem o mesmo objeto',
+                    explanation: 'ER, autômatos e gramáticas são descrições; a linguagem é o conjunto abstrato de palavras.',
+                    correction: 'Ao comparar modelos, pergunte sempre qual linguagem cada um denota ou reconhece.'
+                }
+            ],
+            summary: [
+                { id: 'l0-rep-sum-1', text: 'Linguagens equivalentes podem ter representações muito diferentes.' },
+                { id: 'l0-rep-sum-2', text: 'Boa parte de LFA consiste em provar equivalência entre representações.' }
+            ],
+            status: 'reviewed',
+            reviewedBy: 'Codex',
+            lastReviewedAt: '2026-04-15',
             content: [
                 {
                     type: 'text',
-                    content: 'Uma linguagem pode ser descrita por enumeração, por propriedade, por gramática, por expressão regular ou por automato. Em LFA provamos equivalências entre essas formas.'
+                    content: 'Uma linguagem pode ser descrita por enumeração, por propriedade, por gramática, por expressão regular ou por autômato. Em LFA provamos equivalências entre essas formas.'
                 },
                 {
                     type: 'note',
@@ -187,14 +315,14 @@ export const mod0: CourseModule = {
                     title: 'Exercícios propostos',
                     content: [
                         'Descreva por propriedade a linguagem dos binários divisíveis por 4.',
-                        'Escreva em forma de conjunto a linguagem das palavras com exatamente dois simbolos a.',
+                        'Escreva em forma de conjunto a linguagem das palavras com exatamente dois símbolos a.',
                         'Transforme uma definição por propriedade em ER (quando possível).'
                     ]
                 },
                 {
                     type: 'definition',
                     title: 'Formas equivalentes',
-                    content: 'Enumeração, propriedade, ER, gramática regular e automato podem descrever a mesma linguagem.'
+                    content: 'Enumeração, propriedade, ER, gramática regular e autômato podem descrever a mesma linguagem.'
                 },
                 {
                     type: 'text',
@@ -204,16 +332,30 @@ export const mod0: CourseModule = {
         },
         {
             id: 'l0-glossario',
-            title: 'Glossário de simbolos (Blauth)',
-            description: 'Notações essenciais usadas no livro.',
+            title: 'Glossário de símbolos (Blauth)',
+            description: 'Notações essenciais usadas ao longo de toda a trilha.',
+            objectives: [
+                { id: 'l0-glo-obj-1', text: 'Reconhecer rapidamente a notação recorrente em autômatos, gramáticas e provas.' }
+            ],
+            prerequisites: [
+                'Noções básicas de leitura formal.'
+            ],
+            keywords: ['δ', 'δ̂', 'Σ*', '⇒', '2^A', 'glossário'],
+            estimatedMinutes: 8,
+            references: [blauthCap1],
+            summary: [
+                { id: 'l0-glo-sum-1', text: 'Consultar a notação antes de avançar evita erros conceituais desnecessários.' }
+            ],
+            status: 'reviewed',
+            reviewedBy: 'Codex',
+            lastReviewedAt: '2026-04-15',
             content: [
                 {
                     type: 'math-tip',
                     title: 'Tabela resumida',
-                    content: '• Σ: alfabeto de entrada.\n• Σ*: todas as palavras sobre Σ.\n• ε: palavra vazia (|ε| = 0).\n• ∅: conjunto vazio.\n• |w|: comprimento da palavra w.\n• 2^A: conjunto das partes de A.\n• δ: função programa (transicao).\n• δ̂: função programa estendida.\n• ⇒, ⇒+: derivação (um ou mais passos).\n• L(G) = { w ∈ T* | S ⇒+ w }.\n• w^n: concatenação sucessiva.'
+                    content: '• Σ: alfabeto de entrada.\n• Σ*: todas as palavras sobre Σ.\n• ε: palavra vazia (|ε| = 0).\n• ∅: conjunto vazio.\n• |w|: comprimento da palavra w.\n• 2^A: conjunto das partes de A.\n• δ: função programa (transição).\n• δ̂: função programa estendida.\n• ⇒, ⇒+: derivação (um ou mais passos).\n• L(G) = { w ∈ T* | S ⇒+ w }.\n• w^n: concatenação sucessiva.'
                 }
             ]
         }
     ]
 };
-

@@ -100,4 +100,19 @@ describe('useContentSelection', () => {
         expect(result.current.activeLessonId).toBe('lesson-2');
         expect(result.current.isSidebarOpen).toBe(false);
     });
+
+    it('permite buscar pelo corpo da lição, não apenas por título e descrição', () => {
+        const { result } = renderHook(() => useContentSelection({
+            modules,
+            markLessonVisited: vi.fn()
+        }));
+
+        act(() => {
+            result.current.setSearchQuery('terceira');
+        });
+
+        expect(result.current.filteredModules).toHaveLength(1);
+        expect(result.current.filteredModules[0].id).toBe('mod-2');
+        expect(result.current.filteredModules[0].lessons[0].id).toBe('lesson-3');
+    });
 });

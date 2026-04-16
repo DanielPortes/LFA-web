@@ -78,4 +78,26 @@ describe('ContentBlockRenderer', () => {
         expect(screen.getByText('Passo 1')).toBeInTheDocument();
         expect(screen.getByText('Árvore S')).toBeInTheDocument();
     });
+
+    it('abre exercício relacionado a partir de bloco pedagógico', () => {
+        const onOpenExercise = vi.fn();
+
+        render(
+            <ContentBlockRenderer
+                block={{
+                    type: 'mini-exercise',
+                    title: 'Aplicação guiada',
+                    content: 'Modele primeiro a memória mínima.',
+                    exerciseRef: 'afd:1'
+                }}
+                onOpenExercise={onOpenExercise}
+            />
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Abrir no treino' }));
+
+        expect(screen.getByText('Aplicação guiada')).toBeInTheDocument();
+        expect(screen.getByText(/Exercício 1/i)).toBeInTheDocument();
+        expect(onOpenExercise).toHaveBeenCalledWith('afd:1');
+    });
 });

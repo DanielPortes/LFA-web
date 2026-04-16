@@ -2,12 +2,13 @@ import type { CourseModule } from '../../../types';
 
 export const mod10: CourseModule = {
     id: 'mod10',
-    title: 'Modulo 10: Gramaticas Livres de Contexto',
+    title: 'Módulo 10: Gramáticas Livres de Contexto',
     lessons: [
         {
             id: 'l10-def',
-            title: 'Definicao de GLC',
+            title: 'Definição de GLC',
             description: 'Variaveis, terminais e producoes.',
+            exerciseRefs: ['cfg:1'],
             content: [
                 {
                     type: 'definition',
@@ -59,6 +60,7 @@ export const mod10: CourseModule = {
             id: 'l10-deriv',
             title: 'Derivacoes e arvores',
             description: 'Como acompanhar a geracao de palavras.',
+            exerciseRefs: ['cfg:2', 'cfg:3'],
             content: [
                 {
                     type: 'algorithm',

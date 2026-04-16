@@ -64,7 +64,24 @@ export const useExerciseSelection = ({
             exercise.id.toString() === query
             || exercise.pergunta.toLowerCase().includes(query)
             || exercise.dica?.toLowerCase().includes(query)
+            || exercise.dicas?.some((hint) => hint.text.toLowerCase().includes(query))
+            || exercise.estrategia?.toLowerCase().includes(query)
             || exercise.respostaTexto?.toLowerCase().includes(query)
+            || exercise.guidedSolution?.some((step) =>
+                step.title.toLowerCase().includes(query)
+                || step.explanation.toLowerCase().includes(query)
+                || step.expectedStudentAction?.toLowerCase().includes(query)
+                || step.checkpointQuestion?.toLowerCase().includes(query)
+            )
+            || exercise.commonMistakes?.some((mistake) =>
+                mistake.title.toLowerCase().includes(query)
+                || mistake.symptom.toLowerCase().includes(query)
+                || mistake.correction.toLowerCase().includes(query)
+            )
+            || exercise.metadata?.learningGoal.toLowerCase().includes(query)
+            || exercise.metadata?.pattern.toLowerCase().includes(query)
+            || exercise.metadata?.prerequisites?.some((prerequisite) => prerequisite.toLowerCase().includes(query))
+            || exercise.metadata?.theoryRefs?.some((reference) => reference.toLowerCase().includes(query))
         );
     }, [exercises, searchQuery]);
 

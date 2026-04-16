@@ -2,7 +2,7 @@ import type { CourseModule } from '../../../types';
 
 export const mod12: CourseModule = {
     id: 'mod12',
-    title: 'Modulo 12: Hierarquia de Chomsky e Decidibilidade',
+    title: 'Módulo 12: Hierarquia de Chomsky e Decidibilidade',
     lessons: [
         {
             id: 'l12-hierarquia',
@@ -33,7 +33,7 @@ export const mod12: CourseModule = {
         },
         {
             id: 'l12-tm',
-            title: 'Maquinas de Turing e ALL',
+            title: 'Máquinas de Turing e ALL',
             description: 'Modelo geral de computacao.',
             content: [
                 {
@@ -59,7 +59,7 @@ export const mod12: CourseModule = {
         },
         {
             id: 'l12-reducoes',
-            title: 'Reducao e provas de indecidibilidade',
+            title: 'Redução e provas de indecidibilidade',
             description: 'Ferramenta principal para limites computacionais.',
             content: [
                 {

@@ -2,7 +2,7 @@ import type { CourseModule } from '../../../types';
 
 export const mod7: CourseModule = {
     id: 'mod7',
-    title: 'MA3dulo 7: Fechamentos e Decisao',
+    title: 'Módulo 7: Fechamentos e Decisão',
     lessons: [
         {
             id: 'l7-closure',
@@ -28,7 +28,7 @@ export const mod7: CourseModule = {
         },
         {
             id: 'l7-decision',
-            title: 'Problemas de Decisao',
+            title: 'Problemas de Decisão',
             description: 'Perguntas que podemos responder automaticamente.',
             content: [
                 {

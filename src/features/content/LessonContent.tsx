@@ -6,12 +6,14 @@ interface LessonContentProps {
     blocks: ContentBlock[];
     onSimulate?: (data: AutomatoData) => void;
     onExpand: (data: AutomatoData) => void;
+    onOpenExercise?: (exerciseRef: string) => void;
 }
 
 export const LessonContent: React.FC<LessonContentProps> = ({
     blocks,
     onSimulate,
-    onExpand
+    onExpand,
+    onOpenExercise
 }) => (
     <div className="space-y-2">
         {blocks.map((block, index) => (
@@ -20,6 +22,7 @@ export const LessonContent: React.FC<LessonContentProps> = ({
                 block={block}
                 onSimulate={onSimulate}
                 onExpand={onExpand}
+                onOpenExercise={onOpenExercise}
             />
         ))}
     </div>

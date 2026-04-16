@@ -12,15 +12,17 @@ import {
 } from 'lucide-react';
 import { AutomatonEditor } from '../../components/automaton/AutomatonEditor';
 import { DerivationTreeVisualizer, Modal } from '../../components/ui';
-import type { AutomatoData, GrammarTree, TestCase } from '../../types';
+import type { AutomatoData, Exercicio, GrammarTree, TestCase } from '../../types';
 import type { SimulationTraceStep } from '../../utils/exerciseSimulation';
 import type { SolverMode } from './types';
 import { ExerciseVerificationPanel } from './ExerciseVerificationPanel';
 
 interface ExerciseSolverModalProps {
     isOpen: boolean;
+    exercise: Exercicio | null;
     exerciseId: number | null;
     question: string | null;
+    onOpenTheory?: (moduleId: string, lessonId: string) => void;
     solverMode: SolverMode;
     userAutomaton: AutomatoData | null;
     onAutomatonChange: (data: AutomatoData) => void;
@@ -58,8 +60,10 @@ interface ExerciseSolverModalProps {
 
 export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
     isOpen,
+    exercise,
     exerciseId,
     question,
+    onOpenTheory,
     solverMode,
     userAutomaton,
     onAutomatonChange,
@@ -108,7 +112,7 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
             labelledById={titleId}
             describedById={descriptionId}
             header={(
-                <div className="flex items-center justify-between border-b border-default bg-surface-1 px-6 py-4">
+                <div className="flex items-center justify-between border-b border-default bg-surface-1 px-4 py-4 sm:px-6">
                     <div className="flex items-center gap-4">
                         <div className="rounded-xl bg-ios-green/10 p-2 text-ios-green">
                             <Pencil size={20} />
@@ -163,16 +167,17 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                 </div>
             )}
             bodyClassName="overflow-hidden p-0"
-            className="h-[90vh] max-h-[90vh] w-[96vw] max-w-[1200px] sm:h-[84vh] sm:max-h-[84vh] sm:w-[92vw]"
+            className="min-h-[88dvh] h-[min(92dvh,1024px)] w-[min(96vw,1440px)] max-w-none"
         >
-            <div className="flex h-full flex-col overflow-hidden xl:flex-row">
-                <div className="relative min-h-[320px] flex-1 overflow-hidden xl:min-h-0">
+            <div className="grid h-full min-h-0 grid-cols-1 overflow-hidden xl:grid-cols-[minmax(0,1fr),360px]">
+                <div className="relative min-h-[52vh] overflow-hidden xl:min-h-0">
                     {solverMode === 'automaton' && userAutomaton && (
                         <AutomatonEditor
                             data={userAutomaton}
                             onChange={onAutomatonChange}
                             readOnly={false}
                             compact={true}
+                            compactVariant="modal"
                         />
                     )}
 
@@ -214,7 +219,7 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                                 placeholder="S -> a S b | eps"
                                 aria-invalid={!!grammarError}
                                 aria-describedby={grammarError ? grammarErrorId : undefined}
-                                className="h-64 w-full rounded-2xl border border-default bg-surface-2 px-4 py-3 text-sm font-mono text-primary shadow-inner outline-none ring-ios-blue/40 focus:ring-2"
+                                className="h-[240px] w-full rounded-2xl border border-default bg-surface-2 px-4 py-4 text-sm font-mono text-primary shadow-inner outline-none ring-ios-blue/40 focus:ring-2 md:h-[280px] xl:h-[320px]"
                             />
                             {grammarError && (
                                 <p id={grammarErrorId} role="status" className="mt-3 flex items-center gap-2 text-sm text-status-danger">
@@ -236,7 +241,7 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                                     <div className="mb-4 ui-kicker text-secondary">
                                         Última Árvore Gerada (Falha)
                                     </div>
-                                    <div className="h-64 overflow-hidden rounded-xl border border-default bg-surface-muted">
+                                    <div className="h-[240px] overflow-hidden rounded-2xl border border-default bg-surface-muted md:h-[280px]">
                                         <DerivationTreeVisualizer tree={grammarTree} autoPlay={true} />
                                     </div>
                                 </div>
@@ -254,7 +259,7 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                                 value={userText}
                                 onChange={(e) => onTextChange(e.target.value)}
                                 placeholder="Escreva sua solução aqui..."
-                                className="h-64 w-full rounded-2xl border border-default bg-surface-2 px-4 py-3 text-sm text-primary shadow-inner outline-none ring-ios-blue/40 focus:ring-2"
+                                className="min-h-[240px] w-full rounded-2xl border border-default bg-surface-2 px-4 py-3 text-sm text-primary shadow-inner outline-none ring-ios-blue/40 focus:ring-2"
                             />
                             <div className="mt-4 flex items-center gap-3">
                                 <button
@@ -274,6 +279,9 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                 </div>
 
                 <ExerciseVerificationPanel
+                    exercise={exercise}
+                    onSimulateAnswer={onSimulate}
+                    onOpenTheory={onOpenTheory}
                     hasTests={hasTests}
                     tests={tests}
                     showExpected={showExpected}

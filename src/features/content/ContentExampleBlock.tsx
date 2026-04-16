@@ -21,9 +21,9 @@ const PreviewCard = ({
     accentClassName: string;
     onExpand?: (data: AutomatoData) => void;
 }) => (
-    <div className="flex flex-col gap-3">
+    <div data-testid="automaton-preview-card" className="flex flex-col gap-3">
         {label && <div className={`ui-kicker text-center ${accentClassName}`}>{label}</div>}
-        <div className={`h-72 bg-canvas rounded-2xl overflow-hidden relative shadow-inner group-hover:shadow-md transition-shadow ${accentClassName === 'text-ios-green' ? 'border-2 border-ios-green/20' : 'border border-default'}`}>
+        <div className={`relative aspect-[16/10] min-h-[220px] overflow-hidden rounded-2xl bg-canvas shadow-inner transition-shadow group-hover:shadow-md md:min-h-[260px] lg:min-h-[320px] ${accentClassName === 'text-ios-green' ? 'border-2 border-ios-green/20' : 'border border-default'}`}>
             {onExpand && (
                 <div className="absolute top-2 right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     <button
@@ -50,7 +50,7 @@ export const ContentExampleBlock: React.FC<ContentBlockComponentProps> = ({
     const secondaryAutomaton = block.automatoRef2;
 
     return (
-        <div className="my-10 animate-fade-in group">
+        <div data-testid="content-example-block" className="my-10 animate-fade-in group">
             <div className="glass-card overflow-hidden border-2 border-transparent hover:border-ios-blue/20 transition-all duration-300">
                 <div className="p-6 md:p-8 bg-gradient-to-b from-white/50 to-transparent dark:from-white/5">
                     <div className="flex justify-between items-start mb-6">
@@ -76,7 +76,7 @@ export const ContentExampleBlock: React.FC<ContentBlockComponentProps> = ({
                         {typeof block.content === 'string' ? renderMarkdown(block.content) : block.content}
                     </div>
 
-                    <div className={`grid gap-6 ${secondaryAutomaton ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
+                    <div className={`grid gap-4 md:gap-4 lg:gap-6 ${secondaryAutomaton ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
                         {primaryAutomaton && (
                             <PreviewCard
                                 data={primaryAutomaton}

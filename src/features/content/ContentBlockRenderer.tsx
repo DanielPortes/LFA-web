@@ -4,6 +4,7 @@ import { ContentCalloutBlock } from './ContentCalloutBlock';
 import { ContentExampleBlock } from './ContentExampleBlock';
 import { ContentInteractiveGrammarBlock } from './ContentInteractiveGrammarBlock';
 import { ContentListBlock } from './ContentListBlock';
+import { ContentPedagogicalBlock } from './ContentPedagogicalBlock';
 import { ContentTextBlock } from './ContentTextBlock';
 import type { ContentBlockComponentProps } from './contentBlockShared';
 
@@ -12,7 +13,8 @@ type ContentBlockRendererProps = ContentBlockComponentProps;
 export const ContentBlockRenderer: React.FC<ContentBlockRendererProps> = ({
     block,
     onSimulate,
-    onExpand
+    onExpand,
+    onOpenExercise
 }) => {
     switch (block.type) {
         case 'definition':
@@ -29,6 +31,15 @@ export const ContentBlockRenderer: React.FC<ContentBlockRendererProps> = ({
             return <ContentListBlock block={block} />;
         case 'interactive-grammar':
             return <ContentInteractiveGrammarBlock block={block} />;
+        case 'comparison':
+        case 'proof-outline':
+        case 'common-mistake':
+        case 'checkpoint':
+        case 'mini-exercise':
+        case 'exercise-solution-step':
+        case 'reference':
+        case 'summary':
+            return <ContentPedagogicalBlock block={block} onOpenExercise={onOpenExercise} />;
         default:
             return <ContentTextBlock block={block} />;
     }

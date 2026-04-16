@@ -82,6 +82,421 @@ export const topicos: Topic[] = [
     }
 ];
 
+const pedagogicalExerciseData: Record<string, Partial<Exercicio>> = {
+    afd_1: {
+        dicas: [
+            {
+                id: 'afd-1-h1',
+                level: 1,
+                text: 'Separe as situações essenciais: ainda não leu nada, leu um primeiro símbolo válido mas ainda falta comprimento, já satisfaz a condição e caiu em erro sem possibilidade de recuperação.'
+            },
+            {
+                id: 'afd-1-h2',
+                level: 2,
+                text: 'Se a palavra começa com b, nenhuma continuação pode fazê-la voltar para a linguagem. Isso sugere um estado sumidouro.'
+            },
+            {
+                id: 'afd-1-h3',
+                level: 3,
+                text: 'Depois que a palavra começa com a e alcança tamanho 2, qualquer símbolo adicional preserva a aceitação.'
+            }
+        ],
+        estrategia: 'Converta cada restrição do enunciado em memória finita. O autômato precisa lembrar se o primeiro símbolo foi válido e se o comprimento mínimo já foi atingido. A combinação dessas duas informações determina os estados.',
+        guidedSolution: [
+            {
+                id: 'afd-1-step-1',
+                title: 'Mapeie a memória necessária',
+                explanation: 'Antes de ler símbolos, a palavra ainda não começou. Após ler o primeiro a, a condição do prefixo foi satisfeita, mas ainda falta atingir tamanho 2.',
+                expectedStudentAction: 'Nomear estados para início, progresso parcial, aceitação e erro.',
+                checkpointQuestion: 'Qual estado representa "começou com a, mas ainda só tem comprimento 1"?'
+            },
+            {
+                id: 'afd-1-step-2',
+                title: 'Feche os casos impossíveis',
+                explanation: 'Se o primeiro símbolo for b, a palavra nunca mais poderá começar com a. Esse ramo precisa ir para um estado sumidouro com loops em todo o alfabeto.',
+                expectedStudentAction: 'Adicionar o estado de erro e completar as transições faltantes.'
+            },
+            {
+                id: 'afd-1-step-3',
+                title: 'Valide com exemplos curtos',
+                explanation: 'Palavras aa e ab devem aceitar; a deve rejeitar; b e ba devem ir para o erro.',
+                expectedStudentAction: 'Simular manualmente as entradas de teste antes de finalizar o desenho.'
+            }
+        ],
+        commonMistakes: [
+            {
+                id: 'afd-1-m1',
+                title: 'Marcar o estado após o primeiro a como final',
+                symptom: 'O autômato passa a aceitar a palavra a, embora o comprimento mínimo seja 2.',
+                correction: 'O primeiro estado após ler a ainda não é final; só o estado alcançado após o segundo símbolo deve aceitar.'
+            },
+            {
+                id: 'afd-1-m2',
+                title: 'Omitir o estado sumidouro',
+                symptom: 'A função de transição fica parcial ou o comportamento em palavras iniciadas por b fica indefinido.',
+                correction: 'Inclua um estado de erro com loops em a e b para manter o AFD total.'
+            }
+        ],
+        metadata: {
+            learningGoal: 'Modelar simultaneamente uma restrição de prefixo e uma restrição de comprimento mínimo em um AFD total.',
+            pattern: 'construction',
+            prerequisites: [
+                'Estado inicial e estados finais',
+                'Função de transição total',
+                'Estado sumidouro'
+            ],
+            theoryRefs: [
+                'Módulo 1 • Definição formal de AFD',
+                'Módulo 1 • Estados como memória finita'
+            ],
+            recommendation: 'required'
+        }
+    },
+    afd_5: {
+        dicas: [
+            {
+                id: 'afd-5-h1',
+                level: 1,
+                text: 'Cada estado deve representar quanto do padrão abb já foi reconhecido como sufixo da leitura atual.'
+            },
+            {
+                id: 'afd-5-h2',
+                level: 2,
+                text: 'Use quatro estados conceituais: nenhum progresso, já viu a, já viu ab e padrão completo.'
+            },
+            {
+                id: 'afd-5-h3',
+                level: 3,
+                text: 'Se você está no estado ab e lê a, não volta para o início: esse novo a pode ser o começo de outra ocorrência de abb.'
+            }
+        ],
+        estrategia: 'Ataque o problema como reconhecimento de padrão. Em vez de guardar toda a palavra, guarde apenas o maior sufixo que ainda pode evoluir para abb. Isso produz um AFD pequeno e correto.',
+        guidedSolution: [
+            {
+                id: 'afd-5-step-1',
+                title: 'Defina os estados de progresso',
+                explanation: 'Comece com um estado inicial sem progresso. Depois crie estados para os prefixos relevantes do padrão: a e ab.',
+                expectedStudentAction: 'Descrever verbalmente o significado de cada estado antes de desenhar flechas.'
+            },
+            {
+                id: 'afd-5-step-2',
+                title: 'Trate as sobreposições do padrão',
+                explanation: 'Algumas leituras mantêm progresso parcial. Por exemplo, ao ler a depois de ab, você ainda tem um sufixo a útil.',
+                expectedStudentAction: 'Completar as transições pensando em sufixo relevante, não em "reiniciar sempre".',
+                checkpointQuestion: 'Para onde vai o estado ab ao ler a?'
+            },
+            {
+                id: 'afd-5-step-3',
+                title: 'Absorva após encontrar abb',
+                explanation: 'Como a linguagem pede "conter" a substring, depois que abb aparece a palavra já deve permanecer aceita.',
+                expectedStudentAction: 'Adicionar loops no estado final para a e b.'
+            }
+        ],
+        commonMistakes: [
+            {
+                id: 'afd-5-m1',
+                title: 'Voltar ao início cedo demais',
+                symptom: 'O autômato perde ocorrências sobrepostas e rejeita palavras como aabb.',
+                correction: 'Reaproveite o maior sufixo que ainda pode iniciar o padrão, em vez de reiniciar sem análise.'
+            },
+            {
+                id: 'afd-5-m2',
+                title: 'Fazer o estado final sair da aceitação',
+                symptom: 'Palavras como abba deixam de ser aceitas após reconhecer abb.',
+                correction: 'Depois de encontrar a substring, mantenha o autômato em um estado final absorvente.'
+            }
+        ],
+        metadata: {
+            learningGoal: 'Usar o maior sufixo relevante para construir AFDs de busca de substring.',
+            pattern: 'construction',
+            prerequisites: [
+                'Leitura de padrões por estados',
+                'Noção de prefixo e sufixo',
+                'AFD total'
+            ],
+            theoryRefs: [
+                'Módulo 1 • AFD para padrões',
+                'Módulo 3 • Linguagens definidas por substring'
+            ],
+            recommendation: 'required'
+        }
+    },
+    afn_3: {
+        dicas: [
+            {
+                id: 'afn-3-h1',
+                level: 1,
+                text: 'Como a palavra pode ter qualquer prefixo antes de terminar em aba, um estado inicial com loop em a e b é um bom começo.'
+            },
+            {
+                id: 'afn-3-h2',
+                level: 2,
+                text: 'A não-determinização aparece quando você lê a no estado inicial: você pode continuar no loop e também apostar que esse a inicia o sufixo final.'
+            },
+            {
+                id: 'afn-3-h3',
+                level: 3,
+                text: 'Depois de entrar no caminho q1 -> q2 -> q3, não deve haver transições extras: a aceitação só vale se a leitura terminar exatamente em aba.'
+            }
+        ],
+        estrategia: 'Use o AFN para adivinhar onde o sufixo final começa. Um ramo continua lendo prefixos arbitrários, enquanto outro ramo tenta consumir exatamente aba até o fim da entrada.',
+        guidedSolution: [
+            {
+                id: 'afn-3-step-1',
+                title: 'Modele o prefixo livre',
+                explanation: 'No estado inicial, a palavra ainda pode estar em qualquer ponto antes do sufixo final, então a e b devem fazer loop.',
+                expectedStudentAction: 'Criar um estado inicial com loop em todo o alfabeto.'
+            },
+            {
+                id: 'afn-3-step-2',
+                title: 'Abra o ramo que aposta no sufixo',
+                explanation: 'Ao ler um a no estado inicial, um ramo pode continuar no loop e outro pode seguir para o caminho que reconhece aba.',
+                expectedStudentAction: 'Adicionar a transição que inicia o padrão final.'
+            },
+            {
+                id: 'afn-3-step-3',
+                title: 'Garanta aceitação só no fim',
+                explanation: 'O estado final deve ser alcançado após ler exatamente aba como sufixo, sem consumir símbolos extras depois.',
+                expectedStudentAction: 'Conferir com exemplos como aba, aaba, baba e abba.'
+            }
+        ],
+        commonMistakes: [
+            {
+                id: 'afn-3-m1',
+                title: 'Transformar o AFN em AFD sem perceber',
+                symptom: 'O desenho usa apenas um caminho possível por símbolo e perde a ideia de aposta no início do sufixo.',
+                correction: 'Permita que do estado inicial a leitura de a gere mais de uma continuação.'
+            },
+            {
+                id: 'afn-3-m2',
+                title: 'Aceitar palavras que apenas contêm aba',
+                symptom: 'O autômato aceita ababa mesmo quando a última ocorrência não coincide com o final controlado do ramo escolhido.',
+                correction: 'O caminho que reconhece aba não deve voltar ao loop inicial depois de começar o sufixo.'
+            }
+        ],
+        metadata: {
+            learningGoal: 'Explorar a ideia de aposta não determinística para reconhecer um sufixo fixo.',
+            pattern: 'construction',
+            prerequisites: [
+                'Diferença entre AFD e AFN',
+                'Não-determinismo como múltiplos ramos',
+                'Sufixo de palavra'
+            ],
+            theoryRefs: [
+                'Módulo 2 • Intuição do não-determinismo',
+                'Módulo 2 • AFN para padrões'
+            ],
+            recommendation: 'required'
+        }
+    },
+    er_7: {
+        dicas: [
+            {
+                id: 'er-7-h1',
+                level: 1,
+                text: 'Quando o enunciado diz "termina em 01", pense em prefixo livre seguido de um sufixo fixo.'
+            },
+            {
+                id: 'er-7-h2',
+                level: 2,
+                text: 'O prefixo livre sobre {0,1} pode ser representado por (0|1)*.'
+            },
+            {
+                id: 'er-7-h3',
+                level: 3,
+                text: 'Depois de escrever o prefixo livre, concatene 01 no final sem colocar estrela depois dele.'
+            }
+        ],
+        estrategia: 'Decomponha a linguagem em duas partes: qualquer prefixo binário e o sufixo obrigatório 01. Em ER, isso quase sempre vira "prefixo livre" concatenado com um bloco final fixo.',
+        guidedSolution: [
+            {
+                id: 'er-7-step-1',
+                title: 'Escreva o prefixo livre',
+                explanation: 'Antes do sufixo 01, a palavra pode conter qualquer sequência de 0 e 1, inclusive vazia.',
+                expectedStudentAction: 'Representar esse prefixo por (0|1)*.'
+            },
+            {
+                id: 'er-7-step-2',
+                title: 'Prenda o final da palavra',
+                explanation: 'A concatenação com 01 força os dois últimos símbolos da palavra.',
+                expectedStudentAction: 'Concatenar o bloco 01 ao prefixo livre.',
+                checkpointQuestion: 'Sua expressão ainda aceitaria uma palavra terminada em 001? E em 010?'
+            }
+        ],
+        commonMistakes: [
+            {
+                id: 'er-7-m1',
+                title: 'Colocar 01 no começo da expressão',
+                symptom: 'A expressão passa a descrever palavras que começam com 01, não palavras que terminam com 01.',
+                correction: 'O bloco obrigatório precisa aparecer no fim da concatenação.'
+            },
+            {
+                id: 'er-7-m2',
+                title: 'Permitir símbolos depois do sufixo',
+                symptom: 'Expressões como (0|1)*01(0|1)* também aceitam palavras que apenas contêm 01 em algum ponto.',
+                correction: 'Use somente (0|1)*01 para fixar o sufixo.'
+            }
+        ],
+        metadata: {
+            learningGoal: 'Traduzir uma restrição de sufixo em expressão regular por decomposição entre prefixo livre e bloco final.',
+            pattern: 'construction',
+            prerequisites: [
+                'União em ER',
+                'Concatenação em ER',
+                'Fecho de Kleene'
+            ],
+            theoryRefs: [
+                'Módulo 3 • Expressões regulares',
+                'Módulo 3 • Padrões de prefixo e sufixo'
+            ],
+            recommendation: 'required'
+        }
+    },
+    cfg_2: {
+        dicas: [
+            {
+                id: 'cfg-2-h1',
+                level: 1,
+                text: 'Cada uso de S -> a S b acrescenta um a à esquerda e um b à direita da derivação.'
+            },
+            {
+                id: 'cfg-2-h2',
+                level: 2,
+                text: 'Para chegar em aabb, você precisa aplicar a produção recursiva exatamente duas vezes.'
+            },
+            {
+                id: 'cfg-2-h3',
+                level: 3,
+                text: 'Depois das duas expansões, substitua o S restante por eps para encerrar a derivação.'
+            }
+        ],
+        estrategia: 'Conte quantos pares a...b a palavra alvo exige. Como aabb tem dois a no início e dois b no final, a produção recursiva precisa ser usada duas vezes antes de fechar com eps.',
+        guidedSolution: [
+            {
+                id: 'cfg-2-step-1',
+                title: 'Observe a estrutura da palavra alvo',
+                explanation: 'A palavra aabb tem dois símbolos a seguidos de dois símbolos b. Cada expansão recursiva adiciona exatamente esse tipo de moldura.',
+                expectedStudentAction: 'Decidir quantas vezes aplicar S -> a S b.'
+            },
+            {
+                id: 'cfg-2-step-2',
+                title: 'Faça as expansões recursivas',
+                explanation: 'A primeira expansão produz a S b. A segunda expansão, sobre o S interno, produz a a S b b.',
+                expectedStudentAction: 'Escrever a sequência parcial S => a S b => a a S b b.'
+            },
+            {
+                id: 'cfg-2-step-3',
+                title: 'Feche com eps',
+                explanation: 'Quando o miolo já não precisa gerar mais símbolos, substitua S por eps e simplifique a palavra final.',
+                expectedStudentAction: 'Concluir a derivação como a a eps b b => aabb.'
+            }
+        ],
+        commonMistakes: [
+            {
+                id: 'cfg-2-m1',
+                title: 'Encerrar cedo demais',
+                symptom: 'Ao trocar S por eps após uma única expansão, a derivação termina em ab, não em aabb.',
+                correction: 'Conte quantos pares externos a palavra exige antes de aplicar eps.'
+            },
+            {
+                id: 'cfg-2-m2',
+                title: 'Perder o S interno na escrita',
+                symptom: 'A sequência de derivação salta etapas e fica sem justificar de onde surgiram os símbolos.',
+                correction: 'Mantenha o não terminal S visível até a etapa em que ele realmente for substituído por eps.'
+            }
+        ],
+        metadata: {
+            learningGoal: 'Praticar derivação em GLC entendendo o papel da recursão e da produção base.',
+            pattern: 'simulation',
+            prerequisites: [
+                'Gramática livre de contexto',
+                'Derivação passo a passo',
+                'Produção base com eps'
+            ],
+            theoryRefs: [
+                'Módulo 10 • Derivações em GLC',
+                'Módulo 10 • Exemplo clássico a^n b^n'
+            ],
+            recommendation: 'required'
+        }
+    },
+    pumping_15: {
+        dicas: [
+            {
+                id: 'pumping-15-h1',
+                level: 1,
+                text: 'Comece por contradição: suponha que L seja regular e fixe o comprimento de bombeamento p.'
+            },
+            {
+                id: 'pumping-15-h2',
+                level: 2,
+                text: 'Escolha uma palavra de L longa e rigidamente estruturada, como a^p b^p.'
+            },
+            {
+                id: 'pumping-15-h3',
+                level: 3,
+                text: 'Como |xy| <= p, o trecho y fica inteiramente no bloco de a. Ao bombear i = 0 ou i = 2, o número de a muda mas o de b não.'
+            }
+        ],
+        estrategia: 'Siga o esqueleto padrão do lema do bombeamento: hipótese de regularidade, escolha da palavra w, análise de uma decomposição arbitrária xyz sob as restrições do lema e escolha de um bombeamento que produza contradição.',
+        guidedSolution: [
+            {
+                id: 'pumping-15-step-1',
+                title: 'Fixe a hipótese e a palavra',
+                explanation: 'Assuma que L é regular. Então existe um p tal que toda palavra de comprimento pelo menos p pode ser escrita como xyz obedecendo ao lema. Escolha w = a^p b^p.',
+                expectedStudentAction: 'Escrever explicitamente a hipótese de regularidade e a palavra escolhida.'
+            },
+            {
+                id: 'pumping-15-step-2',
+                title: 'Use a restrição |xy| <= p',
+                explanation: 'Os primeiros p símbolos de w são todos a. Logo, x e y estão completamente dentro do bloco inicial de a.',
+                expectedStudentAction: 'Concluir que y = a^k para algum k > 0.',
+                checkpointQuestion: 'Por que y não pode conter um símbolo b?'
+            },
+            {
+                id: 'pumping-15-step-3',
+                title: 'Bombeie e produza a contradição',
+                explanation: 'Se você escolher i = 0, a palavra fica com menos a do que b. Se escolher i = 2, ela fica com mais a do que b. Em ambos os casos, sai de L.',
+                expectedStudentAction: 'Aplicar um valor de i e explicar por que a palavra resultante não pertence à linguagem.'
+            },
+            {
+                id: 'pumping-15-step-4',
+                title: 'Feche a prova',
+                explanation: 'Como a decomposição arbitrária prevista pelo lema leva sempre a uma palavra fora de L após bombeamento, a hipótese de regularidade é falsa.',
+                expectedStudentAction: 'Concluir formalmente que L não é regular.'
+            }
+        ],
+        commonMistakes: [
+            {
+                id: 'pumping-15-m1',
+                title: 'Escolher a decomposição xyz livremente',
+                symptom: 'A prova trata um caso específico de decomposição e ignora que o lema exige considerar qualquer decomposição válida.',
+                correction: 'Você escolhe a palavra w, mas a decomposição xyz deve ser tratada como arbitrária dentro das restrições do lema.'
+            },
+            {
+                id: 'pumping-15-m2',
+                title: 'Deixar y atravessar a fronteira entre a e b',
+                symptom: 'A argumentação esquece a condição |xy| <= p e admite y contendo símbolos b.',
+                correction: 'Use explicitamente o fato de que os p primeiros símbolos são todos a para concluir que y está inteiramente no primeiro bloco.'
+            }
+        ],
+        metadata: {
+            learningGoal: 'Estruturar uma prova completa pelo lema do bombeamento para mostrar que uma linguagem não é regular.',
+            pattern: 'proof',
+            prerequisites: [
+                'Enunciado do lema do bombeamento',
+                'Prova por contradição',
+                'Quantificadores da demonstração'
+            ],
+            theoryRefs: [
+                'Módulo 5 • Lema do bombeamento',
+                'Módulo 5 • Estratégia de escolha de w'
+            ],
+            recommendation: 'required'
+        }
+    }
+};
+
 export const exerciciosDB: Record<string, Exercicio[]> = {
     // ========================================================================
     // EXERCICIOS - FUNDAMENTOS
@@ -168,6 +583,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 1,
             nivel: 'facil',
             pergunta: "Construa um AFD para L = { w | w começa com 'a' e tem tamanho >= 2 }.",
+            ...pedagogicalExerciseData.afd_1,
             dica: 'Estados: q0 (ini), q1 (leu a), q2 (leu aa ou ab → final). Lembre do estado de erro se começar com b.',
             respostaAutomato: {
                 tipo: 'AFD',
@@ -248,6 +664,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 5,
             nivel: 'medio',
             pergunta: 'Construa um AFD para L = { w | w contém a substring "abb" }.',
+            ...pedagogicalExerciseData.afd_5,
             dica: 'Estados lembram o maior sufixo que pode iniciar "abb".',
             respostaTexto: 'Use estados para: nenhum, "a", "ab", e aceito ("abb" visto).',
             testes: [
@@ -446,6 +863,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 3,
             nivel: 'facil',
             pergunta: "AFN para palavras terminadas em 'aba'.",
+            ...pedagogicalExerciseData.afn_3,
             dica: "Loop no q0 com a,b. Transicao q0->q1 com 'a' para começar o padrão.",
             respostaTexto: 'q0(loop) -a-> q1 -b-> q2 -a-> q3(final)',
             testes: [
@@ -618,8 +1036,18 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 7,
             nivel: 'facil',
             pergunta: 'ER para binários que terminam em 01.',
+            ...pedagogicalExerciseData.er_7,
             dica: 'Use (0|1)* como prefixo.',
-            respostaTexto: '(0|1)*01'
+            respostaTexto: '(0|1)*01',
+            testes: [
+                { input: '01', expected: 'accept' },
+                { input: '101', expected: 'accept' },
+                { input: '1101', expected: 'accept' },
+                { input: '', expected: 'reject' },
+                { input: '0', expected: 'reject' },
+                { input: '10', expected: 'reject' },
+                { input: '010', expected: 'reject' }
+            ]
         },
         {
             id: 8,
@@ -870,6 +1298,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 15,
             nivel: 'medio',
             pergunta: 'Use o lema do bombeamento para mostrar que L = { a^n b^n | n ≥ 0 } não é regular.',
+            ...pedagogicalExerciseData.pumping_15,
             dica: 'Escolha w = a^p b^p e bombeie dentro do bloco de a.',
             respostaTexto: 'Assuma regular e pegue w = a^p b^p. Ao bombear a^k com k>0, o número de a muda e o de b não, então a palavra sai de L. Contradição.'
         },
@@ -933,6 +1362,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 2,
             nivel: 'medio',
             pergunta: 'Dada a gramatica S -> a S b | eps, derive aabb.',
+            ...pedagogicalExerciseData.cfg_2,
             respostaTexto: 'S => a S b => a a S b b => a a b b.',
             mode: 'text'
         },

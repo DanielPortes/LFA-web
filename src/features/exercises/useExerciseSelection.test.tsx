@@ -18,7 +18,13 @@ const exerciseDatabase: ExerciseDatabase = {
             id: 2,
             pergunta: 'Descreva a linguagem por expressão regular.',
             nivel: 'medio',
-            mode: 'regex'
+            mode: 'regex',
+            estrategia: 'Separe a solução em prefixo livre e sufixo obrigatório.',
+            metadata: {
+                learningGoal: 'Modelar um sufixo em expressão regular.',
+                pattern: 'construction',
+                theoryRefs: ['Módulo 3 • Padrões de sufixo']
+            }
         }
     ]
 };
@@ -68,5 +74,21 @@ describe('useExerciseSelection', () => {
         expect(result.current.activeCategory).toBe('er');
         expect(result.current.isSidebarOpen).toBe(false);
         expect(result.current.exercises).toHaveLength(1);
+    });
+
+    it('busca também em estratégia e metadados pedagógicos', () => {
+        const { result } = renderHook(() => useExerciseSelection({
+            exerciseDatabase,
+            initialCategoryId: 'er',
+            setLastCategory: vi.fn()
+        }));
+
+        act(() => {
+            result.current.setSearchQuery('sufixo obrigatório');
+        });
+
+        expect(result.current.filteredExercises).toHaveLength(1);
+        expect(result.current.filteredExercises[0]?.id).toBe(2);
+        expect(result.current.activeCategory).toBe('er');
     });
 });

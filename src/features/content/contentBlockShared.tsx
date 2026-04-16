@@ -5,6 +5,7 @@ export interface ContentBlockComponentProps {
     block: ContentBlock;
     onSimulate?: (data: AutomatoData) => void;
     onExpand?: (data: AutomatoData) => void;
+    onOpenExercise?: (exerciseRef: string) => void;
 }
 
 export const renderMarkdown = (text: string): React.ReactNode => {

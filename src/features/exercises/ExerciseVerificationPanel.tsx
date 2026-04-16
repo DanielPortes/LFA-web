@@ -6,7 +6,7 @@ import {
     Trophy,
     XCircle,
 } from 'lucide-react';
-import type { TestCase } from '../../types';
+import type { AutomatoData, Exercicio, TestCase } from '../../types';
 import { EPSILON_SYMBOL } from '../../utils/symbols';
 import type { SimulationTraceStep } from '../../utils/exerciseSimulation';
 import type {
@@ -14,8 +14,12 @@ import type {
     ExerciseFailure,
     ExerciseTestStatus,
 } from './types';
+import { ExerciseSupportPanel } from './ExerciseSupportPanel';
 
 interface ExerciseVerificationPanelProps {
+    exercise: Exercicio | null;
+    onSimulateAnswer?: (data: AutomatoData) => void;
+    onOpenTheory?: (moduleId: string, lessonId: string) => void;
     hasTests: boolean;
     tests: TestCase[];
     showExpected: boolean;
@@ -33,6 +37,9 @@ interface ExerciseVerificationPanelProps {
 }
 
 export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps> = ({
+    exercise,
+    onSimulateAnswer,
+    onOpenTheory,
     hasTests,
     tests,
     showExpected,
@@ -48,7 +55,7 @@ export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps>
     lastTrace,
     formatStateList,
 }) => (
-    <div className="flex max-h-[45%] w-full flex-col border-t border-default bg-surface-1 backdrop-blur-xl xl:max-h-none xl:w-80 xl:border-t-0 xl:border-l">
+    <div className="flex min-h-[32vh] max-h-[40vh] w-full flex-col border-t border-default bg-surface-1 backdrop-blur-xl xl:min-h-0 xl:max-h-none xl:w-[360px] xl:border-l xl:border-t-0">
         <div className="border-b border-default p-4">
             <div className="flex items-center justify-between gap-3">
                 <div>
@@ -77,115 +84,123 @@ export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps>
             </div>
         </div>
 
-        <div className="flex-1 space-y-2 overflow-y-auto bg-surface-1 p-4">
-            {hasTests ? tests.map((testCase, index) => (
-                <div
-                    key={index}
-                    className={`flex items-center gap-3 rounded-2xl border p-3 transition-all
-                        ${testResults[`${index}`] === 'pass'
-                            ? 'border-ios-green/30 bg-ios-green/10'
-                            : testResults[`${index}`] === 'fail'
-                                ? 'border-ios-red/30 bg-ios-red/10'
-                                : 'border-default bg-surface-2'
-                        }`}
-                >
-                    <div className="flex h-6 w-6 items-center justify-center">
-                        {testResults[`${index}`] === 'running' ? (
-                            <Loader2 size={16} className="animate-spin text-ios-blue" />
-                        ) : testResults[`${index}`] === 'pass' ? (
-                            <CheckCircle2 size={16} strokeWidth={3} className="text-ios-green" />
-                        ) : testResults[`${index}`] === 'fail' ? (
-                            <XCircle size={16} className="text-ios-red" />
-                        ) : (
-                            <div className="h-2 w-2 rounded-full bg-text-secondary-30" />
-                        )}
+        <div className="flex-1 space-y-4 overflow-y-auto bg-surface-1 p-4 custom-scrollbar">
+            <ExerciseSupportPanel
+                exercise={exercise}
+                onSimulateAnswer={onSimulateAnswer}
+                onOpenTheory={onOpenTheory}
+            />
+
+            <section className="space-y-3">
+                {hasTests ? tests.map((testCase, index) => (
+                    <div
+                        key={index}
+                        className={`flex items-center gap-3 rounded-2xl border p-3 transition-all
+                            ${testResults[`${index}`] === 'pass'
+                                ? 'border-ios-green/30 bg-ios-green/10'
+                                : testResults[`${index}`] === 'fail'
+                                    ? 'border-ios-red/30 bg-ios-red/10'
+                                    : 'border-default bg-surface-2'
+                            }`}
+                    >
+                        <div className="flex h-6 w-6 items-center justify-center">
+                            {testResults[`${index}`] === 'running' ? (
+                                <Loader2 size={16} className="animate-spin text-ios-blue" />
+                            ) : testResults[`${index}`] === 'pass' ? (
+                                <CheckCircle2 size={16} strokeWidth={3} className="text-ios-green" />
+                            ) : testResults[`${index}`] === 'fail' ? (
+                                <XCircle size={16} className="text-ios-red" />
+                            ) : (
+                                <div className="h-2 w-2 rounded-full bg-text-secondary-30" />
+                            )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <code className="block truncate text-sm font-mono text-primary">
+                                "{testCase.input || EPSILON_SYMBOL}"
+                            </code>
+                        </div>
+                        <span className={`rounded-xl border px-2 py-1 text-xs font-bold ${
+                            showExpected
+                                ? (testCase.expected === 'accept' ? 'border-ios-green/20 bg-ios-green/15 text-ios-green' : 'border-ios-red/20 bg-ios-red/15 text-ios-red')
+                                : 'border-default bg-surface-2 text-secondary'
+                        }`}>
+                            {showExpected ? (testCase.expected === 'accept' ? 'Aceita' : 'Rejeita') : 'Oculto'}
+                        </span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                        <code className="block truncate text-sm font-mono text-primary">
-                            "{testCase.input || EPSILON_SYMBOL}"
-                        </code>
+                )) : (
+                    <div className="rounded-2xl border border-dashed border-default p-4 text-sm text-secondary">
+                        Este exercício é conceitual. Compare sua solução com o gabarito quando terminar.
                     </div>
-                    <span className={`rounded-xl border px-2 py-1 text-xs font-bold ${
-                        showExpected
-                            ? (testCase.expected === 'accept' ? 'border-ios-green/20 bg-ios-green/15 text-ios-green' : 'border-ios-red/20 bg-ios-red/15 text-ios-red')
-                            : 'border-default bg-surface-2 text-secondary'
-                    }`}>
-                        {showExpected ? (testCase.expected === 'accept' ? 'Aceita' : 'Rejeita') : 'Oculto'}
-                    </span>
+                )}
+            </section>
+
+            {lastFailure && (
+                <div className="rounded-2xl border border-ios-red/20 bg-ios-red/10 p-4">
+                    <div className="mb-2 ui-kicker text-ios-red">Primeiro erro</div>
+                    <div className="text-xs text-ios-red/80">
+                        Entrada: <code className="rounded bg-ios-red/10 px-1 font-mono">{lastFailure.input}</code> · Esperado: {lastFailure.expected} · Obtido: {lastFailure.received}
+                    </div>
+                    {lastFailure.reason && (
+                        <div className="mt-2 text-xs text-ios-red/70">{lastFailure.reason}</div>
+                    )}
                 </div>
-            )) : (
-                <div className="rounded-2xl border border-dashed border-default p-4 text-sm text-secondary">
-                    Este exercício é conceitual. Compare sua solução com o gabarito quando terminar.
+            )}
+
+            {equivalenceStatus && (
+                <div className={`rounded-2xl border p-4 ${equivalenceStatus === 'pass' ? 'border-ios-green/20 bg-ios-green/10' : 'border-ios-red/20 bg-ios-red/10'}`}>
+                    <div className={`mb-2 ui-kicker ${equivalenceStatus === 'pass' ? 'text-ios-green' : 'text-ios-red'}`}>
+                        Equivalência DFA
+                    </div>
+                    <div className={`text-xs ${equivalenceStatus === 'pass' ? 'text-ios-green/80' : 'text-ios-red/80'}`}>
+                        {equivalenceStatus === 'pass'
+                            ? 'Autômato equivalente ao gabarito.'
+                            : 'Autômato diferente do gabarito.'}
+                    </div>
+                </div>
+            )}
+
+            {lastTrace && lastTrace.length > 0 && (
+                <div className="rounded-2xl border border-default bg-surface-2 p-4">
+                    <div className="mb-2 ui-kicker text-secondary">Traço de execução</div>
+                    <div className="max-h-40 space-y-2 overflow-y-auto custom-scrollbar">
+                        {lastTrace.map((step, index) => (
+                            <div key={`${index}-${step.symbol}`} className="text-xs text-secondary">
+                                <span className="font-bold">Passo {index + 1}</span> — símbolo <code className="font-mono">{step.symbol}</code>
+                                <div>De: {formatStateList(step.fromStates)}</div>
+                                {step.directTargets.length > 0 && (
+                                    <div>Alvo direto: {formatStateList(step.directTargets)}</div>
+                                )}
+                                <div>Para: {formatStateList(step.toStates)}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {Object.keys(testResults).length > 0 && (
+                <div className="rounded-2xl border border-default bg-surface-2 p-4">
+                    {Object.values(testResults).every((result) => result === 'pass') && equivalenceStatus !== 'fail' ? (
+                        <div className="flex items-center gap-3 text-ios-green">
+                            <Trophy size={24} />
+                            <div>
+                                <p className="font-bold">Parabéns!</p>
+                                <p className="text-xs opacity-80">Todos os testes passaram</p>
+                            </div>
+                        </div>
+                    ) : Object.values(testResults).some((result) => result === 'fail') || equivalenceStatus === 'fail' ? (
+                        <div className="flex items-center gap-3 text-ios-red">
+                            <XCircle size={24} />
+                            <div>
+                                <p className="font-bold">Tente novamente</p>
+                                <p className="text-xs opacity-80">
+                                    {Object.values(testResults).filter((result) => result === 'fail').length} teste(s) falharam
+                                </p>
+                            </div>
+                        </div>
+                    ) : null}
                 </div>
             )}
         </div>
-
-        {lastFailure && (
-            <div className="border-t border-default bg-ios-red/10 p-4">
-                <div className="mb-2 ui-kicker text-ios-red">Primeiro erro</div>
-                <div className="text-xs text-ios-red/80">
-                    Entrada: <code className="rounded bg-ios-red/10 px-1 font-mono">{lastFailure.input}</code> · Esperado: {lastFailure.expected} · Obtido: {lastFailure.received}
-                </div>
-                {lastFailure.reason && (
-                    <div className="mt-2 text-xs text-ios-red/70">{lastFailure.reason}</div>
-                )}
-            </div>
-        )}
-
-        {equivalenceStatus && (
-            <div className={`border-t border-default p-4 ${equivalenceStatus === 'pass' ? 'bg-ios-green/10' : 'bg-ios-red/10'}`}>
-                <div className={`mb-2 ui-kicker ${equivalenceStatus === 'pass' ? 'text-ios-green' : 'text-ios-red'}`}>
-                    Equivalência DFA
-                </div>
-                <div className={`text-xs ${equivalenceStatus === 'pass' ? 'text-ios-green/80' : 'text-ios-red/80'}`}>
-                    {equivalenceStatus === 'pass'
-                        ? 'Autômato equivalente ao gabarito.'
-                        : 'Autômato diferente do gabarito.'}
-                </div>
-            </div>
-        )}
-
-        {lastTrace && lastTrace.length > 0 && (
-            <div className="border-t border-default bg-surface-1 p-4">
-                <div className="mb-2 ui-kicker text-secondary">Traço de execução</div>
-                <div className="max-h-40 space-y-2 overflow-y-auto custom-scrollbar">
-                    {lastTrace.map((step, index) => (
-                        <div key={`${index}-${step.symbol}`} className="text-xs text-secondary">
-                            <span className="font-bold">Passo {index + 1}</span> — símbolo <code className="font-mono">{step.symbol}</code>
-                            <div>De: {formatStateList(step.fromStates)}</div>
-                            {step.directTargets.length > 0 && (
-                                <div>Alvo direto: {formatStateList(step.directTargets)}</div>
-                            )}
-                            <div>Para: {formatStateList(step.toStates)}</div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )}
-
-        {Object.keys(testResults).length > 0 && (
-            <div className="border-t border-default bg-surface-1 p-4">
-                {Object.values(testResults).every((result) => result === 'pass') && equivalenceStatus !== 'fail' ? (
-                    <div className="flex items-center gap-3 text-ios-green">
-                        <Trophy size={24} />
-                        <div>
-                            <p className="font-bold">Parabéns!</p>
-                            <p className="text-xs opacity-80">Todos os testes passaram</p>
-                        </div>
-                    </div>
-                ) : Object.values(testResults).some((result) => result === 'fail') || equivalenceStatus === 'fail' ? (
-                    <div className="flex items-center gap-3 text-ios-red">
-                        <XCircle size={24} />
-                        <div>
-                            <p className="font-bold">Tente novamente</p>
-                            <p className="text-xs opacity-80">
-                                {Object.values(testResults).filter((result) => result === 'fail').length} teste(s) falharam
-                            </p>
-                        </div>
-                    </div>
-                ) : null}
-            </div>
-        )}
 
         <div className="border-t border-default bg-surface-1 p-4">
             {verifyDisabledReason ? (

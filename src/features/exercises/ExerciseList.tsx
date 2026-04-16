@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+    Brain,
     Lightbulb,
     Eye,
     EyeOff,
@@ -83,6 +84,7 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
 
         {filteredExercises.map((exercise, index) => {
             const completed = isExerciseCompleted(activeCategory, exercise.id);
+            const hintCount = exercise.dicas?.length ?? (exercise.dica ? 1 : 0);
 
             return (
                 <div
@@ -99,6 +101,22 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                         </div>
 
                         <div className="flex flex-wrap gap-3 mt-6 sm:mt-8 ml-0 sm:ml-14">
+                            {exercise.metadata && (
+                                <span className="badge border-default bg-surface-muted text-secondary">
+                                    {exercise.metadata.pattern}
+                                </span>
+                            )}
+                            {exercise.estrategia && (
+                                <span className="badge gap-2 border-status-info bg-status-info-soft text-status-info">
+                                    <Brain size={12} />
+                                    Estratégia
+                                </span>
+                            )}
+                            {exercise.guidedSolution && exercise.guidedSolution.length > 0 && (
+                                <span className="badge border-status-success bg-status-success-soft text-status-success">
+                                    Solução guiada
+                                </span>
+                            )}
                             <button
                                 onClick={() => onStartSolving(exercise.id)}
                                 className={`btn-icon px-4 py-2.5 rounded-xl text-[13px] font-bold gap-2 border transition-all
@@ -120,7 +138,7 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                                 )}
                             </button>
 
-                            {exercise.dica && (
+                            {hintCount > 0 && (
                                 <button
                                     onClick={() => onToggleHint(exercise.id)}
                                     className={`btn-icon px-4 rounded-xl text-sm font-bold gap-2 border shadow-apple-sm ${
@@ -130,7 +148,9 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                                     }`}
                                 >
                                     <Lightbulb size={14} className={revealedHints[exercise.id] ? 'fill-current' : ''} />
-                                    {revealedHints[exercise.id] ? 'Esconder' : 'Dica'}
+                                    {revealedHints[exercise.id]
+                                        ? 'Esconder'
+                                        : hintCount > 1 ? `Pistas (${hintCount})` : 'Dica'}
                                 </button>
                             )}
 
@@ -148,10 +168,25 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                         </div>
                     </div>
 
-                    {revealedHints[exercise.id] && exercise.dica && (
+                    {revealedHints[exercise.id] && hintCount > 0 && (
                         <div className="mx-4 sm:mx-8 mb-6 sm:ml-20 p-4 bg-status-warning-soft border border-status-warning rounded-2xl text-status-warning text-sm animate-scale-in">
-                            <span className="font-bold mr-2 block mb-1 uppercase tracking-wide text-xs">Pista</span>
-                            {exercise.dica}
+                            <span className="font-bold mr-2 block mb-3 uppercase tracking-wide text-xs">
+                                {hintCount > 1 ? 'Pistas iniciais' : 'Pista'}
+                            </span>
+                            <div className="space-y-3">
+                                {(exercise.dicas && exercise.dicas.length > 0 ? exercise.dicas : exercise.dica ? [{
+                                    id: `exercise-${exercise.id}-legacy-hint`,
+                                    level: 1,
+                                    text: exercise.dica
+                                }] : []).map((hint) => (
+                                    <div key={hint.id} className="rounded-2xl border border-status-warning/20 bg-white/60 p-3 text-primary dark:bg-black/10">
+                                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-status-warning">
+                                            Pista {hint.level}
+                                        </p>
+                                        <p className="mt-2 text-sm leading-relaxed">{hint.text}</p>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
 
@@ -193,8 +228,11 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                                                 </button>
                                             </div>
                                         </div>
-                                        <div className="h-64 sm:h-80 w-full bg-white dark:bg-black rounded-3xl border border-default shadow-inner overflow-hidden relative">
-                                            <AutomatonPreview data={exercise.respostaAutomato} />
+                                        <div className="relative aspect-[16/10] min-h-[224px] w-full overflow-hidden rounded-3xl border border-default bg-canvas shadow-inner md:min-h-[260px] lg:min-h-[320px]">
+                                            <AutomatonPreview
+                                                data={exercise.respostaAutomato}
+                                                ariaLabel={`Gabarito visual do exercício ${exercise.id}`}
+                                            />
                                         </div>
                                     </div>
                                 )}

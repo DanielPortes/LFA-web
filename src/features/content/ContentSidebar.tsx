@@ -53,11 +53,11 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
             <div className="sticky top-0 z-20 rounded-t-3xl border-b border-default bg-surface-1/80 p-6 backdrop-blur-md">
                 <div className="mb-3 flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-ios-green" />
-                    <h2 className="text-xs font-black uppercase tracking-[0.2em] text-secondary">DCC063 • LFA</h2>
+                    <h2 className="text-xs font-black uppercase tracking-[0.2em] text-secondary">Plataforma LFA</h2>
                 </div>
                 <div className="flex items-center gap-3 text-2xl font-bold text-primary">
                     <GraduationCap size={28} className="text-ios-blue" />
-                    Material P1
+                    Trilha de LFA
                 </div>
 
                 <div className="mt-4">
@@ -97,8 +97,8 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                         type="text"
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
-                        placeholder="Buscar lição..."
-                        aria-label="Buscar lição"
+                        placeholder="Buscar conceito, teorema, algoritmo ou símbolo formal..."
+                        aria-label="Buscar conceito na trilha"
                         className="w-full rounded-xl border border-default bg-surface-2 px-3 py-2 text-sm font-medium text-primary shadow-inner outline-none ring-ios-blue/40 focus:ring-2"
                     />
                 </div>

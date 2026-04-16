@@ -5,6 +5,7 @@ import {
     useMemo,
     useState
 } from 'react';
+import { buildContentIndex, normalizeForSearch } from '../../data/contentIndex';
 import type { AutomatoData, CourseModule, Lesson } from '../../types';
 
 export interface ContentNavigationTarget {
@@ -53,6 +54,7 @@ export const useContentSelection = ({
     const [selectedAutomaton, setSelectedAutomaton] = useState<AutomatoData | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const deferredSearchQuery = useDeferredValue(searchQuery);
+    const contentIndex = useMemo(() => buildContentIndex(modules), [modules]);
 
     const totalLessons = useMemo(() =>
         modules.reduce((sum, module) => sum + module.lessons.length, 0),
@@ -72,17 +74,22 @@ export const useContentSelection = ({
 
     const filteredModules = useMemo(() => {
         if (!deferredSearchQuery.trim()) return modules;
-        const query = deferredSearchQuery.trim().toLowerCase();
+        const queryTokens = normalizeForSearch(deferredSearchQuery)
+            .split(' ')
+            .filter(Boolean);
+        const matchedLessons = new Set(
+            contentIndex
+                .filter((entry) => queryTokens.every((token) => entry.searchableText.includes(token)))
+                .map((entry) => entry.lessonId)
+        );
+
         return modules
             .map((module) => ({
                 ...module,
-                lessons: module.lessons.filter((lesson) =>
-                    lesson.title.toLowerCase().includes(query)
-                    || lesson.description.toLowerCase().includes(query)
-                )
+                lessons: module.lessons.filter((lesson) => matchedLessons.has(lesson.id))
             }))
             .filter((module) => module.lessons.length > 0) as CourseModule[];
-    }, [deferredSearchQuery, modules]);
+    }, [contentIndex, deferredSearchQuery, modules]);
 
     const navigationState = useMemo(() => {
         const modIndex = modules.findIndex((module) => module.id === activeModuleId);

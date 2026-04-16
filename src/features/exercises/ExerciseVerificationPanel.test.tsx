@@ -1,15 +1,52 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ExerciseVerificationPanel } from './ExerciseVerificationPanel';
+import type { Exercicio } from '../../types';
+
+const pedagogicalExercise: Exercicio = {
+    id: 7,
+    pergunta: 'Construa um AFD para cadeias terminadas em a.',
+    nivel: 'facil',
+    dicas: [
+        { id: 'hint-1', level: 1, text: 'Observe apenas o último símbolo lido.' },
+        { id: 'hint-2', level: 2, text: 'Dois estados bastam: termina em a e não termina em a.' }
+    ],
+    estrategia: 'Modele a propriedade relevante como memória de um único símbolo.',
+    guidedSolution: [
+        {
+            id: 'step-1',
+            title: 'Escolha a memória mínima',
+            explanation: 'O AFD só precisa lembrar se o último símbolo lido foi a.'
+        }
+    ],
+    commonMistakes: [
+        {
+            id: 'mistake-1',
+            title: 'Aceitar a palavra vazia',
+            symptom: 'O estado inicial é marcado como final sem justificativa.',
+            correction: 'O estado inicial só é final se a linguagem aceitar ε.'
+        }
+    ],
+    metadata: {
+        learningGoal: 'Modelar uma condição de sufixo em um AFD.',
+        pattern: 'construction',
+        theoryRefs: ['Módulo 1 • Definição formal de AFD'],
+        recommendation: 'required'
+    },
+    respostaTexto: 'Use dois estados: q0 e q1.'
+};
 
 describe('ExerciseVerificationPanel', () => {
     it('renderiza testes e dispara ações principais', () => {
         const onToggleShowExpected = vi.fn();
         const onToggleFastVerify = vi.fn();
         const onVerify = vi.fn();
+        const onOpenTheory = vi.fn();
 
         render(
             <ExerciseVerificationPanel
+                exercise={pedagogicalExercise}
+                onOpenTheory={onOpenTheory}
                 hasTests={true}
                 tests={[
                     { input: 'abba', expected: 'accept' },
@@ -41,19 +78,29 @@ describe('ExerciseVerificationPanel', () => {
         expect(screen.getByText('Primeiro erro')).toBeInTheDocument();
         expect(screen.getByText('Equivalência DFA')).toBeInTheDocument();
         expect(screen.getByText('Traço de execução')).toBeInTheDocument();
+        expect(screen.getByText('Objetivo: Modelar uma condição de sufixo em um AFD.')).toBeInTheDocument();
 
+        fireEvent.click(screen.getByRole('button', { name: /Mostrar pista/i }));
+        fireEvent.click(screen.getByRole('button', { name: 'Estratégia' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Solução guiada' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Módulo 1 • Autômato Finito Determinístico' }));
         fireEvent.click(screen.getByRole('button', { name: /Mostrar esperado/i }));
         fireEvent.click(screen.getByRole('button', { name: /Normal/i }));
         fireEvent.click(screen.getByRole('button', { name: /Verificar solução/i }));
 
+        expect(screen.getByText('Observe apenas o último símbolo lido.')).toBeInTheDocument();
+        expect(screen.getByText('Modele a propriedade relevante como memória de um único símbolo.')).toBeInTheDocument();
+        expect(screen.getByText('Escolha a memória mínima')).toBeInTheDocument();
+        expect(onOpenTheory).toHaveBeenCalledWith('mod1', 'l1-def');
         expect(onToggleShowExpected).toHaveBeenCalledTimes(1);
         expect(onToggleFastVerify).toHaveBeenCalledTimes(1);
         expect(onVerify).toHaveBeenCalledTimes(1);
-    });
+    }, 15000);
 
     it('mostra estado conceitual quando não há testes', () => {
         render(
             <ExerciseVerificationPanel
+                exercise={null}
                 hasTests={false}
                 tests={[]}
                 showExpected={false}
