@@ -51,7 +51,7 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
             flex flex-col md:self-start
         `}
     >
-        <div className="glass-panel min-w-0 rounded-3xl flex flex-col overflow-hidden shadow-apple-md md:sticky md:top-0">
+        <div className="render-lite-panel glass-panel min-w-0 rounded-3xl flex flex-col overflow-hidden shadow-apple-md md:sticky md:top-0">
             <div className="sticky top-0 z-10 rounded-t-3xl border-b border-default bg-surface-1 p-6 backdrop-blur-md">
                 <div className="mb-3 flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-ios-green" />
@@ -77,7 +77,7 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
                             </button>
                         </div>
                     </div>
-                    <div className="h-2.5 overflow-hidden rounded-full border border-black/5 bg-black/5 shadow-inner dark:border-white/5 dark:bg-white/10">
+                    <div className="surface-track h-2.5 overflow-hidden rounded-full border border-black/5 shadow-inner dark:border-white/5">
                         <div
                             className="h-full rounded-full bg-gradient-to-r from-ios-green via-emerald-500 to-ios-teal transition-all duration-500 shadow-[0_0_10px_rgba(52,199,89,0.4)]"
                             style={{ width: `${progressPercent}%` }}
@@ -113,11 +113,11 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
                             className={`group relative mb-1 flex w-full items-center gap-3 overflow-hidden rounded-xl pl-3 pr-3 py-3 text-left text-sm font-medium transition-all duration-200
                                 ${isActive
                                     ? 'border border-status-info bg-status-info-soft text-status-info shadow-sm'
-                                    : 'border border-transparent text-secondary hover:bg-black/5 hover:text-primary dark:hover:bg-white/5'
+                                    : 'border border-transparent text-secondary hover:bg-surface-hover hover:text-primary'
                                 }`}
                         >
                             <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg font-mono text-xs font-bold
-                                ${isActive ? 'bg-ios-blue text-white' : 'bg-black/5 text-secondary dark:bg-white/10'}`}>
+                                ${isActive ? 'bg-ios-blue text-white' : 'surface-chip border border-default text-secondary'}`}>
                                 {item.index + 1}
                             </span>
                             <span className="flex-1 truncate">{item.label}</span>

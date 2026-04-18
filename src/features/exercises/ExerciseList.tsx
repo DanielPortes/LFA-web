@@ -4,7 +4,6 @@ import {
     Lightbulb,
     Eye,
     EyeOff,
-    Play,
     CheckCircle2,
     ListFilter,
     Pencil,
@@ -12,8 +11,8 @@ import {
     ArrowRightLeft
 } from 'lucide-react';
 import { AutomatonPreview } from '../../components/automaton/AutomatonPreview';
-import type { AutomatoData, Exercicio } from '../../types';
-import type { ConverterData } from './types';
+import type { Exercicio } from '../../types';
+import type { ConverterData, ExerciseSolverStartOptions } from './types';
 
 interface ExerciseListProps {
     activeCategory: string;
@@ -26,10 +25,9 @@ interface ExerciseListProps {
     isExerciseCompleted: (categoryId: string, exerciseId: number) => boolean;
     onToggleHint: (exerciseId: number) => void;
     onToggleAnswer: (exerciseId: number) => void;
-    onStartSolving: (exerciseId: number) => void;
+    onStartSolving: (exerciseId: number, options?: ExerciseSolverStartOptions) => void;
     onOpenSidebar: () => void;
     onOpenConverter: (data: ConverterData) => void;
-    onSimulate: (data: AutomatoData) => void;
 }
 
 export const ExerciseList: React.FC<ExerciseListProps> = ({
@@ -46,9 +44,8 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
     onStartSolving,
     onOpenSidebar,
     onOpenConverter,
-    onSimulate,
 }) => (
-    <div className="flex-1 min-w-0 space-y-6 pb-10">
+    <div className="render-lite-shell flex-1 min-w-0 space-y-6 pb-10">
         <div className="glass-card p-6 flex flex-col gap-4">
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
@@ -89,12 +86,13 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
             return (
                 <div
                     key={exercise.id}
+                    data-deferred-render="card"
                     className="glass-card overflow-hidden group hover:shadow-apple-md animate-slide-in-up opacity-0"
                     style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'forwards' }}
                 >
                     <div className="p-5 sm:p-6 lg:p-8">
                         <div className="flex gap-4 sm:gap-5 items-start">
-                            <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-black/5 dark:bg-white/5 text-secondary font-mono font-bold text-lg flex items-center justify-center border border-default">
+                            <span className="surface-chip flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-default font-mono text-lg font-bold text-secondary">
                                 {exercise.id}
                             </span>
                             <h3 className="text-lg font-medium text-primary leading-relaxed pt-1">{exercise.pergunta}</h3>
@@ -179,7 +177,7 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                                     level: 1,
                                     text: exercise.dica
                                 }] : []).map((hint) => (
-                                    <div key={hint.id} className="rounded-2xl border border-status-warning/20 bg-white/60 p-3 text-primary dark:bg-black/10">
+                                    <div key={hint.id} className="surface-soft-panel rounded-2xl border border-status-warning/20 p-3 text-primary dark:bg-black/10">
                                         <p className="text-xs font-bold uppercase tracking-[0.18em] text-status-warning">
                                             Pista {hint.level}
                                         </p>
@@ -191,7 +189,7 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                     )}
 
                     {revealedAnswers[exercise.id] && (
-                        <div className="bg-black/5 dark:bg-black/20 border-t border-default p-5 sm:p-8 animate-fade-in">
+                        <div className="border-t border-default bg-surface-2/80 p-5 sm:p-8 animate-fade-in dark:bg-black/20">
                             <div className="sm:ml-14">
                                 <div className="flex items-center gap-2 mb-4">
                                     <CheckCircle2 size={16} strokeWidth={3} className="text-ios-green" />
@@ -199,7 +197,7 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                                 </div>
 
                                 {exercise.respostaTexto && (
-                                    <p className="text-primary whitespace-pre-line leading-relaxed font-mono text-sm bg-white dark:bg-white/5 p-6 rounded-2xl border border-default shadow-sm">
+                                    <p className="surface-soft-panel whitespace-pre-line rounded-2xl border border-default p-6 font-mono text-sm leading-relaxed text-primary shadow-sm dark:bg-white/5">
                                         {exercise.respostaTexto}
                                     </p>
                                 )}
@@ -220,11 +218,13 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                                                     Converter
                                                 </button>
                                                 <button
-                                                    onClick={() => onSimulate(exercise.respostaAutomato!)}
+                                                    onClick={() => onStartSolving(exercise.id, {
+                                                        initialAutomaton: exercise.respostaAutomato,
+                                                    })}
                                                     className="group flex items-center gap-2 px-4 py-2 rounded-full bg-status-info-soft text-status-info hover:bg-ios-blue hover:text-white text-xs font-bold transition-all duration-300"
                                                 >
-                                                    <Play size={12} fill="currentColor" />
-                                                    Simular
+                                                    <Pencil size={12} />
+                                                    Verificar solução
                                                 </button>
                                             </div>
                                         </div>

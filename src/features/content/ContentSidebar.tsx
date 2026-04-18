@@ -49,7 +49,7 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
             flex flex-col md:self-start
         `}
     >
-        <div className="glass-panel rounded-3xl min-w-0 flex flex-col overflow-hidden shadow-apple-md md:sticky md:top-0">
+        <div className="render-lite-panel render-lite-shell glass-panel rounded-3xl min-w-0 flex flex-col overflow-hidden shadow-apple-md md:sticky md:top-0">
             <div className="sticky top-0 z-20 rounded-t-3xl border-b border-default bg-surface-1/80 p-6 backdrop-blur-md">
                 <div className="mb-3 flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-ios-green" />
@@ -75,7 +75,7 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                             </button>
                         </div>
                     </div>
-                    <div className="h-2.5 overflow-hidden rounded-full border border-black/5 bg-black/5 shadow-inner dark:border-white/5 dark:bg-white/10">
+                    <div className="surface-track h-2.5 overflow-hidden rounded-full border border-black/5 shadow-inner dark:border-white/5">
                         <div
                             className="h-full rounded-full bg-gradient-to-r from-ios-green via-emerald-500 to-ios-teal transition-all duration-500 shadow-[0_0_10px_rgba(52,199,89,0.4)]"
                             style={{ width: `${progressPercent}%` }}
@@ -108,7 +108,7 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                 {filteredModules.map((module, modIdx) => (
                     <div key={module.id} className="mb-6 last:mb-0">
                         <div className="sticky top-0 z-10 flex items-center gap-3 rounded-lg border-b border-transparent bg-surface-1/90 px-4 py-3 backdrop-blur">
-                            <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-black/5 font-mono text-xs font-bold text-secondary dark:bg-white/10">
+                            <span className="surface-chip flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border-default font-mono text-xs font-bold text-secondary">
                                 {modIdx + 1}
                             </span>
                             <h3 className="text-sm font-bold leading-tight text-primary">
@@ -117,7 +117,7 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                         </div>
 
                         <div className="relative mt-1 space-y-1 px-2">
-                            <div className="absolute left-7 top-2 bottom-2 -z-10 w-px bg-black/5 dark:bg-white/5"></div>
+                            <div className="absolute left-7 top-2 bottom-2 -z-10 w-px bg-border"></div>
 
                             {module.lessons.map((lesson) => {
                                 const isActive = lesson.id === activeLessonId;
@@ -130,7 +130,7 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                                         className={`group relative flex w-full items-start gap-2 overflow-hidden rounded-xl pl-10 pr-4 py-3 text-left text-sm font-medium transition-all duration-200
                                             ${isActive
                                                 ? 'bg-status-info-soft font-bold text-status-info shadow-sm'
-                                                : 'text-secondary hover:bg-black/5 hover:text-primary dark:hover:bg-white/5'
+                                                : 'text-secondary hover:bg-surface-hover hover:text-primary'
                                             }`}
                                     >
                                         {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full bg-ios-blue"></div>}

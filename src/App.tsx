@@ -182,12 +182,12 @@ function MainApp() {
                 className={`relative z-10 transition-all duration-500 ${
                     isWorkspaceTab
                         ? 'flex flex-col flex-1 min-h-0 w-full max-w-none mx-0 px-0 mt-0 overflow-hidden'
-                        : 'flex-1 w-full max-w-[1600px] mx-auto px-4 md:px-8 mt-28 md:mt-32'
+                        : 'flex-1 w-full max-w-[1600px] mx-auto px-4 md:px-8 mt-20 sm:mt-[5.5rem] lg:mt-24'
                 }`}
             >
-                <div className={`transition-opacity duration-300 ${route.tab === 'home' ? 'block' : 'hidden'}`}>
+                {route.tab === 'home' && (
                     <HomeSection onNavigate={handleTabChange} />
-                </div>
+                )}
 
                 <Suspense fallback={routeFallback}>
                     {route.tab === 'conteudo' && (

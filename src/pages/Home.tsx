@@ -65,7 +65,7 @@ const studySignals = [
 ] as const;
 
 export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => (
-    <div className="animate-fade-in space-y-6 md:space-y-8">
+    <div className="render-lite-shell animate-fade-in space-y-6 md:space-y-8">
         <div className="relative flex min-h-[360px] items-center overflow-hidden rounded-[28px] text-white shadow-apple-xl md:min-h-[420px] md:rounded-[32px]">
             <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" />
             <div className="absolute -top-24 right-[-10%] h-[360px] w-[360px] rounded-full bg-blue-500/20 blur-[90px]" />
@@ -118,7 +118,7 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) 
             </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-3" data-deferred-render="section">
             {entryPoints.map((entryPoint) => (
                 <button
                     key={entryPoint.title}
@@ -138,7 +138,7 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) 
             ))}
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-3" data-deferred-render="section">
             <div className="glass-card p-6 md:p-8">
                 <h3 className="ui-title-4 mb-6 flex items-center gap-3 text-primary">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/10 text-ios-blue">

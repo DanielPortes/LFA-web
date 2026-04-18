@@ -15,15 +15,19 @@ export const LessonContent: React.FC<LessonContentProps> = ({
     onExpand,
     onOpenExercise
 }) => (
-    <div className="space-y-2">
+    <div className="render-lite-shell space-y-2">
         {blocks.map((block, index) => (
-            <ContentBlockRenderer
+            <div
                 key={`${block.type}-${index}-${block.title ?? 'content-block'}`}
-                block={block}
-                onSimulate={onSimulate}
-                onExpand={onExpand}
-                onOpenExercise={onOpenExercise}
-            />
+                data-deferred-render="section"
+            >
+                <ContentBlockRenderer
+                    block={block}
+                    onSimulate={onSimulate}
+                    onExpand={onExpand}
+                    onOpenExercise={onOpenExercise}
+                />
+            </div>
         ))}
     </div>
 );

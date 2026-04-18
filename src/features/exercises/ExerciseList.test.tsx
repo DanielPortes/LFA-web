@@ -1,7 +1,15 @@
+// @vitest-environment jsdom
+
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ExerciseList } from './ExerciseList';
-import type { Exercicio } from '../../types';
+import type { AutomatoData, Exercicio } from '../../types';
+
+const answerAutomaton: AutomatoData = {
+    tipo: 'AFD',
+    estados: [],
+    transicoes: [],
+};
 
 const exercises: Exercicio[] = [
     {
@@ -23,6 +31,7 @@ const exercises: Exercicio[] = [
             learningGoal: 'Reconhecer um sufixo fixo com AFD.',
             pattern: 'construction'
         },
+        respostaAutomato: answerAutomaton,
         respostaTexto: 'Use dois estados para rastrear o último símbolo.',
         nivel: 'facil',
     }
@@ -35,7 +44,6 @@ describe('ExerciseList', () => {
         const onStartSolving = vi.fn();
         const onOpenSidebar = vi.fn();
         const onOpenConverter = vi.fn();
-        const onSimulate = vi.fn();
 
         render(
             <ExerciseList
@@ -52,7 +60,6 @@ describe('ExerciseList', () => {
                 onStartSolving={onStartSolving}
                 onOpenSidebar={onOpenSidebar}
                 onOpenConverter={onOpenConverter}
-                onSimulate={onSimulate}
             />
         );
 
@@ -65,11 +72,39 @@ describe('ExerciseList', () => {
         expect(screen.getByText('construction')).toBeInTheDocument();
         expect(screen.getByText('Estratégia')).toBeInTheDocument();
         expect(screen.getByText('Solução guiada')).toBeInTheDocument();
+        expect(screen.getByText(/Construa um AFD/i).closest('[data-deferred-render="card"]')).not.toBeNull();
         expect(onOpenSidebar).toHaveBeenCalledTimes(1);
         expect(onOpenConverter).toHaveBeenCalledWith({});
         expect(onStartSolving).toHaveBeenCalledWith(1);
         expect(onToggleHint).toHaveBeenCalledWith(1);
         expect(onToggleAnswer).toHaveBeenCalledWith(1);
+    });
+
+    it('usa o gabarito visual para abrir o solver com o autômato exibido', () => {
+        const onStartSolving = vi.fn();
+
+        render(
+            <ExerciseList
+                activeCategory="afd"
+                activeCategoryLabel="AFDs"
+                exercises={exercises}
+                filteredExercises={exercises}
+                completedInActiveCategory={0}
+                revealedHints={{}}
+                revealedAnswers={{ 1: true }}
+                isExerciseCompleted={() => false}
+                onToggleHint={vi.fn()}
+                onToggleAnswer={vi.fn()}
+                onStartSolving={onStartSolving}
+                onOpenSidebar={vi.fn()}
+                onOpenConverter={vi.fn()}
+            />
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /Verificar solução/i }));
+
+        expect(screen.getByText('Gabarito Visual')).toBeInTheDocument();
+        expect(onStartSolving).toHaveBeenCalledWith(1, { initialAutomaton: answerAutomaton });
     });
 
     it('mostra estado vazio quando o filtro não retorna itens', () => {
@@ -88,7 +123,6 @@ describe('ExerciseList', () => {
                 onStartSolving={vi.fn()}
                 onOpenSidebar={vi.fn()}
                 onOpenConverter={vi.fn()}
-                onSimulate={vi.fn()}
             />
         );
 

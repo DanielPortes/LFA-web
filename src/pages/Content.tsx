@@ -101,7 +101,7 @@ const LoadedContentSection = ({
 
             <main
                 id="main-content-scroll"
-                className="flex-1 min-w-0 scroll-smooth rounded-2xl md:rounded-3xl glass-panel border border-transparent md:border-default pb-10"
+                className="render-lite-panel flex-1 min-w-0 scroll-smooth rounded-2xl md:rounded-3xl glass-panel border border-default dark:border-transparent md:border-default md:dark:border-default pb-10"
             >
                 <div className="max-w-6xl mx-auto py-10 px-6 md:px-12 pb-32">
                     <LessonHeader
