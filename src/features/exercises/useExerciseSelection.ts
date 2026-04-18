@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import type { AutomatoData, Exercicio, TestCase } from '../../types';
 import { createEmptyAutomaton } from '../../utils/exerciseSimulation';
 import { exerciseCategories } from './exerciseCategories';
-import type { ConverterData, ExerciseDatabase, SolverMode } from './types';
+import type { ConverterData, ExerciseDatabase, ExerciseSolverStartOptions, SolverMode } from './types';
 
 interface UseExerciseSelectionOptions {
     exerciseDatabase: ExerciseDatabase;
@@ -21,15 +21,35 @@ export const useExerciseSelection = ({
     onSelectionChange,
     setLastCategory,
 }: UseExerciseSelectionOptions) => {
+    const fallbackCategoryId = useMemo(() => {
+        if (exerciseDatabase.afd) return 'afd';
+        return Object.keys(exerciseDatabase)[0] ?? 'afd';
+    }, [exerciseDatabase]);
+    const routeCategoryId = initialCategoryId && exerciseDatabase[initialCategoryId]
+        ? initialCategoryId
+        : undefined;
+    const storedCategoryId = !routeCategoryId && lastCategory && exerciseDatabase[lastCategory]
+        ? lastCategory
+        : undefined;
+    const externalCategoryId = routeCategoryId ?? storedCategoryId;
+
+    const cloneAutomaton = useCallback((data: AutomatoData): AutomatoData => {
+        if (typeof structuredClone === 'function') {
+            return structuredClone(data);
+        }
+
+        return JSON.parse(JSON.stringify(data)) as AutomatoData;
+    }, []);
     const [activeCategory, setActiveCategory] = useState(() => {
-        if (initialCategoryId && exerciseDatabase[initialCategoryId]) return initialCategoryId;
-        return 'afd';
+        return externalCategoryId ?? fallbackCategoryId;
     });
     const [revealedHints, setRevealedHints] = useState<Record<number, boolean>>({});
     const [revealedAnswers, setRevealedAnswers] = useState<Record<number, boolean>>({});
     const [solvingExercise, setSolvingExercise] = useState<number | null>(null);
     const [solverMode, setSolverMode] = useState<SolverMode>('automaton');
     const [userAutomaton, setUserAutomaton] = useState<AutomatoData | null>(null);
+    const [savedAttemptAutomaton, setSavedAttemptAutomaton] = useState<AutomatoData | null>(null);
+    const [isViewingAnswerAutomaton, setIsViewingAnswerAutomaton] = useState(false);
     const [userRegex, setUserRegex] = useState('');
     const [userGrammar, setUserGrammar] = useState('');
     const [userText, setUserText] = useState('');
@@ -38,15 +58,24 @@ export const useExerciseSelection = ({
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const [showConverter, setShowConverter] = useState(false);
     const [converterData, setConverterData] = useState<ConverterData>({});
+    const [editorSessionKey, setEditorSessionKey] = useState(0);
 
-    const lastUrlSelectionRef = useRef<{
-        categoryId?: string;
-        exerciseId: number | null | undefined;
-    } | null>(null);
     const lastSyncedSelectionRef = useRef<{
         categoryId: string;
         exerciseId: number | null;
     } | null>(null);
+    const lastObservedExternalSelectionRef = useRef<{
+        categoryId?: string;
+        exerciseId: number | null | undefined;
+    } | null>(null);
+    const pendingExternalSyncRef = useRef<{
+        categoryId?: string;
+        exerciseId: number | null | undefined;
+    } | null>(null);
+    const isSyncingFromRouteRef = useRef(false);
+    const resetEditorSession = useCallback(() => {
+        setEditorSessionKey((current) => current + 1);
+    }, []);
 
     const exercises = useMemo<Exercicio[]>(
         () => exerciseDatabase[activeCategory] || [],
@@ -102,7 +131,7 @@ export const useExerciseSelection = ({
         setShowConverter(true);
     }, []);
 
-    const startSolving = useCallback((exerciseId: number) => {
+    const startSolving = useCallback((exerciseId: number, options?: ExerciseSolverStartOptions) => {
         const exercise = exercises.find((item) => item.id === exerciseId);
         const mode = exercise?.mode ?? activeCategoryConfig.mode ?? 'automaton';
         const tipo = exercise?.tipo ?? activeCategoryConfig.tipo ?? 'AFD';
@@ -113,18 +142,49 @@ export const useExerciseSelection = ({
         setUserRegex('');
         setUserGrammar('');
         setUserText('');
+        setSavedAttemptAutomaton(null);
+        setIsViewingAnswerAutomaton(false);
 
         if (mode === 'automaton') {
-            setUserAutomaton(createEmptyAutomaton(tipo));
+            resetEditorSession();
+            setUserAutomaton(
+                options?.initialAutomaton
+                    ? cloneAutomaton(options.initialAutomaton)
+                    : createEmptyAutomaton(tipo)
+            );
             return;
         }
 
         setUserAutomaton(null);
-    }, [activeCategoryConfig.mode, activeCategoryConfig.tipo, exercises]);
+    }, [activeCategoryConfig.mode, activeCategoryConfig.tipo, cloneAutomaton, exercises, resetEditorSession]);
+
+    const loadAnswerAutomaton = useCallback((data: AutomatoData) => {
+        setSavedAttemptAutomaton((currentSavedAttempt) => {
+            if (currentSavedAttempt || isViewingAnswerAutomaton || !userAutomaton) {
+                return currentSavedAttempt;
+            }
+
+            return cloneAutomaton(userAutomaton);
+        });
+        resetEditorSession();
+        setUserAutomaton(cloneAutomaton(data));
+        setIsViewingAnswerAutomaton(true);
+    }, [cloneAutomaton, isViewingAnswerAutomaton, resetEditorSession, userAutomaton]);
+
+    const restoreSavedAttempt = useCallback(() => {
+        if (!savedAttemptAutomaton) return;
+
+        resetEditorSession();
+        setUserAutomaton(cloneAutomaton(savedAttemptAutomaton));
+        setSavedAttemptAutomaton(null);
+        setIsViewingAnswerAutomaton(false);
+    }, [cloneAutomaton, resetEditorSession, savedAttemptAutomaton]);
 
     const stopSolving = useCallback(() => {
         setSolvingExercise(null);
         setUserAutomaton(null);
+        setSavedAttemptAutomaton(null);
+        setIsViewingAnswerAutomaton(false);
         setUserRegex('');
         setUserGrammar('');
         setUserText('');
@@ -133,8 +193,11 @@ export const useExerciseSelection = ({
 
     const resetAutomaton = useCallback(() => {
         const tipo = currentExercise?.tipo ?? activeCategoryConfig.tipo ?? 'AFD';
+        resetEditorSession();
         setUserAutomaton(createEmptyAutomaton(tipo));
-    }, [activeCategoryConfig.tipo, currentExercise?.tipo]);
+        setSavedAttemptAutomaton(null);
+        setIsViewingAnswerAutomaton(false);
+    }, [activeCategoryConfig.tipo, currentExercise?.tipo, resetEditorSession]);
 
     const handleCategorySelect = useCallback((categoryId: string) => {
         setActiveCategory(categoryId);
@@ -145,52 +208,68 @@ export const useExerciseSelection = ({
     }, [setLastCategory]);
 
     useEffect(() => {
-        if (!initialCategoryId) return;
-        if (exerciseDatabase[initialCategoryId]) {
-            setActiveCategory((previous) => (previous === initialCategoryId ? previous : initialCategoryId));
-        }
-    }, [exerciseDatabase, initialCategoryId]);
+        let isSyncingFromRoute = false;
+        const nextExternalSelection = {
+            categoryId: externalCategoryId,
+            exerciseId: initialExerciseId
+        };
+        const hasObservedExternalSelectionChanged = !lastObservedExternalSelectionRef.current
+            || lastObservedExternalSelectionRef.current.categoryId !== nextExternalSelection.categoryId
+            || lastObservedExternalSelectionRef.current.exerciseId !== nextExternalSelection.exerciseId;
 
-    useEffect(() => {
-        if (initialCategoryId) return;
-        if (lastCategory && exerciseDatabase[lastCategory]) {
-            setActiveCategory((previous) => (lastCategory ? lastCategory : previous));
+        if (hasObservedExternalSelectionChanged) {
+            lastObservedExternalSelectionRef.current = nextExternalSelection;
+            pendingExternalSyncRef.current = nextExternalSelection;
         }
-    }, [exerciseDatabase, initialCategoryId, lastCategory]);
 
-    useEffect(() => {
-        if (initialCategoryId && activeCategory !== initialCategoryId) {
+        const pendingExternalSync = pendingExternalSyncRef.current;
+
+        if (pendingExternalSync?.categoryId && activeCategory !== pendingExternalSync.categoryId) {
+            isSyncingFromRoute = true;
+            setActiveCategory(pendingExternalSync.categoryId);
+            isSyncingFromRouteRef.current = true;
             return;
         }
 
-        const nextUrlSelection = { categoryId: initialCategoryId, exerciseId: initialExerciseId };
-        if (
-            lastUrlSelectionRef.current &&
-            lastUrlSelectionRef.current.categoryId === nextUrlSelection.categoryId &&
-            lastUrlSelectionRef.current.exerciseId === nextUrlSelection.exerciseId
-        ) {
+        if (!exerciseDatabase[activeCategory]) {
+            isSyncingFromRoute = true;
+            setActiveCategory(fallbackCategoryId);
+            isSyncingFromRouteRef.current = true;
             return;
         }
-        lastUrlSelectionRef.current = nextUrlSelection;
 
-        if (typeof initialExerciseId === 'number') {
-            const categoryId = initialCategoryId ?? activeCategory;
-            const exerciseExists = exerciseDatabase[categoryId]?.some((exercise) => exercise.id === initialExerciseId);
-            if (exerciseExists && solvingExercise !== initialExerciseId) {
-                startSolving(initialExerciseId);
+        if (typeof pendingExternalSync?.exerciseId === 'number') {
+            const categoryId = pendingExternalSync.categoryId ?? activeCategory;
+            const exerciseExists = exerciseDatabase[categoryId]?.some((exercise) => exercise.id === pendingExternalSync.exerciseId);
+            if (exerciseExists && solvingExercise !== pendingExternalSync.exerciseId) {
+                isSyncingFromRoute = true;
+                startSolving(pendingExternalSync.exerciseId);
+            } else {
+                isSyncingFromRoute = false;
+            }
+            isSyncingFromRouteRef.current = isSyncingFromRoute;
+            if (!isSyncingFromRoute) {
+                pendingExternalSyncRef.current = null;
             }
             return;
         }
 
-        if (initialExerciseId === null && solvingExercise !== null) {
+        if (pendingExternalSync?.exerciseId === null && solvingExercise !== null) {
+            isSyncingFromRoute = true;
             stopSolving();
         }
-    }, [activeCategory, exerciseDatabase, initialCategoryId, initialExerciseId, solvingExercise, startSolving, stopSolving]);
+
+        if (!isSyncingFromRoute) {
+            pendingExternalSyncRef.current = null;
+        }
+        isSyncingFromRouteRef.current = isSyncingFromRoute;
+    }, [activeCategory, exerciseDatabase, externalCategoryId, fallbackCategoryId, initialExerciseId, routeCategoryId, solvingExercise, startSolving, stopSolving]);
 
     useEffect(() => {
         if (!onSelectionChange) return;
+        if (isSyncingFromRouteRef.current) return;
 
-        if (activeCategory === initialCategoryId && solvingExercise === initialExerciseId) {
+        if (activeCategory === routeCategoryId && solvingExercise === initialExerciseId) {
             lastSyncedSelectionRef.current = { categoryId: activeCategory, exerciseId: solvingExercise };
             return;
         }
@@ -206,7 +285,7 @@ export const useExerciseSelection = ({
 
         lastSyncedSelectionRef.current = nextSelection;
         onSelectionChange(activeCategory, solvingExercise);
-    }, [activeCategory, initialCategoryId, initialExerciseId, onSelectionChange, solvingExercise]);
+    }, [activeCategory, initialExerciseId, onSelectionChange, routeCategoryId, solvingExercise]);
 
     useEffect(() => {
         setLastCategory(activeCategory);
@@ -247,6 +326,8 @@ export const useExerciseSelection = ({
         solvingExercise,
         solverMode,
         userAutomaton,
+        savedAttemptAutomaton,
+        isViewingAnswerAutomaton,
         userRegex,
         userGrammar,
         userText,
@@ -255,6 +336,7 @@ export const useExerciseSelection = ({
         isSidebarOpen,
         showConverter,
         converterData,
+        editorSessionKey,
         exercises,
         filteredExercises,
         filteredCategories,
@@ -272,6 +354,8 @@ export const useExerciseSelection = ({
         setShowConverter,
         openConverter,
         startSolving,
+        loadAnswerAutomaton,
+        restoreSavedAttempt,
         stopSolving,
         resetAutomaton,
         handleCategorySelect,

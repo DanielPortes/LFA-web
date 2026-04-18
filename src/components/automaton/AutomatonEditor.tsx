@@ -1,7 +1,7 @@
 import React, { lazy, useState, useRef, useEffect, useCallback } from 'react';
 import type { AutomatoData, Tool, APData } from '../../types';
 import { AutomatonCanvas } from './AutomatonCanvas';
-import { MousePointer2, Plus, ArrowUpRight, Trash2, SlidersHorizontal, Wrench, X } from 'lucide-react';
+import { MousePointer2, Plus, ArrowUpRight, Trash2, SlidersHorizontal, Wrench, X, Undo2, Redo2 } from 'lucide-react';
 import { useHistory } from '../../hooks/useHistory';
 import { useToast } from '../ui';
 import { useUiSettings } from '../../hooks/useUiSettings';
@@ -20,6 +20,7 @@ import { useEditorConversions } from './editor/useEditorConversions';
 import { useEditorImportExport } from './editor/useEditorImportExport';
 import { useEditorViewport } from './editor/useEditorViewport';
 import { isEditableTarget, useWindowKeyboard } from '../../features/shortcuts';
+import { ToolbarButton } from '../ui/ToolbarButton';
 
 const LazyTemplatesGallery = lazy(async () => {
     const module = await import('../ui/TemplatesGallery');
@@ -36,8 +37,9 @@ interface EditorProps {
     viewState?: { zoom: number; pan: { x: number; y: number } };
     onViewStateChange?: (zoom: number, pan: { x: number; y: number }) => void;
     compact?: boolean;
-    compactVariant?: 'workspace' | 'modal';
+    compactVariant?: 'workspace' | 'modal' | 'solver';
     fitRequestToken?: number;
+    sessionKey?: number;
 }
 
 const EDITOR_COACH_STORAGE_KEY = 'lfa-simulator-coach-dismissed-v1';
@@ -105,7 +107,8 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
     });
     const [showCompactTools, setShowCompactTools] = useState(false);
     const [showCompactInspector, setShowCompactInspector] = useState(false);
-    const isWorkspaceCompact = compact && compactVariant === 'workspace';
+    const isWorkspaceCompact = compact && (compactVariant === 'workspace' || compactVariant === 'solver');
+    const isSolverCompact = compact && compactVariant === 'solver';
 
     const {
         state: historyState,
@@ -531,6 +534,33 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
         />
     );
 
+    const solverToolbar = (
+        <div className="glass-panel rounded-2xl border border-default bg-surface-1/95 p-2 shadow-apple-md">
+            <div className="flex flex-col gap-1">
+                {tools.map((toolItem) => (
+                    <ToolbarButton
+                        key={toolItem.id}
+                        icon={toolItem.icon}
+                        label={toolItem.label}
+                        shortcut={toolItem.shortcut}
+                        hint={toolItem.hint}
+                        active={tool === toolItem.id}
+                        onClick={() => handleSelectTool(toolItem.id)}
+                        className={`${modifierHeld === 'shift' && toolItem.id === 'pointer' ? 'ring-2 ring-ios-blue/50' : ''} ${modifierHeld === 'alt' && toolItem.id === 'transition' ? 'ring-2 ring-ios-blue/50' : ''}`}
+                        side="right"
+                    />
+                ))}
+            </div>
+
+            <div className="my-2 h-px bg-border/70" />
+
+            <div className="flex flex-col gap-1">
+                <ToolbarButton icon={Undo2} label="Desfazer" shortcut="Ctrl+Z" disabled={!canUndo} onClick={handleUndo} side="right" />
+                <ToolbarButton icon={Redo2} label="Refazer" shortcut="Ctrl+Y" disabled={!canRedo} onClick={handleRedo} side="right" />
+            </div>
+        </div>
+    );
+
     const diagnosticsPanel = (
         <EditorDiagnosticsPanel
             data={data}
@@ -596,7 +626,7 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                     {!readOnly && (
                         <>
                             <div className="pointer-events-auto absolute left-4 top-24 hidden md:block">
-                                {primaryToolbar}
+                                {isSolverCompact ? solverToolbar : primaryToolbar}
                             </div>
 
                             <div className="pointer-events-auto absolute left-4 top-24 md:hidden">
@@ -614,7 +644,7 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
 
                             {showCompactTools && (
                                 <div className="pointer-events-auto absolute left-4 top-[7.25rem] max-h-[calc(100%-8rem)] overflow-y-auto overflow-x-visible custom-scrollbar md:hidden">
-                                    {primaryToolbar}
+                                    {isSolverCompact ? solverToolbar : primaryToolbar}
                                 </div>
                             )}
                         </>

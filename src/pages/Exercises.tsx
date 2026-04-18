@@ -6,7 +6,7 @@ import { ExerciseList } from '../features/exercises/ExerciseList';
 import { exerciseCategories } from '../features/exercises/exerciseCategories';
 import { ExerciseSolverModal } from '../features/exercises/ExerciseSolverModal';
 import { ExercisesSidebar } from '../features/exercises/ExercisesSidebar';
-import type { ExerciseDatabase } from '../features/exercises/types';
+import type { ExerciseDatabase, ExerciseSolverStartOptions } from '../features/exercises/types';
 import { useExerciseData } from '../features/exercises/useExerciseData';
 import { useExerciseSelection } from '../features/exercises/useExerciseSelection';
 import { useExerciseVerification } from '../features/exercises/useExerciseVerification';
@@ -78,10 +78,10 @@ const LoadedExercisesSection = ({
         markExerciseCompleted
     });
 
-    const startSolving = useCallback((exerciseId: number) => {
+    const startSolving = useCallback((exerciseId: number, options?: ExerciseSolverStartOptions) => {
         verifyRunRef.current += 1;
         verification.resetVerificationState();
-        selection.startSolving(exerciseId);
+        selection.startSolving(exerciseId, options);
     }, [selection, verification]);
 
     const stopSolving = useCallback(() => {
@@ -214,7 +214,6 @@ const LoadedExercisesSection = ({
                 onStartSolving={startSolving}
                 onOpenSidebar={() => selection.setSidebarOpen(true)}
                 onOpenConverter={selection.openConverter}
-                onSimulate={onSimulate}
             />
 
             <ExerciseSolverModal
@@ -226,6 +225,11 @@ const LoadedExercisesSection = ({
                 solverMode={selection.solverMode}
                 userAutomaton={selection.userAutomaton}
                 onAutomatonChange={selection.setUserAutomaton}
+                onLoadAnswerAutomaton={selection.loadAnswerAutomaton}
+                onRestoreAttempt={selection.restoreSavedAttempt}
+                hasSavedAttempt={selection.savedAttemptAutomaton !== null}
+                isViewingAnswerAutomaton={selection.isViewingAnswerAutomaton}
+                editorSessionKey={selection.editorSessionKey}
                 onSimulate={onSimulate}
                 userRegex={selection.userRegex}
                 onRegexChange={handleRegexChange}
