@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useId, useMemo } from 'react';
 import { AutomatonEditor } from '../components/automaton/AutomatonEditor';
 import type { AutomatoData } from '../types';
-import { Code, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { regexToNfa } from '../utils/conversions';
 import {
     useToast,
@@ -42,7 +42,10 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
     const [data, setData] = useLocalStorageState<AutomatoData>(
         SIMULATOR_STORAGE_KEY,
         initialData ?? emptyAutomaton,
-        { readOnInit: !initialData }
+        {
+            readOnInit: !initialData,
+            writeDelayMs: 200
+        }
     );
     const [isDesktopViewport, setIsDesktopViewport] = useState(() => {
         if (typeof window === 'undefined') return true;
@@ -243,18 +246,6 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
             ? 'Defina o alfabeto de entrada no autômato antes de iniciar a simulação.'
             : null;
 
-    const workspaceHeader = (
-        <div className="glass-panel pointer-events-auto flex items-center gap-3 rounded-2xl border border-default bg-surface-1/90 px-4 py-3 shadow-apple-md">
-            <div className="rounded-xl bg-ios-blue/10 p-2 text-ios-blue">
-                <Code size={16} />
-            </div>
-            <div>
-                <div className="ui-kicker-xs text-primary">Simulador de autômatos</div>
-                <div className="text-[11px] text-secondary">Editor e execução lado a lado na área completa</div>
-            </div>
-        </div>
-    );
-
     const statsPanel = (
         <SimulatorStatusBar
             automatonType={safeData.tipo}
@@ -378,12 +369,7 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
         />
     );
 
-    const topBar = (
-        <div className="flex max-w-[420px] flex-col gap-2">
-            {workspaceHeader}
-            {statsPanel}
-        </div>
-    );
+    const topBar = statsPanel;
 
     return (
         <div className="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden pb-3 pt-20 animate-fade-in sm:pt-[5.5rem] lg:pt-24" data-native-cursor="true">

@@ -1,5 +1,7 @@
+// @vitest-environment jsdom
+
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { isEditableTarget } from './shortcutUtils';
 import { useModifierKey, useWindowKeyboard } from './useWindowKeyboard';
 
@@ -24,6 +26,18 @@ const KeyboardProbe = () => {
     );
 };
 
+const StableListenerProbe = ({ label }: { label: string }) => {
+    useWindowKeyboard({
+        onKeyDown: (event) => {
+            if (event.key === 'k') {
+                document.body.dataset.keyboardLabel = label;
+            }
+        }
+    });
+
+    return null;
+};
+
 describe('useWindowKeyboard', () => {
     it('acompanha teclas modificadoras e diferencia alvos editáveis', () => {
         render(<KeyboardProbe />);
@@ -39,5 +53,28 @@ describe('useWindowKeyboard', () => {
 
         fireEvent.keyDown(window, { key: 'k' });
         expect(screen.getByText('plain')).toBeInTheDocument();
+    });
+
+    it('mantém listeners estáveis entre rerenders e usa callbacks atualizados', () => {
+        const addSpy = vi.spyOn(window, 'addEventListener');
+        const removeSpy = vi.spyOn(window, 'removeEventListener');
+
+        const { rerender, unmount } = render(<StableListenerProbe label="primeiro" />);
+        const keydownAddsAfterMount = addSpy.mock.calls.filter(([type]) => type === 'keydown').length;
+
+        rerender(<StableListenerProbe label="segundo" />);
+
+        expect(addSpy.mock.calls.filter(([type]) => type === 'keydown')).toHaveLength(keydownAddsAfterMount);
+
+        fireEvent.keyDown(window, { key: 'k' });
+        expect(document.body.dataset.keyboardLabel).toBe('segundo');
+
+        unmount();
+
+        expect(removeSpy.mock.calls.filter(([type]) => type === 'keydown')).toHaveLength(1);
+
+        delete document.body.dataset.keyboardLabel;
+        addSpy.mockRestore();
+        removeSpy.mockRestore();
     });
 });

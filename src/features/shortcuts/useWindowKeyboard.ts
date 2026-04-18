@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface UseWindowKeyboardOptions {
     enabled?: boolean;
@@ -15,23 +15,39 @@ export const useWindowKeyboard = ({
     onKeyUp,
     onBlur,
 }: UseWindowKeyboardOptions) => {
+    const keyDownRef = useRef(onKeyDown);
+    const keyUpRef = useRef(onKeyUp);
+    const blurRef = useRef(onBlur);
+
+    useEffect(() => {
+        keyDownRef.current = onKeyDown;
+    }, [onKeyDown]);
+
+    useEffect(() => {
+        keyUpRef.current = onKeyUp;
+    }, [onKeyUp]);
+
+    useEffect(() => {
+        blurRef.current = onBlur;
+    }, [onBlur]);
+
     useEffect(() => {
         if (!enabled) return undefined;
 
-        const keydownHandler = (event: KeyboardEvent) => onKeyDown?.(event);
-        const keyupHandler = (event: KeyboardEvent) => onKeyUp?.(event);
-        const blurHandler = () => onBlur?.();
+        const keydownHandler = (event: KeyboardEvent) => keyDownRef.current?.(event);
+        const keyupHandler = (event: KeyboardEvent) => keyUpRef.current?.(event);
+        const blurHandler = () => blurRef.current?.();
 
-        if (onKeyDown) window.addEventListener('keydown', keydownHandler, { capture });
-        if (onKeyUp) window.addEventListener('keyup', keyupHandler, { capture });
-        if (onBlur) window.addEventListener('blur', blurHandler);
+        window.addEventListener('keydown', keydownHandler, capture);
+        window.addEventListener('keyup', keyupHandler, capture);
+        window.addEventListener('blur', blurHandler);
 
         return () => {
-            if (onKeyDown) window.removeEventListener('keydown', keydownHandler, { capture });
-            if (onKeyUp) window.removeEventListener('keyup', keyupHandler, { capture });
-            if (onBlur) window.removeEventListener('blur', blurHandler);
+            window.removeEventListener('keydown', keydownHandler, capture);
+            window.removeEventListener('keyup', keyupHandler, capture);
+            window.removeEventListener('blur', blurHandler);
         };
-    }, [capture, enabled, onBlur, onKeyDown, onKeyUp]);
+    }, [capture, enabled]);
 };
 
 interface UseModifierKeyOptions {

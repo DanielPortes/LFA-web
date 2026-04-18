@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 interface HistoryState<T> {
     past: T[];
@@ -23,94 +23,121 @@ export function useHistory<T>(initialState: T, maxHistory = 50): UseHistoryResul
         present: initialState,
         future: []
     });
+    const historyRef = useRef(history);
 
     // Debounce timer for grouping rapid changes
     const debounceTimer = useRef<number | null>(null);
-    const pendingState = useRef<T | null>(null);
-    // Track the last committed state to avoid unnecessary updates
-    const lastCommittedRef = useRef<T>(initialState);
+    const pendingState = useRef<{ value: T } | null>(null);
+    const groupBaseState = useRef<{ value: T } | null>(null);
+
+    const updateHistory = useCallback((updater: (previous: HistoryState<T>) => HistoryState<T>) => {
+        setHistory((previous) => {
+            const next = updater(previous);
+            historyRef.current = next;
+            return next;
+        });
+    }, []);
+
+    const clearPendingCommit = useCallback(() => {
+        if (debounceTimer.current !== null) {
+            window.clearTimeout(debounceTimer.current);
+            debounceTimer.current = null;
+        }
+        pendingState.current = null;
+        groupBaseState.current = null;
+    }, []);
+
+    useEffect(() => {
+        historyRef.current = history;
+    }, [history]);
+
+    useEffect(() => clearPendingCommit, [clearPendingCommit]);
 
     const set = useCallback((newState: T, recordHistory = true) => {
-        // Skip update if state hasn't changed (shallow comparison)
-        if (newState === lastCommittedRef.current) {
+        if (newState === historyRef.current.present) {
             return;
         }
 
         if (!recordHistory) {
-            setHistory(prev => {
-                if (prev.present === newState) return prev;
-                return { ...prev, present: newState };
+            clearPendingCommit();
+            updateHistory((previous) => {
+                if (previous.present === newState) return previous;
+                return { ...previous, present: newState };
             });
-            lastCommittedRef.current = newState;
             return;
         }
 
-        // Clear any pending debounced update
-        if (debounceTimer.current) {
-            clearTimeout(debounceTimer.current);
+        if (groupBaseState.current === null) {
+            groupBaseState.current = { value: historyRef.current.present };
         }
-
-        pendingState.current = newState;
-
-        // Debounce history recording to group rapid changes
+        pendingState.current = { value: newState };
+        if (debounceTimer.current !== null) {
+            window.clearTimeout(debounceTimer.current);
+        }
         debounceTimer.current = window.setTimeout(() => {
-            setHistory(prev => {
-                if (pendingState.current === null) return prev;
-                const newPast = [...prev.past, prev.present].slice(-maxHistory);
+            const pending = pendingState.current;
+            const base = groupBaseState.current;
+            clearPendingCommit();
+            if (!pending || !base || pending.value === base.value) {
+                return;
+            }
+
+            updateHistory((previous) => {
+                const nextPast = [...previous.past, base.value].slice(-maxHistory);
                 return {
-                    past: newPast,
-                    present: pendingState.current!,
+                    past: nextPast,
+                    present: pending.value,
                     future: []
                 };
             });
-            pendingState.current = null;
         }, 300);
 
-        // Immediately update the present state for responsive UI
-        setHistory(prev => {
-            if (prev.present === newState) return prev;
-            return { ...prev, present: newState };
+        updateHistory((previous) => {
+            if (previous.present === newState) return previous;
+            return { ...previous, present: newState };
         });
-        lastCommittedRef.current = newState;
-    }, [maxHistory]);
+    }, [clearPendingCommit, maxHistory, updateHistory]);
 
     const undo = useCallback(() => {
-        setHistory(prev => {
-            if (prev.past.length === 0) return prev;
+        clearPendingCommit();
+        updateHistory((previous) => {
+            if (previous.past.length === 0) return previous;
 
-            const previous = prev.past[prev.past.length - 1];
-            const newPast = prev.past.slice(0, -1);
+            const nextPresent = previous.past[previous.past.length - 1];
+            const nextPast = previous.past.slice(0, -1);
 
             return {
-                past: newPast,
-                present: previous,
-                future: [prev.present, ...prev.future]
+                past: nextPast,
+                present: nextPresent,
+                future: [previous.present, ...previous.future]
             };
         });
-    }, []);
+    }, [clearPendingCommit, updateHistory]);
 
     const redo = useCallback(() => {
-        setHistory(prev => {
-            if (prev.future.length === 0) return prev;
+        clearPendingCommit();
+        updateHistory((previous) => {
+            if (previous.future.length === 0) return previous;
 
-            const next = prev.future[0];
-            const newFuture = prev.future.slice(1);
+            const nextPresent = previous.future[0];
+            const nextFuture = previous.future.slice(1);
 
             return {
-                past: [...prev.past, prev.present],
-                present: next,
-                future: newFuture
+                past: [...previous.past, previous.present],
+                present: nextPresent,
+                future: nextFuture
             };
         });
-    }, []);
+    }, [clearPendingCommit, updateHistory]);
 
     const clear = useCallback(() => {
-        setHistory(prev => ({
+        clearPendingCommit();
+        updateHistory((previous) => ({
             past: [],
-            present: prev.present,
+            present: previous.present,
             future: []
         }));
-    }, []);
+    }, [clearPendingCommit, updateHistory]);
 
     return {
         state: history.present,
