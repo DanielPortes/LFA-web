@@ -81,4 +81,17 @@ describe('AutomatonEditor', () => {
         expect(screen.getByRole('button', { name: 'Templates' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Abrir inspetor do editor' })).toBeInTheDocument();
     });
+
+    it('usa rail reduzido no preset de solver', async () => {
+        await renderEditor({ compact: true, compactVariant: 'solver' });
+
+        expect(screen.getByRole('button', { name: 'Mover' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Estado' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Transição' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Apagar' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Desfazer' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Refazer' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Templates' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Mais' })).not.toBeInTheDocument();
+    });
 });

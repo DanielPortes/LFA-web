@@ -127,7 +127,7 @@ export const ContentPedagogicalBlock: React.FC<ContentBlockComponentProps> = ({
             )}
 
             {relatedExercise && onOpenExercise && (
-                <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-default bg-white/70 p-4 dark:bg-black/10">
+                <div className="surface-soft-panel mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-default p-4 dark:bg-black/10">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
                             Prática associada

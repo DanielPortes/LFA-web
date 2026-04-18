@@ -55,7 +55,7 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
                 </button>
             </div>
             <div className="ui-kicker mb-6 flex flex-wrap items-center gap-2 text-secondary">
-                <span className="rounded-md bg-black/5 px-2 py-1 dark:bg-white/10">Módulo {moduleIndex}</span>
+                <span className="surface-chip rounded-md border-default px-2 py-1 text-secondary">Módulo {moduleIndex}</span>
                 <ChevronRight size={10} />
                 <span className="text-ios-blue">{moduleTitle}</span>
             </div>

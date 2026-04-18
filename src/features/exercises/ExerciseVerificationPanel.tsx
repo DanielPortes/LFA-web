@@ -13,13 +13,15 @@ import type {
     ExerciseEquivalenceStatus,
     ExerciseFailure,
     ExerciseTestStatus,
+    SolverMode,
 } from './types';
 import { ExerciseSupportPanel } from './ExerciseSupportPanel';
 
 interface ExerciseVerificationPanelProps {
     exercise: Exercicio | null;
-    onSimulateAnswer?: (data: AutomatoData) => void;
+    onLoadAnswerAutomaton?: (data: AutomatoData) => void;
     onOpenTheory?: (moduleId: string, lessonId: string) => void;
+    solverMode: SolverMode;
     hasTests: boolean;
     tests: TestCase[];
     showExpected: boolean;
@@ -38,8 +40,9 @@ interface ExerciseVerificationPanelProps {
 
 export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps> = ({
     exercise,
-    onSimulateAnswer,
+    onLoadAnswerAutomaton,
     onOpenTheory,
+    solverMode,
     hasTests,
     tests,
     showExpected,
@@ -55,11 +58,39 @@ export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps>
     lastTrace,
     formatStateList,
 }) => (
-    <div className="flex min-h-[32vh] max-h-[40vh] w-full flex-col border-t border-default bg-surface-1 backdrop-blur-xl xl:min-h-0 xl:max-h-none xl:w-[360px] xl:border-l xl:border-t-0">
-        <div className="border-b border-default p-4">
+    <aside
+        data-testid="exercise-verification-rail"
+        aria-label="Painel de verificação do exercício"
+        className="flex min-h-[32vh] max-h-[40vh] w-full min-w-0 flex-col overflow-hidden border-t border-default/80 bg-surface-1/95 backdrop-blur-2xl min-[1180px]:min-h-0 min-[1180px]:max-h-none min-[1180px]:w-[360px] min-[1180px]:border-l min-[1180px]:border-t-0"
+    >
+        <div className="border-b border-default/70 px-4 py-4">
+            {exercise && (
+                <div className="mb-4">
+                    <div className="ui-kicker-xs text-secondary">Exercício {exercise.id}</div>
+                    <p className="mt-2 text-sm leading-relaxed text-primary">
+                        {exercise.pergunta}
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span className="badge border-status-info bg-status-info-soft text-status-info">
+                            {solverMode === 'automaton'
+                                ? 'Autômato'
+                                : solverMode === 'regex'
+                                    ? 'Expressão regular'
+                                    : solverMode === 'grammar'
+                                        ? 'Gramática'
+                                        : 'Resposta aberta'}
+                        </span>
+                        <span className="badge border-default bg-surface-muted text-secondary">
+                            {exercise.nivel === 'facil' ? 'Fácil' : exercise.nivel === 'medio' ? 'Médio' : 'Desafio'}
+                        </span>
+                    </div>
+                </div>
+            )}
+
             <div className="flex items-center justify-between gap-3">
                 <div>
-                    <h4 className="mb-1 text-sm font-bold text-primary">Casos de teste</h4>
+                    <div className="ui-kicker-xs text-secondary">Verificação</div>
+                    <h4 className="mt-1 text-sm font-bold text-primary">Casos de teste</h4>
                     <p className="text-xs text-secondary">
                         {hasTests ? 'Seu resultado será verificado com estas entradas' : 'Sem verificação automática'}
                     </p>
@@ -84,58 +115,82 @@ export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps>
             </div>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto bg-surface-1 p-4 custom-scrollbar">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-surface-1/80 p-4 custom-scrollbar">
             <ExerciseSupportPanel
                 exercise={exercise}
-                onSimulateAnswer={onSimulateAnswer}
+                onLoadAnswerAutomaton={onLoadAnswerAutomaton}
                 onOpenTheory={onOpenTheory}
+                lastFailure={lastFailure}
+                equivalenceStatus={equivalenceStatus}
             />
 
-            <section className="space-y-3">
-                {hasTests ? tests.map((testCase, index) => (
-                    <div
-                        key={index}
-                        className={`flex items-center gap-3 rounded-2xl border p-3 transition-all
-                            ${testResults[`${index}`] === 'pass'
-                                ? 'border-ios-green/30 bg-ios-green/10'
-                                : testResults[`${index}`] === 'fail'
-                                    ? 'border-ios-red/30 bg-ios-red/10'
-                                    : 'border-default bg-surface-2'
-                            }`}
-                    >
-                        <div className="flex h-6 w-6 items-center justify-center">
-                            {testResults[`${index}`] === 'running' ? (
-                                <Loader2 size={16} className="animate-spin text-ios-blue" />
-                            ) : testResults[`${index}`] === 'pass' ? (
-                                <CheckCircle2 size={16} strokeWidth={3} className="text-ios-green" />
-                            ) : testResults[`${index}`] === 'fail' ? (
-                                <XCircle size={16} className="text-ios-red" />
-                            ) : (
-                                <div className="h-2 w-2 rounded-full bg-text-secondary-30" />
-                            )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <code className="block truncate text-sm font-mono text-primary">
-                                "{testCase.input || EPSILON_SYMBOL}"
-                            </code>
-                        </div>
-                        <span className={`rounded-xl border px-2 py-1 text-xs font-bold ${
-                            showExpected
-                                ? (testCase.expected === 'accept' ? 'border-ios-green/20 bg-ios-green/15 text-ios-green' : 'border-ios-red/20 bg-ios-red/15 text-ios-red')
-                                : 'border-default bg-surface-2 text-secondary'
-                        }`}>
-                            {showExpected ? (testCase.expected === 'accept' ? 'Aceita' : 'Rejeita') : 'Oculto'}
-                        </span>
+            <section className="rounded-[24px] border border-default bg-surface-2/85 p-4">
+                <div className="flex items-start justify-between gap-3">
+                    <div>
+                        <div className="ui-kicker text-secondary">Bateria de teste</div>
+                        <p className="mt-1 text-sm font-semibold text-primary">
+                            {hasTests ? `${tests.length} entrada(s) de validação` : 'Exercício conceitual'}
+                        </p>
                     </div>
-                )) : (
-                    <div className="rounded-2xl border border-dashed border-default p-4 text-sm text-secondary">
-                        Este exercício é conceitual. Compare sua solução com o gabarito quando terminar.
-                    </div>
-                )}
+                    {hasTests && (
+                        <div className="surface-chip rounded-full border border-default px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-secondary dark:bg-black/10">
+                            {Object.values(testResults).filter((result) => result === 'pass').length}/{tests.length} OK
+                        </div>
+                    )}
+                </div>
+
+                <div className="mt-4">
+                    {hasTests ? (
+                        <div className="max-h-[15rem] space-y-3 overflow-y-auto pr-1 custom-scrollbar">
+                            {tests.map((testCase, index) => (
+                                <div
+                                    key={index}
+                                    className={`flex items-center gap-3 rounded-[22px] border p-3 transition-all ${
+                                        testResults[`${index}`] === 'pass'
+                                            ? 'border-ios-green/30 bg-ios-green/10'
+                                            : testResults[`${index}`] === 'fail'
+                                                ? 'border-ios-red/30 bg-ios-red/10'
+                                                : 'border-default bg-surface-1/80'
+                                    }`}
+                                >
+                                    <div className="flex h-6 w-6 items-center justify-center">
+                                        {testResults[`${index}`] === 'running' ? (
+                                            <Loader2 size={16} className="animate-spin text-ios-blue" />
+                                        ) : testResults[`${index}`] === 'pass' ? (
+                                            <CheckCircle2 size={16} strokeWidth={3} className="text-ios-green" />
+                                        ) : testResults[`${index}`] === 'fail' ? (
+                                            <XCircle size={16} className="text-ios-red" />
+                                        ) : (
+                                            <div className="h-2 w-2 rounded-full bg-text-secondary-30" />
+                                        )}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <code className="block truncate text-sm font-mono text-primary">
+                                            "{testCase.input || EPSILON_SYMBOL}"
+                                        </code>
+                                    </div>
+                                    <span className={`rounded-xl border px-2 py-1 text-xs font-bold ${
+                                        showExpected
+                                            ? (testCase.expected === 'accept'
+                                                ? 'border-ios-green/20 bg-ios-green/15 text-ios-green'
+                                                : 'border-ios-red/20 bg-ios-red/15 text-ios-red')
+                                            : 'border-default bg-surface-2 text-secondary'
+                                    }`}>
+                                        {showExpected ? (testCase.expected === 'accept' ? 'Aceita' : 'Rejeita') : 'Oculto'}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-[22px] border border-dashed border-default bg-surface-1/70 p-4 text-sm text-secondary">
+                            Este exercício é conceitual. Compare sua solução com o gabarito quando terminar.
+                        </div>
+                    )}
+                </div>
             </section>
 
             {lastFailure && (
-                <div className="rounded-2xl border border-ios-red/20 bg-ios-red/10 p-4">
+                <div className="rounded-[24px] border border-ios-red/20 bg-ios-red/10 p-4">
                     <div className="mb-2 ui-kicker text-ios-red">Primeiro erro</div>
                     <div className="text-xs text-ios-red/80">
                         Entrada: <code className="rounded bg-ios-red/10 px-1 font-mono">{lastFailure.input}</code> · Esperado: {lastFailure.expected} · Obtido: {lastFailure.received}
@@ -147,7 +202,7 @@ export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps>
             )}
 
             {equivalenceStatus && (
-                <div className={`rounded-2xl border p-4 ${equivalenceStatus === 'pass' ? 'border-ios-green/20 bg-ios-green/10' : 'border-ios-red/20 bg-ios-red/10'}`}>
+                <div className={`rounded-[24px] border p-4 ${equivalenceStatus === 'pass' ? 'border-ios-green/20 bg-ios-green/10' : 'border-ios-red/20 bg-ios-red/10'}`}>
                     <div className={`mb-2 ui-kicker ${equivalenceStatus === 'pass' ? 'text-ios-green' : 'text-ios-red'}`}>
                         Equivalência DFA
                     </div>
@@ -160,7 +215,7 @@ export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps>
             )}
 
             {lastTrace && lastTrace.length > 0 && (
-                <div className="rounded-2xl border border-default bg-surface-2 p-4">
+                <div className="rounded-[24px] border border-default bg-surface-2/85 p-4">
                     <div className="mb-2 ui-kicker text-secondary">Traço de execução</div>
                     <div className="max-h-40 space-y-2 overflow-y-auto custom-scrollbar">
                         {lastTrace.map((step, index) => (
@@ -178,7 +233,7 @@ export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps>
             )}
 
             {Object.keys(testResults).length > 0 && (
-                <div className="rounded-2xl border border-default bg-surface-2 p-4">
+                <div className="rounded-[24px] border border-default bg-surface-2/85 p-4">
                     {Object.values(testResults).every((result) => result === 'pass') && equivalenceStatus !== 'fail' ? (
                         <div className="flex items-center gap-3 text-ios-green">
                             <Trophy size={24} />
@@ -202,7 +257,7 @@ export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps>
             )}
         </div>
 
-        <div className="border-t border-default bg-surface-1 p-4">
+        <div className="border-t border-default/70 bg-surface-1/95 p-4">
             {verifyDisabledReason ? (
                 <p className="mb-3 rounded-xl border border-status-warning bg-status-warning-soft px-3 py-2 text-xs text-status-warning">
                     {verifyDisabledReason}
@@ -215,7 +270,7 @@ export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps>
             <button
                 onClick={onVerify}
                 disabled={isVerifying || !!verifyDisabledReason}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-ios-blue py-3 text-sm font-bold text-white shadow-lg shadow-ios-blue/20 transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-[22px] bg-ios-blue py-3 text-sm font-bold text-white shadow-lg shadow-ios-blue/20 transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
                 {isVerifying ? (
                     <>
@@ -230,5 +285,5 @@ export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps>
                 )}
             </button>
         </div>
-    </div>
+    </aside>
 );

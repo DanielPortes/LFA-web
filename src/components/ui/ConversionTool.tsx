@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
     ArrowRightLeft, 
     Copy, 
@@ -179,9 +180,9 @@ export const ConversionTool = ({
         setTimeout(() => setCopied(false), 2000);
     };
 
-    if (!isOpen) return null;
+    if (!isOpen || typeof document === 'undefined') return null;
 
-    return (
+    return createPortal(
         <div className="overlay-backdrop animate-fade-in" onClick={onClose}>
             <div className="overlay-surface w-[92vw] max-w-5xl h-[88vh] flex flex-col animate-scale-in" onClick={e => e.stopPropagation()}>
                 {/* Header */}
@@ -197,7 +198,7 @@ export const ConversionTool = ({
                             </p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 rounded-lg text-secondary hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                    <button onClick={onClose} className="p-2 rounded-lg text-secondary hover:bg-surface-hover transition-colors">
                         <span className="sr-only">Fechar</span>
                         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
                     </button>
@@ -277,7 +278,7 @@ export const ConversionTool = ({
                             {sourceType === 'automaton' && (
                                 <div className="h-full flex flex-col">
                                     {sourceAutomaton ? (
-                                        <div className="flex-1 relative border border-default rounded-xl overflow-hidden bg-white dark:bg-black/20">
+                                        <div className="flex-1 relative overflow-hidden rounded-xl border border-default bg-canvas-surface dark:bg-black/20">
                                             <div className="absolute top-2 left-2 z-10 px-2 py-1 rounded bg-black/10 backdrop-blur text-xs font-bold text-primary border border-white/10">
                                                 {sourceAutomaton.tipo}
                                             </div>
@@ -309,7 +310,7 @@ export const ConversionTool = ({
                                         className={`flex items-center gap-2 px-3 py-3 rounded-xl text-xs font-bold text-left transition-all border ${
                                             selectedTarget?.id === opt.id
                                                 ? 'bg-ios-purple text-white border-status-accent shadow-lg shadow-purple-500/20'
-                                                : 'bg-surface-1 text-primary border-transparent hover:border-default hover:bg-white dark:hover:bg-white/5'
+                                                : 'bg-surface-1 text-primary border-transparent hover:border-default hover:bg-surface-2 dark:hover:bg-white/5'
                                         }`}
                                     >
                                         {opt.type === 'grammar' ? <Type size={14} /> : 
@@ -319,7 +320,7 @@ export const ConversionTool = ({
                                     </button>
                                 ))
                             ) : (
-                                <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 text-xs text-secondary text-center">
+                                <div className="surface-soft-panel rounded-xl border border-default p-3 text-center text-xs text-secondary dark:bg-white/5">
                                     Nenhuma conversão disponível para esta entrada.
                                 </div>
                             )}
@@ -365,7 +366,7 @@ export const ConversionTool = ({
                                     </div>
                                 </div>
                             ) : outputAutomaton ? (
-                                <div className="h-full border border-default rounded-xl overflow-hidden bg-white dark:bg-black/20 relative">
+                                <div className="relative h-full overflow-hidden rounded-xl border border-default bg-canvas-surface dark:bg-black/20">
                                     <div className="absolute top-2 left-2 z-10 px-2 py-1 rounded bg-black/10 backdrop-blur text-xs font-bold text-primary border border-white/10">
                                         {outputAutomaton.tipo}
                                     </div>
@@ -388,7 +389,8 @@ export const ConversionTool = ({
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

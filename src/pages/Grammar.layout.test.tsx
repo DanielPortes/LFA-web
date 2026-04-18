@@ -26,7 +26,7 @@ describe('GrammarPage layout', () => {
                 </UiSettingsProvider>
             );
 
-            expect(screen.getByText('Laboratório de gramáticas')).toBeInTheDocument();
+            expect(screen.queryByText('Laboratório de gramáticas')).not.toBeInTheDocument();
             if (width < 1024) {
                 fireEvent.click(screen.getByRole('button', { name: 'Abrir painel da gramática' }));
             }

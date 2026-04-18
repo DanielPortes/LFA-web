@@ -36,7 +36,7 @@ describe('SimulatorPage layout', () => {
                 await Promise.resolve();
             });
 
-            expect(screen.getByText('Simulador de autômatos')).toBeInTheDocument();
+            expect(screen.queryByText('Simulador de autômatos')).not.toBeInTheDocument();
             expect(screen.getByRole('region', { name: 'Canvas do autômato AFD' })).toBeInTheDocument();
 
             fireEvent.change(screen.getByPlaceholderText('Digite a entrada para o autômato...'), {

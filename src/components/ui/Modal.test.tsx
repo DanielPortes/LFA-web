@@ -63,4 +63,22 @@ describe('Modal', () => {
         fireEvent.click(backdrop!);
         expect(onClose).toHaveBeenCalledTimes(1);
     });
+
+    it('renderiza em portal para não ficar preso a contêiner com transform', () => {
+        const onClose = vi.fn();
+
+        render(
+            <div data-testid="transform-parent" style={{ transform: 'translateY(10px)' }}>
+                <Modal isOpen={true} onClose={onClose} title="Preferências">
+                    Conteúdo
+                </Modal>
+            </div>
+        );
+
+        const dialog = screen.getByRole('dialog', { name: 'Preferências' });
+        const transformedParent = screen.getByTestId('transform-parent');
+
+        expect(transformedParent.contains(dialog)).toBe(false);
+        expect(dialog.parentElement?.parentElement).toBe(document.body);
+    });
 });

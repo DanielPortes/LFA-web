@@ -47,7 +47,7 @@ export const LessonNavigator: React.FC<LessonNavigatorProps> = ({
                 disabled={!previousLesson}
                 className={`flex items-center gap-3 rounded-full px-6 py-3 transition-all
                     ${previousLesson
-                        ? 'cursor-pointer text-primary hover:bg-black/5 dark:hover:bg-white/10'
+                        ? 'cursor-pointer text-primary hover:bg-surface-hover'
                         : 'cursor-not-allowed text-secondary opacity-50'
                     }`}
             >
@@ -61,7 +61,7 @@ export const LessonNavigator: React.FC<LessonNavigatorProps> = ({
                 className={`flex items-center gap-3 rounded-full px-8 py-4 shadow-lg transition-all
                     ${nextLesson
                         ? 'cursor-pointer bg-ios-blue text-white hover:scale-105 hover:bg-blue-600 active:scale-95'
-                        : 'cursor-not-allowed bg-black/5 text-secondary opacity-50 dark:bg-white/10'
+                        : 'cursor-not-allowed border border-default bg-surface-2 text-secondary opacity-50'
                     }`}
             >
                 <span className="font-bold">Próxima Lição</span>

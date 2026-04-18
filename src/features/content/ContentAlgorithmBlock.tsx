@@ -14,7 +14,7 @@ export const ContentAlgorithmBlock: React.FC<ContentBlockComponentProps> = ({ bl
         <div className="space-y-4">
             {Array.isArray(block.content) ? block.content.map((step, index) => (
                 <div key={index} className="flex gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white/80 dark:bg-white/10 border border-black/10 dark:border-white/20 flex items-center justify-center font-bold text-sm text-secondary font-mono">
+                    <div className="surface-chip flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-black/10 font-mono text-sm font-bold text-secondary dark:border-white/20">
                         {index + 1}
                     </div>
                     <p className="pt-1 text-lg text-secondary">{renderMarkdown(step)}</p>

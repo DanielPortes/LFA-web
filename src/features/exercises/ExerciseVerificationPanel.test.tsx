@@ -47,6 +47,7 @@ describe('ExerciseVerificationPanel', () => {
             <ExerciseVerificationPanel
                 exercise={pedagogicalExercise}
                 onOpenTheory={onOpenTheory}
+                solverMode="automaton"
                 hasTests={true}
                 tests={[
                     { input: 'abba', expected: 'accept' },
@@ -79,8 +80,9 @@ describe('ExerciseVerificationPanel', () => {
         expect(screen.getByText('Equivalência DFA')).toBeInTheDocument();
         expect(screen.getByText('Traço de execução')).toBeInTheDocument();
         expect(screen.getByText('Objetivo: Modelar uma condição de sufixo em um AFD.')).toBeInTheDocument();
+        expect(screen.getByText('Ajuste a partir da última verificação')).toBeInTheDocument();
 
-        fireEvent.click(screen.getByRole('button', { name: /Mostrar pista/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Liberar pista 1/i }));
         fireEvent.click(screen.getByRole('button', { name: 'Estratégia' }));
         fireEvent.click(screen.getByRole('button', { name: 'Solução guiada' }));
         fireEvent.click(screen.getByRole('button', { name: 'Módulo 1 • Autômato Finito Determinístico' }));
@@ -101,6 +103,7 @@ describe('ExerciseVerificationPanel', () => {
         render(
             <ExerciseVerificationPanel
                 exercise={null}
+                solverMode="text"
                 hasTests={false}
                 tests={[]}
                 showExpected={false}

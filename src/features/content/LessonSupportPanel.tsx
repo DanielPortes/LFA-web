@@ -32,7 +32,7 @@ export const LessonSupportPanel: React.FC<LessonSupportPanelProps> = ({
                         {relatedExercises.map((exercise) => (
                             <article
                                 key={exercise.ref}
-                                className="rounded-2xl border border-status-info/20 bg-white/70 p-4 dark:bg-black/10"
+                                className="surface-soft-panel rounded-2xl border border-status-info/20 p-4 dark:bg-black/10"
                             >
                                 <div className="flex flex-wrap items-center gap-2">
                                     <span className="badge border-default bg-surface-muted text-secondary">
@@ -90,7 +90,7 @@ export const LessonSupportPanel: React.FC<LessonSupportPanelProps> = ({
                         {commonMistakes.map((mistake) => (
                             <article
                                 key={mistake.title}
-                                className="rounded-2xl border border-status-warning/30 bg-white/60 p-4 dark:bg-black/10"
+                                className="surface-soft-panel rounded-2xl border border-status-warning/30 p-4 dark:bg-black/10"
                             >
                                 <h3 className="text-sm font-bold text-primary">{mistake.title}</h3>
                                 <p className="mt-2 text-sm leading-relaxed text-secondary">{mistake.explanation}</p>

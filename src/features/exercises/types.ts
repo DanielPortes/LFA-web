@@ -4,6 +4,10 @@ export type SolverMode = 'automaton' | 'regex' | 'text' | 'grammar';
 export type ExerciseTestStatus = 'pass' | 'fail' | 'running';
 export type ExerciseEquivalenceStatus = 'pass' | 'fail' | null;
 
+export interface ExerciseSolverStartOptions {
+    initialAutomaton?: AutomatoData;
+}
+
 export interface CategoryConfig {
     id: string;
     label: string;

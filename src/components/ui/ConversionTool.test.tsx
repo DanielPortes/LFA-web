@@ -32,4 +32,20 @@ describe('ConversionTool', () => {
         // Check for Grammar placeholder
         expect(screen.getByPlaceholderText('S -> a S b | eps')).toBeInTheDocument();
     });
+
+    it('renderiza em portal para manter o overlay centralizado na viewport', () => {
+        const onClose = vi.fn();
+
+        render(
+            <div data-testid="transform-parent" style={{ transform: 'translateY(10px)' }}>
+                <ConversionTool isOpen={true} onClose={onClose} />
+            </div>
+        );
+
+        const title = screen.getByText('Conversor de Modelos');
+        const transformedParent = screen.getByTestId('transform-parent');
+
+        expect(transformedParent.contains(title)).toBe(false);
+        expect(title.closest('.overlay-backdrop')?.parentElement).toBe(document.body);
+    });
 });

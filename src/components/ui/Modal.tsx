@@ -1,5 +1,6 @@
 import React, { useEffect, useId, useState } from 'react';
 import { X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { useDialog } from '../../hooks/useDialog';
 import type { BaseProps, ModalBaseProps, WithChildren } from './types';
 
@@ -62,9 +63,9 @@ export const Modal: React.FC<ModalProps> = ({
         }
     }, [isOpen]);
 
-    if (!isVisible) return null;
+    if (!isVisible || typeof document === 'undefined') return null;
 
-    return (
+    return createPortal(
         <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 ${overlayClassName}`}>
             {/* Backdrop */}
             <div
@@ -112,6 +113,7 @@ export const Modal: React.FC<ModalProps> = ({
                     {children}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
