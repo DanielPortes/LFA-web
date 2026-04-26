@@ -1,6 +1,7 @@
 export * from './types';
 export * from './panels/GrammarWorkspace';
 export * from './components/AutomatonWorkspace';
+export * from './components/AutomatonSimulationWorkspace';
 export * from './components/GrammarWorkspaceShell';
 export * from './components/RegexImportCard';
 export * from './components/SimulationControlsDock';
