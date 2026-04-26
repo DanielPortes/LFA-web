@@ -31,7 +31,7 @@ describe('ContentPreviewModal', () => {
         expect(screen.getByRole('dialog', { name: 'Visualização AFD' })).toBeInTheDocument();
         expect(screen.getByRole('img', { name: 'Visualização ampliada do autômato AFD' })).toBeInTheDocument();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Abrir autômato no simulador principal' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Abrir autômato no laboratório interativo' }));
 
         expect(onSimulate).toHaveBeenCalledWith(automaton);
     });

@@ -25,6 +25,7 @@ export const ContentPreviewModal: React.FC<ContentPreviewModalProps> = ({
             <AutomatonViewer
                 data={automaton}
                 onOpenSimulator={onSimulate}
+                openSimulatorLabel="Abrir autômato no laboratório interativo"
             />
         )}
     </Modal>

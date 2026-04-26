@@ -8,6 +8,7 @@ import { PageAmbientBackground, TopNav } from './components/layout';
 import { useRouteState } from './features/navigation';
 
 import { HomeSection } from './pages/Home';
+import { cloneAutomaton } from './utils/cloneAutomaton';
 
 const ConteudoSection = lazy(async () => {
     const module = await import('./pages/Content');
@@ -28,13 +29,6 @@ const GrammarPage = lazy(async () => {
     const module = await import('./pages/Grammar');
     return { default: module.GrammarPage };
 });
-
-const cloneAutomaton = (data: AutomatoData): AutomatoData => {
-    if (typeof structuredClone === 'function') {
-        return structuredClone(data);
-    }
-    return JSON.parse(JSON.stringify(data)) as AutomatoData;
-};
 
 function MainApp() {
     const { route, updateRoute } = useRouteState();
@@ -192,7 +186,7 @@ function MainApp() {
                 <Suspense fallback={routeFallback}>
                     {route.tab === 'conteudo' && (
                         <ConteudoSection
-                            onSimulate={handleSimulationRequest}
+                            onOpenFullSimulator={handleSimulationRequest}
                             onOpenExercise={handleOpenExerciseFromContent}
                             initialModuleId={route.moduleId}
                             initialLessonId={route.lessonId}

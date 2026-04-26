@@ -8,6 +8,7 @@ interface AutomatonViewerProps {
     ariaLabel?: string;
     className?: string;
     onOpenSimulator?: (data: AutomatoData) => void;
+    openSimulatorLabel?: string;
 }
 
 export const AutomatonViewer: React.FC<AutomatonViewerProps> = ({
@@ -15,6 +16,7 @@ export const AutomatonViewer: React.FC<AutomatonViewerProps> = ({
     ariaLabel,
     className = '',
     onOpenSimulator,
+    openSimulatorLabel = 'Abrir autômato no simulador principal',
 }) => {
     const [zoom, setZoom] = useState(1);
 
@@ -58,7 +60,7 @@ export const AutomatonViewer: React.FC<AutomatonViewerProps> = ({
                             type="button"
                             onClick={() => onOpenSimulator(data)}
                             className="rounded-full p-2 text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
-                            aria-label="Abrir autômato no simulador principal"
+                            aria-label={openSimulatorLabel}
                         >
                             <ExternalLink size={16} />
                         </button>
