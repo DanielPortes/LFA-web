@@ -75,24 +75,29 @@ describe('ExerciseVerificationPanel', () => {
             />
         );
 
-        expect(screen.getByText('Casos de teste')).toBeInTheDocument();
+        expect(screen.getByText('Bateria de testes')).toBeInTheDocument();
         expect(screen.getByText('Primeiro erro')).toBeInTheDocument();
         expect(screen.getByText('Equivalência DFA')).toBeInTheDocument();
         expect(screen.getByText('Traço de execução')).toBeInTheDocument();
-        expect(screen.getByText('Objetivo: Modelar uma condição de sufixo em um AFD.')).toBeInTheDocument();
-        expect(screen.getByText('Ajuste a partir da última verificação')).toBeInTheDocument();
+        expect(screen.getByText('Ajuda opcional')).toBeInTheDocument();
+        expect(screen.queryByText(pedagogicalExercise.pergunta)).not.toBeInTheDocument();
+        expect(screen.queryByText('Observe apenas o último símbolo lido.')).not.toBeInTheDocument();
+        expect(screen.queryByText('Modelar uma condição de sufixo em um AFD.')).not.toBeInTheDocument();
 
+        fireEvent.click(screen.getByRole('button', { name: 'Dicas' }));
         fireEvent.click(screen.getByRole('button', { name: /Liberar pista 1/i }));
         fireEvent.click(screen.getByRole('button', { name: 'Estratégia' }));
         fireEvent.click(screen.getByRole('button', { name: 'Solução guiada' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Contexto e teoria' }));
         fireEvent.click(screen.getByRole('button', { name: 'Módulo 1 • Autômato Finito Determinístico' }));
         fireEvent.click(screen.getByRole('button', { name: /Mostrar esperado/i }));
-        fireEvent.click(screen.getByRole('button', { name: /Normal/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Modo animado/i }));
         fireEvent.click(screen.getByRole('button', { name: /Verificar solução/i }));
 
         expect(screen.getByText('Observe apenas o último símbolo lido.')).toBeInTheDocument();
         expect(screen.getByText('Modele a propriedade relevante como memória de um único símbolo.')).toBeInTheDocument();
         expect(screen.getByText('Escolha a memória mínima')).toBeInTheDocument();
+        expect(screen.getByText('Modelar uma condição de sufixo em um AFD.')).toBeInTheDocument();
         expect(onOpenTheory).toHaveBeenCalledWith('mod1', 'l1-def');
         expect(onToggleShowExpected).toHaveBeenCalledTimes(1);
         expect(onToggleFastVerify).toHaveBeenCalledTimes(1);

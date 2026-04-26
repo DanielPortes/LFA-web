@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UiSettingsProvider } from '../../hooks/UiSettingsContext';
 import { mockAnimationFrames, mockViewport } from '../../test/browserMocks';
@@ -94,7 +94,7 @@ describe('ExerciseSolverModal layout', () => {
         });
     });
 
-    it('reposiciona o chrome de ações abaixo do launcher do inspetor no modo autômato', () => {
+    it('permite recolher o painel de verificação sem desmontar o stage principal', () => {
         mockAnimationFrames();
         mockViewport({ width: 390, height: 844 });
 
@@ -104,7 +104,10 @@ describe('ExerciseSolverModal layout', () => {
             </UiSettingsProvider>
         );
 
-        expect(screen.getByTestId('exercise-solver-action-chrome').className).toContain('top-[4.75rem]');
-        expect(screen.getByTestId('exercise-solver-status-chrome').className).toContain('max-w-[calc(100%-6.5rem)]');
+        fireEvent.click(screen.getByRole('button', { name: 'Ocultar painel de verificação' }));
+
+        expect(screen.queryByTestId('exercise-verification-rail')).not.toBeInTheDocument();
+        expect(screen.getByTestId('solver-editor')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Abrir painel de verificação' })).toBeInTheDocument();
     });
 });

@@ -3,6 +3,7 @@ import {
     ArrowRightLeft,
     Brain,
     FileText,
+    LayoutPanelLeft,
     Pencil,
     Play,
     RotateCcw,
@@ -78,7 +79,7 @@ const exerciseLevelLabel = {
     dificil: 'Desafio'
 } as const;
 
-const floatingActionClassName = 'rounded-[18px] p-2.5 text-secondary transition-colors hover:bg-surface-hover hover:text-primary';
+const floatingActionClassName = 'rounded-[16px] p-2.5 text-secondary transition-colors hover:bg-surface-hover hover:text-primary';
 const stageFieldClassName = 'w-full rounded-[24px] border border-default bg-surface-1/92 px-4 py-3 text-primary shadow-inner outline-none ring-ios-blue/40 focus:ring-2';
 
 export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
@@ -131,22 +132,11 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
     const regexErrorId = useId();
     const grammarErrorId = useId();
     const [fitRequestToken, setFitRequestToken] = useState<number | undefined>(undefined);
+    const [verificationPanelOpen, setVerificationPanelOpen] = useState(true);
     const pendingAnswerFitRef = useRef(false);
     const titleText = `Exercício ${exerciseId}`;
     const isAutomatonMode = solverMode === 'automaton';
-    const stageMetrics = solverMode === 'automaton' && userAutomaton
-        ? `${userAutomaton.estados.length} estados • ${userAutomaton.transicoes.length} transições`
-        : solverMode === 'regex'
-            ? 'Expressão em edição'
-            : solverMode === 'grammar'
-                ? 'Gramática em edição'
-                : 'Resposta em elaboração';
-    const statusChromeClassName = isAutomatonMode
-        ? 'pointer-events-none absolute left-4 top-4 z-30 flex max-w-[calc(100%-6.5rem)] flex-col gap-2 sm:max-w-[calc(100%-7rem)] min-[1180px]:max-w-[460px]'
-        : 'pointer-events-none absolute left-4 top-4 z-30 flex max-w-[calc(100%-7rem)] flex-col gap-2 sm:max-w-[calc(100%-7.5rem)] min-[1180px]:max-w-[420px]';
-    const actionChromeClassName = isAutomatonMode
-        ? 'pointer-events-none absolute right-4 top-[4.75rem] z-30 sm:top-20'
-        : 'pointer-events-none absolute right-4 top-4 z-30';
+    const hasRunnableAutomaton = solverMode === 'automaton' && !!userAutomaton && userAutomaton.estados.length > 0;
 
     const handleLoadAnswerAutomaton = useCallback((data: AutomatoData) => {
         if (!onLoadAnswerAutomaton) return;
@@ -169,6 +159,11 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
         setFitRequestToken((current) => (current ?? 0) + 1);
     }, [isAutomatonMode, userAutomaton]);
 
+    useEffect(() => {
+        if (!isOpen) return;
+        setVerificationPanelOpen(true);
+    }, [exerciseId, isOpen, solverMode]);
+
     if (!exerciseId || !question) return null;
 
     return (
@@ -183,37 +178,47 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
             className="h-[min(92dvh,1024px)] min-h-[88dvh] w-[min(96vw,1440px)] max-w-none overflow-hidden rounded-[32px]"
         >
             <div className="flex h-full min-h-0 flex-col bg-app/30 p-3 sm:p-4 lg:p-5">
-                <div
-                    data-testid="exercise-solver-workspace"
-                    className="relative h-full min-h-0 overflow-hidden rounded-[28px] border border-default bg-canvas shadow-apple-xl"
-                >
-                    <div className="sr-only">
-                        <h3 id={titleId}>{titleText}</h3>
-                        <p id={descriptionId}>{question}</p>
-                    </div>
-
-                    <div data-testid="exercise-solver-status-chrome" className={statusChromeClassName}>
-                        <div className="pointer-events-auto glass-panel flex items-center gap-2 rounded-2xl border border-default bg-surface-1/95 px-3 py-2 shadow-apple-md">
-                            <div className="rounded-xl bg-ios-green/10 p-2 text-ios-green">
+                <div className="flex items-start justify-between gap-4 px-1 pb-3 sm:pb-4">
+                    <div className="min-w-0 max-w-4xl">
+                        <div className="flex items-start gap-3">
+                            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-default/70 bg-ios-green/10 text-ios-green">
                                 <Pencil size={16} />
                             </div>
-                            <span className="badge border-status-info bg-status-info-soft text-status-info">
-                                {titleText}
-                            </span>
-                            <span className="badge border-default bg-surface-muted text-secondary">
-                                {solverModeLabel[solverMode]}
-                            </span>
-                            <span className="badge border-default bg-surface-muted text-secondary">
-                                {exercise ? exerciseLevelLabel[exercise.nivel] : 'Exercício'}
-                            </span>
-                            <span className="hidden text-[11px] font-bold text-secondary sm:inline">
-                                {stageMetrics}
-                            </span>
+                            <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="ui-kicker-xs text-secondary">{titleText}</span>
+                                    <span className="rounded-full border border-default bg-surface-2/80 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-secondary">
+                                        {solverModeLabel[solverMode]}
+                                    </span>
+                                    <span className="rounded-full border border-default bg-surface-2/80 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-secondary">
+                                        {exercise ? exerciseLevelLabel[exercise.nivel] : 'Exercício'}
+                                    </span>
+                                </div>
+
+                                <h3 id={titleId} className="mt-2 text-xl font-bold text-primary sm:text-2xl">
+                                    {titleText}
+                                </h3>
+                                <p id={descriptionId} className="mt-1 max-w-4xl text-sm leading-relaxed text-secondary sm:text-[15px]">
+                                    {question}
+                                </p>
+                            </div>
                         </div>
                     </div>
 
-                    <div data-testid="exercise-solver-action-chrome" className={actionChromeClassName}>
-                        <div className="pointer-events-auto glass-panel flex items-center gap-1 rounded-[24px] border-default/80 bg-surface-1/92 p-2 shadow-apple-xl">
+                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                        {hasRunnableAutomaton && (
+                            <button
+                                type="button"
+                                onClick={() => onSimulate(userAutomaton)}
+                                className="flex items-center gap-2 rounded-[18px] bg-ios-blue px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-ios-blue/20 transition-colors hover:opacity-90"
+                                aria-label="Abrir autômato atual no simulador"
+                            >
+                                <Play size={16} fill="currentColor" />
+                                Abrir no simulador
+                            </button>
+                        )}
+
+                        <div className="glass-panel flex items-center gap-1 rounded-[20px] border-default/80 bg-surface-1/92 p-1.5 shadow-apple-lg">
                             <button
                                 onClick={onOpenConverter}
                                 className={floatingActionClassName}
@@ -222,16 +227,6 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                             >
                                 <ArrowRightLeft size={18} />
                             </button>
-                            {solverMode === 'automaton' && userAutomaton && userAutomaton.estados.length > 0 && (
-                                <button
-                                    onClick={() => onSimulate(userAutomaton)}
-                                    className={`${floatingActionClassName} text-ios-blue hover:text-ios-blue`}
-                                    title="Abrir no simulador"
-                                    aria-label="Abrir autômato atual no simulador"
-                                >
-                                    <Play size={18} />
-                                </button>
-                            )}
                             {solverMode === 'automaton' && isViewingAnswerAutomaton && hasSavedAttempt && (
                                 <button
                                     onClick={handleRestoreAttempt}
@@ -253,6 +248,16 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                                 </button>
                             )}
                             <button
+                                type="button"
+                                onClick={() => setVerificationPanelOpen((current) => !current)}
+                                className={floatingActionClassName}
+                                title={verificationPanelOpen ? 'Ocultar painel de verificação' : 'Abrir painel de verificação'}
+                                aria-label={verificationPanelOpen ? 'Ocultar painel de verificação' : 'Abrir painel de verificação'}
+                                aria-expanded={verificationPanelOpen}
+                            >
+                                <LayoutPanelLeft size={18} />
+                            </button>
+                            <button
                                 onClick={onClose}
                                 className={`${floatingActionClassName} text-status-danger hover:text-status-danger`}
                                 title="Fechar"
@@ -262,8 +267,19 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                             </button>
                         </div>
                     </div>
+                </div>
 
-                    <div className="grid h-full min-h-0 grid-rows-[minmax(0,1fr),auto] min-[1180px]:grid-cols-[minmax(0,1fr),360px] min-[1180px]:grid-rows-1">
+                <div
+                    data-testid="exercise-solver-workspace"
+                    className="relative h-full min-h-0 overflow-hidden rounded-[28px] border border-default bg-canvas shadow-apple-xl"
+                >
+                    <div
+                        className={`grid h-full min-h-0 grid-rows-[minmax(0,1fr),auto] ${
+                            verificationPanelOpen
+                                ? 'min-[1180px]:grid-cols-[minmax(0,1fr),360px]'
+                                : 'min-[1180px]:grid-cols-[minmax(0,1fr)]'
+                        } min-[1180px]:grid-rows-1`}
+                    >
                         <section
                             role="region"
                             aria-label="Área de resolução do exercício"
@@ -277,7 +293,7 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                                         onChange={onAutomatonChange}
                                         readOnly={false}
                                         compact={true}
-                                        compactVariant="solver"
+                                        compactVariant="workspace"
                                         fitRequestToken={fitRequestToken}
                                         sessionKey={editorSessionKey}
                                     />
@@ -285,7 +301,7 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                             )}
 
                             {solverMode === 'regex' && (
-                                <div className="h-full overflow-y-auto px-4 pb-6 pt-28 custom-scrollbar sm:px-6 sm:pt-32 lg:px-8 lg:pb-8">
+                                <div className="h-full overflow-y-auto px-4 pb-6 pt-6 custom-scrollbar sm:px-6 sm:pt-8 lg:px-8 lg:pb-8">
                                     <div className="mx-auto flex max-w-3xl flex-col gap-4">
                                         <div className="rounded-[24px] border border-default bg-surface-1/92 p-5 shadow-apple-sm">
                                             <div className="flex items-center gap-2 ui-kicker text-secondary">
@@ -323,7 +339,7 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                             )}
 
                             {solverMode === 'grammar' && (
-                                <div className="h-full overflow-y-auto px-4 pb-6 pt-28 custom-scrollbar sm:px-6 sm:pt-32 lg:px-8 lg:pb-8">
+                                <div className="h-full overflow-y-auto px-4 pb-6 pt-6 custom-scrollbar sm:px-6 sm:pt-8 lg:px-8 lg:pb-8">
                                     <div className="mx-auto flex max-w-4xl flex-col gap-4">
                                         <div className="rounded-[24px] border border-default bg-surface-1/92 p-5 shadow-apple-sm">
                                             <div className="flex items-center gap-2 ui-kicker text-secondary">
@@ -377,7 +393,7 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                             )}
 
                             {solverMode === 'text' && (
-                                <div className="h-full overflow-y-auto px-4 pb-6 pt-28 custom-scrollbar sm:px-6 sm:pt-32 lg:px-8 lg:pb-8">
+                                <div className="h-full overflow-y-auto px-4 pb-6 pt-6 custom-scrollbar sm:px-6 sm:pt-8 lg:px-8 lg:pb-8">
                                     <div className="mx-auto flex max-w-3xl flex-col gap-4">
                                         <div className="rounded-[24px] border border-default bg-surface-1/92 p-5 shadow-apple-sm">
                                             <div className="flex items-center gap-2 ui-kicker text-secondary">
@@ -409,28 +425,30 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                             )}
                         </section>
 
-                        <ExerciseVerificationPanel
-                            exercise={exercise}
-                            onLoadAnswerAutomaton={solverMode === 'automaton'
-                                ? handleLoadAnswerAutomaton
-                                : undefined}
-                            onOpenTheory={onOpenTheory}
-                            solverMode={solverMode}
-                            hasTests={hasTests}
-                            tests={tests}
-                            showExpected={showExpected}
-                            onToggleShowExpected={onToggleShowExpected}
-                            fastVerify={fastVerify}
-                            onToggleFastVerify={onToggleFastVerify}
-                            testResults={testResults}
-                            verifyDisabledReason={verifyDisabledReason}
-                            isVerifying={isVerifying}
-                            onVerify={onVerify}
-                            lastFailure={lastFailure}
-                            equivalenceStatus={equivalenceStatus}
-                            lastTrace={lastTrace}
-                            formatStateList={formatStateList}
-                        />
+                        {verificationPanelOpen && (
+                            <ExerciseVerificationPanel
+                                exercise={exercise}
+                                onLoadAnswerAutomaton={solverMode === 'automaton'
+                                    ? handleLoadAnswerAutomaton
+                                    : undefined}
+                                onOpenTheory={onOpenTheory}
+                                solverMode={solverMode}
+                                hasTests={hasTests}
+                                tests={tests}
+                                showExpected={showExpected}
+                                onToggleShowExpected={onToggleShowExpected}
+                                fastVerify={fastVerify}
+                                onToggleFastVerify={onToggleFastVerify}
+                                testResults={testResults}
+                                verifyDisabledReason={verifyDisabledReason}
+                                isVerifying={isVerifying}
+                                onVerify={onVerify}
+                                lastFailure={lastFailure}
+                                equivalenceStatus={equivalenceStatus}
+                                lastTrace={lastTrace}
+                                formatStateList={formatStateList}
+                            />
+                        )}
                     </div>
                 </div>
             </div>

@@ -174,6 +174,15 @@ describe('ExerciseSolverModal', () => {
         expect(screen.getByTestId('exercise-verification-rail')).toBeInTheDocument();
         expect(screen.getByTestId('solver-editor')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Verificar solução' })).toBeInTheDocument();
+        expect(screen.getAllByText('Construa um AFD para cadeias terminadas em a.')).toHaveLength(1);
+
+        const lastProps = automatonEditorMock.mock.calls.at(-1)?.[0] as {
+            compact?: boolean;
+            compactVariant?: string;
+        } | undefined;
+
+        expect(lastProps?.compact).toBe(true);
+        expect(lastProps?.compactVariant).toBe('workspace');
     });
 
     it('mostra textarea e árvore no modo gramática', () => {

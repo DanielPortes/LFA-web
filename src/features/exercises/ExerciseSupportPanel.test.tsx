@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { Exercicio } from '../../types';
 import { ExerciseSupportPanel } from './ExerciseSupportPanel';
@@ -43,7 +43,8 @@ describe('ExerciseSupportPanel', () => {
             />
         );
 
-        expect(screen.queryByText('Revise primeiro')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Erros comuns' })).toBeInTheDocument();
+        expect(screen.queryByText('Revisar')).not.toBeInTheDocument();
     });
 
     it('destaca o erro comum correspondente quando há diagnóstico compatível', () => {
@@ -59,7 +60,21 @@ describe('ExerciseSupportPanel', () => {
             />
         );
 
-        expect(screen.getByText('Revise primeiro')).toBeInTheDocument();
+        expect(screen.getByText('Revisar')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Erros comuns' }));
+
         expect(screen.getByText('Ignorar estado de erro')).toBeInTheDocument();
+        expect(screen.getByText('Revise primeiro')).toBeInTheDocument();
+    });
+
+    it('mantém contexto e teoria recolhidos por padrão', () => {
+        render(<ExerciseSupportPanel exercise={exercise} />);
+
+        expect(screen.queryByText('Relacionar sufixo e memória de estado.')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Contexto e teoria' }));
+
+        expect(screen.getByText('Relacionar sufixo e memória de estado.')).toBeInTheDocument();
     });
 });

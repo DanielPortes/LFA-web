@@ -7,7 +7,7 @@ import {
     CheckCircle2,
     ChevronDown,
     Lightbulb,
-    Play
+    Play,
 } from 'lucide-react';
 import { resolveTheoryRefs } from '../../data/learningConnections';
 import { AutomatonPreview } from '../../components/automaton/AutomatonPreview';
@@ -22,18 +22,84 @@ interface ExerciseSupportPanelProps {
     equivalenceStatus?: ExerciseEquivalenceStatus;
 }
 
+interface SupportSectionProps {
+    title: string;
+    subtitle: string;
+    badge?: string;
+    icon: React.ReactNode;
+    iconClassName: string;
+    isOpen: boolean;
+    onToggle: () => void;
+    children: React.ReactNode;
+}
+
 const recommendationLabel = {
     required: 'Obrigatório',
     recommended: 'Recomendado',
-    challenge: 'Desafio'
+    challenge: 'Desafio',
 } as const;
+
+const patternLabel: Record<string, string> = {
+    construction: 'Construção',
+};
+
+const sectionBodyClassName = 'border-t border-default/60 px-4 py-4';
+
+const SupportSection: React.FC<SupportSectionProps> = ({
+    title,
+    subtitle,
+    badge,
+    icon,
+    iconClassName,
+    isOpen,
+    onToggle,
+    children,
+}) => (
+    <section className="border-t border-default/60 first:border-t-0">
+        <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={isOpen}
+            aria-label={title}
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-1/40"
+        >
+            <div className="flex min-w-0 items-center gap-3">
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-default/70 bg-surface-1/80 ${iconClassName}`}>
+                    {icon}
+                </div>
+                <div className="min-w-0">
+                    <p className="text-sm font-semibold text-primary">{title}</p>
+                    <p className="text-xs leading-relaxed text-secondary">{subtitle}</p>
+                </div>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2">
+                {badge && (
+                    <span className="surface-chip rounded-full border border-default px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-secondary dark:bg-black/10">
+                        {badge}
+                    </span>
+                )}
+                <ChevronDown
+                    size={16}
+                    className={`text-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                />
+            </div>
+        </button>
+
+        {isOpen && (
+            <div className={sectionBodyClassName}>
+                {children}
+            </div>
+        )}
+    </section>
+);
 
 export const ExerciseSupportPanel: React.FC<ExerciseSupportPanelProps> = ({
     exercise,
     onLoadAnswerAutomaton,
     onOpenTheory,
     lastFailure = null,
-    equivalenceStatus = null
+    equivalenceStatus = null,
 }) => {
     const normalizedHints = useMemo<ExerciseHint[]>(() => {
         if (!exercise) return [];
@@ -44,25 +110,25 @@ export const ExerciseSupportPanel: React.FC<ExerciseSupportPanelProps> = ({
             return [{
                 id: `exercise-${exercise.id}-legacy-hint`,
                 level: 1,
-                text: exercise.dica
+                text: exercise.dica,
             }];
         }
         return [];
     }, [exercise]);
 
-    const [revealedHintCount, setRevealedHintCount] = useState(0);
-    const [showStrategy, setShowStrategy] = useState(false);
-    const [showGuidedSolution, setShowGuidedSolution] = useState(false);
-    const [showFinalAnswer, setShowFinalAnswer] = useState(false);
     const relatedTheory = useMemo(
         () => resolveTheoryRefs(exercise?.metadata?.theoryRefs),
         [exercise?.metadata?.theoryRefs]
     );
-    const hasFailureContext = Boolean(lastFailure) || equivalenceStatus === 'fail';
-    const nextHint = normalizedHints[revealedHintCount] ?? null;
-    const hintProgressLabel = normalizedHints.length > 0
-        ? `${revealedHintCount}/${normalizedHints.length} pistas abertas`
-        : 'Sem pistas graduais';
+
+    const [revealedHintCount, setRevealedHintCount] = useState(0);
+    const [showHints, setShowHints] = useState(false);
+    const [showStrategy, setShowStrategy] = useState(false);
+    const [showContext, setShowContext] = useState(false);
+    const [showMistakes, setShowMistakes] = useState(false);
+    const [showGuidedSolution, setShowGuidedSolution] = useState(false);
+    const [showFinalAnswer, setShowFinalAnswer] = useState(false);
+
     const highlightedMistakeId = useMemo(() => {
         if (!lastFailure || !exercise?.commonMistakes || exercise.commonMistakes.length === 0) {
             return null;
@@ -72,7 +138,7 @@ export const ExerciseSupportPanel: React.FC<ExerciseSupportPanelProps> = ({
             lastFailure.input,
             lastFailure.expected,
             lastFailure.received,
-            lastFailure.reason ?? ''
+            lastFailure.reason ?? '',
         ].join(' ').toLowerCase();
 
         const matchedMistake = exercise.commonMistakes.find((mistake) => (
@@ -83,54 +149,52 @@ export const ExerciseSupportPanel: React.FC<ExerciseSupportPanelProps> = ({
 
         return matchedMistake?.id ?? null;
     }, [exercise?.commonMistakes, lastFailure]);
-    const currentGuidance = useMemo(() => {
+
+    const supportSummary = useMemo(() => {
         if (lastFailure) {
             return {
-                kicker: 'Foco de correção',
-                title: 'Ajuste a partir da última verificação',
-                description: lastFailure.reason
-                    ?? `Na entrada "${lastFailure.input}", sua solução retornou ${lastFailure.received}, mas o esperado era ${lastFailure.expected}.`,
-                accentClassName: 'text-status-danger',
-                panelClassName: 'border-status-danger/30 bg-status-danger-soft/55'
+                title: 'Ajuda para o erro atual',
+                description: 'O primeiro erro já foi destacado na verificação. Se precisar destravar, abra as dicas ou revise os erros comuns abaixo.',
+                className: 'border-status-danger/25 bg-status-danger-soft/45 text-status-danger',
             };
         }
 
         if (equivalenceStatus === 'fail') {
             return {
-                kicker: 'Refinamento estrutural',
-                title: 'Os testes podem passar e o modelo ainda divergir',
-                description: 'Revise os estados e a cobertura de transições. A estrutura geral ainda difere do gabarito esperado.',
-                accentClassName: 'text-status-warning',
-                panelClassName: 'border-status-warning/30 bg-status-warning-soft/55'
+                title: 'Revise a estrutura',
+                description: 'Os testes não garantem equivalência por si só. Use estratégia, teoria e erros comuns para revisar a estrutura do modelo.',
+                className: 'border-status-warning/25 bg-status-warning-soft/45 text-status-warning',
             };
         }
 
         if (revealedHintCount > 0) {
             return {
-                kicker: 'Próximo passo',
-                title: `Pista ${revealedHintCount} revelada`,
-                description: nextHint
-                    ? `A próxima ajuda disponível é a pista ${nextHint.level}. Tente aplicar a pista atual antes de liberar a seguinte.`
-                    : 'Você já abriu todas as pistas graduais. Se ainda estiver travado, avance para a estratégia ou para a solução guiada.',
-                accentClassName: 'text-ios-blue',
-                panelClassName: 'border-status-info/30 bg-status-info-soft/55'
+                title: 'Pista ativa',
+                description: `Você já abriu ${revealedHintCount} pista(s). Tente aplicar a dica atual antes de revelar a próxima.`,
+                className: 'border-status-info/25 bg-status-info-soft/45 text-status-info',
             };
         }
 
-        return {
-            kicker: 'Rota recomendada',
-            title: 'Valide primeiro, peça ajuda depois',
-            description: normalizedHints.length > 0
-                ? 'Monte uma primeira tentativa, rode a verificação e use a próxima pista apenas se precisar destravar o raciocínio.'
-                : 'Comece pela sua tentativa e use a estratégia ou o gabarito apenas como apoio final.',
-            accentClassName: 'text-secondary',
-            panelClassName: 'border-default bg-surface-2/95'
-        };
-    }, [equivalenceStatus, lastFailure, nextHint, normalizedHints.length, revealedHintCount]);
+        return null;
+    }, [equivalenceStatus, lastFailure, revealedHintCount]);
+
+    const nextHint = normalizedHints[revealedHintCount] ?? null;
+    const metadataBadges = useMemo(() => {
+        if (!exercise?.metadata) return [];
+
+        const badges = [patternLabel[exercise.metadata.pattern] ?? exercise.metadata.pattern];
+        if (exercise.metadata.recommendation) {
+            badges.push(recommendationLabel[exercise.metadata.recommendation]);
+        }
+        return badges;
+    }, [exercise?.metadata]);
 
     useEffect(() => {
         setRevealedHintCount(0);
+        setShowHints(false);
         setShowStrategy(false);
+        setShowContext(false);
+        setShowMistakes(false);
         setShowGuidedSolution(false);
         setShowFinalAnswer(false);
     }, [exercise?.id]);
@@ -152,353 +216,293 @@ export const ExerciseSupportPanel: React.FC<ExerciseSupportPanelProps> = ({
     }
 
     return (
-        <section className="space-y-4">
-            <div className={`rounded-[24px] border p-4 ${currentGuidance.panelClassName}`}>
+        <section className="rounded-[22px] border border-default/70 bg-surface-2/80">
+            <div className="px-4 py-4">
                 <div className="flex items-start justify-between gap-3">
                     <div>
-                        <div className={`ui-kicker ${currentGuidance.accentClassName}`}>{currentGuidance.kicker}</div>
-                        <h3 className="mt-2 text-sm font-bold text-primary">{currentGuidance.title}</h3>
-                        <p className="mt-2 text-sm leading-relaxed text-secondary">{currentGuidance.description}</p>
+                        <div className="ui-kicker text-secondary">Ajuda opcional</div>
+                        <p className="mt-1 text-sm font-semibold text-primary">Abra só o que precisar</p>
+                        <p className="mt-1 text-xs leading-relaxed text-secondary">
+                            Estratégia, teoria e gabarito ficam recolhidos por padrão para manter o foco na verificação.
+                        </p>
                     </div>
-                    <div className={`surface-chip rounded-2xl border px-3 py-2 text-[11px] font-black uppercase tracking-[0.18em] ${
-                        hasFailureContext
-                            ? 'border-status-danger/20 text-status-danger dark:bg-black/10'
-                            : 'border-default text-secondary dark:bg-black/10'
-                    }`}>
-                        {hintProgressLabel}
-                    </div>
+                    {normalizedHints.length > 0 && (
+                        <span className="surface-chip rounded-full border border-default px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-secondary dark:bg-black/10">
+                            {revealedHintCount}/{normalizedHints.length} pistas
+                        </span>
+                    )}
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-2">
-                    {nextHint && (
-                        <button
-                            type="button"
-                            onClick={() => setRevealedHintCount((current) => Math.min(current + 1, normalizedHints.length))}
-                            className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
-                                hasFailureContext
-                                    ? 'bg-status-danger text-white hover:opacity-90'
-                                    : 'bg-ios-blue text-white hover:opacity-90'
-                            }`}
-                        >
-                            {revealedHintCount === 0 ? `Liberar pista ${nextHint.level}` : `Liberar pista ${nextHint.level}`}
-                        </button>
-                    )}
-                    {revealedHintCount > 0 && (
-                        <button
-                            type="button"
-                            onClick={() => setRevealedHintCount(0)}
-                            className="surface-chip rounded-full border border-default px-3 py-1.5 text-xs font-bold text-secondary transition-colors hover:text-primary dark:bg-black/10"
-                        >
-                            Recolher pistas
-                        </button>
-                    )}
-                    {exercise.estrategia && !showStrategy && (
-                        <button
-                            type="button"
-                            onClick={() => setShowStrategy(true)}
-                            className="surface-chip rounded-full border border-default px-3 py-1.5 text-xs font-bold text-secondary transition-colors hover:text-primary dark:bg-black/10"
-                        >
-                            Abrir estratégia
-                        </button>
-                    )}
-                </div>
+                {supportSummary && (
+                    <div className={`mt-3 rounded-[18px] border px-3 py-3 ${supportSummary.className}`}>
+                        <p className="text-xs font-black uppercase tracking-[0.16em]">{supportSummary.title}</p>
+                        <p className="mt-1 text-xs leading-relaxed">{supportSummary.description}</p>
+                    </div>
+                )}
             </div>
 
-            {exercise.metadata && (
-                <div className="rounded-[24px] border border-default bg-surface-2/95 p-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <span className="badge border-status-info bg-status-info-soft text-status-info">
-                            {exercise.metadata.pattern}
-                        </span>
-                        {exercise.metadata.recommendation && (
-                            <span className="badge border-default bg-surface-muted text-secondary">
-                                {recommendationLabel[exercise.metadata.recommendation]}
-                            </span>
-                        )}
-                    </div>
+            {normalizedHints.length > 0 && (
+                <SupportSection
+                    title="Dicas"
+                    subtitle="Libere uma pista por vez."
+                    badge={`${revealedHintCount}/${normalizedHints.length}`}
+                    icon={<Lightbulb size={16} />}
+                    iconClassName="text-status-warning"
+                    isOpen={showHints}
+                    onToggle={() => setShowHints((current) => !current)}
+                >
+                    <div className="space-y-3">
+                        <div className="flex flex-wrap gap-2">
+                            {nextHint && (
+                                <button
+                                    type="button"
+                                    onClick={() => setRevealedHintCount((current) => Math.min(current + 1, normalizedHints.length))}
+                                    className="rounded-full bg-ios-blue px-3 py-1.5 text-xs font-bold text-white transition-colors hover:opacity-90"
+                                >
+                                    Liberar pista {nextHint.level}
+                                </button>
+                            )}
+                            {revealedHintCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => setRevealedHintCount(0)}
+                                    className="surface-chip rounded-full border border-default px-3 py-1.5 text-xs font-bold text-secondary transition-colors hover:text-primary dark:bg-black/10"
+                                >
+                                    Recolher pistas
+                                </button>
+                            )}
+                        </div>
 
-                    <p className="mt-3 text-sm font-semibold text-primary">
-                        Objetivo: {exercise.metadata.learningGoal}
-                    </p>
-
-                    {exercise.metadata.prerequisites && exercise.metadata.prerequisites.length > 0 && (
-                        <div className="mt-3">
-                            <p className="ui-kicker text-secondary">Pré-requisitos</p>
-                            <div className="mt-2 flex flex-wrap gap-2">
-                                {exercise.metadata.prerequisites.map((prerequisite) => (
-                                    <span key={prerequisite} className="badge border-default bg-surface-muted text-secondary">
-                                        {prerequisite}
-                                    </span>
+                        {revealedHintCount === 0 ? (
+                            <p className="text-sm leading-relaxed text-secondary">
+                                Nenhuma pista aberta ainda. Tente verificar sua solução antes de pedir ajuda.
+                            </p>
+                        ) : (
+                            <div className="space-y-2">
+                                {normalizedHints.slice(0, revealedHintCount).map((hint) => (
+                                    <div key={hint.id} className="rounded-[18px] border border-status-warning/20 bg-status-warning-soft/35 px-3 py-3">
+                                        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-status-warning">
+                                            Pista {hint.level}
+                                        </p>
+                                        <p className="mt-2 text-sm leading-relaxed text-primary">{hint.text}</p>
+                                    </div>
                                 ))}
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {exercise.metadata.theoryRefs && exercise.metadata.theoryRefs.length > 0 && (
-                        <div className="mt-3">
-                            <div className="flex items-center gap-2 text-ios-indigo">
-                                <BookOpen size={14} />
-                                <p className="ui-kicker">Trilha associada</p>
-                            </div>
-                            <div className="mt-2 flex flex-wrap gap-2">
-                                {exercise.metadata.theoryRefs.map((reference) => {
-                                    const resolvedReference = relatedTheory.find((item) => item.ref === reference);
-
-                                    if (resolvedReference && onOpenTheory) {
-                                        return (
-                                            <button
-                                                key={reference}
-                                                type="button"
-                                                onClick={() => onOpenTheory(resolvedReference.moduleId, resolvedReference.lessonId)}
-                                                className="badge border-status-info bg-status-info-soft text-status-info transition-colors hover:bg-ios-blue hover:text-white"
-                                            >
-                                                {resolvedReference.label}
-                                            </button>
-                                        );
-                                    }
-
-                                    return (
-                                        <span key={reference} className="badge border-default bg-surface-muted text-secondary">
-                                            {reference}
-                                        </span>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {normalizedHints.length > 0 && (
-                <div className="rounded-[24px] border border-status-warning/35 bg-status-warning-soft/55 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2 text-status-warning">
-                            <Lightbulb size={16} />
-                            <p className="ui-kicker">Pistas graduais</p>
-                        </div>
-                        <div className="surface-chip rounded-full border border-status-warning/25 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-status-warning dark:bg-black/10">
-                            {hasFailureContext && nextHint ? `Priorize a pista ${nextHint.level}` : hintProgressLabel}
-                        </div>
+                        {nextHint && (
+                            <p className="text-xs leading-relaxed text-secondary">
+                                Próxima pista disponível: {nextHint.level}.
+                            </p>
+                        )}
                     </div>
-
-                    <div className="mt-4 space-y-3">
-                        {normalizedHints.map((hint, index) => {
-                            const isRevealed = index < revealedHintCount;
-                            const isNext = index === revealedHintCount && revealedHintCount < normalizedHints.length;
-
-                            return (
-                                <div
-                                    key={hint.id}
-                                    className={`rounded-[22px] border p-4 transition-colors ${
-                                        isRevealed
-                                            ? 'surface-soft-panel border-status-warning/25 dark:bg-black/10'
-                                            : isNext
-                                                ? 'border-status-warning/20 bg-status-warning-soft/40'
-                                                : 'surface-soft-panel border-status-warning/10 opacity-80 dark:bg-black/5'
-                                    }`}
-                                >
-                                    <div className="flex items-start gap-3">
-                                        <div className={`mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full border text-[11px] font-black ${
-                                            isRevealed
-                                                ? 'border-status-warning/40 bg-status-warning-soft text-status-warning'
-                                                : isNext
-                                                    ? 'surface-chip border-status-warning/25 text-status-warning dark:bg-black/10'
-                                                    : 'border-status-warning/15 bg-transparent text-status-warning/70'
-                                        }`}>
-                                            {hint.level}
-                                        </div>
-
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-status-warning">
-                                                    Pista {hint.level}
-                                                </p>
-                                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] ${
-                                                    isRevealed
-                                                        ? 'bg-status-warning-soft text-status-warning'
-                                                        : isNext
-                                                            ? 'surface-chip text-status-warning dark:bg-black/10'
-                                                            : 'bg-transparent text-status-warning/70'
-                                                }`}>
-                                                    {isRevealed ? 'Revelada' : isNext ? (hasFailureContext ? 'Recomendada agora' : 'Disponível') : 'Bloqueada'}
-                                                </span>
-                                            </div>
-
-                                            {isRevealed ? (
-                                                <p className="mt-2 text-sm leading-relaxed text-primary">{hint.text}</p>
-                                            ) : isNext ? (
-                                                <p className="mt-2 text-sm leading-relaxed text-secondary">
-                                                    {hasFailureContext
-                                                        ? 'A última falha já aponta que esta é a próxima pista mais útil para ajustar sua solução.'
-                                                        : 'Libere esta pista somente se a tentativa atual já estiver no limite do que você consegue inferir sozinho.'}
-                                                </p>
-                                            ) : (
-                                                <p className="mt-2 text-sm leading-relaxed text-secondary">
-                                                    Mantenha esta pista bloqueada por enquanto para preservar a progressão do exercício.
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
+                </SupportSection>
             )}
 
             {exercise.estrategia && (
-                <div className="rounded-[24px] border border-default bg-surface-2/95 p-4">
-                    <button
-                        type="button"
-                        onClick={() => setShowStrategy((current) => !current)}
-                        className="flex w-full items-center justify-between gap-3 text-left"
-                    >
-                        <div className="flex items-center gap-2 text-ios-blue">
-                            <Brain size={16} />
-                            <p className="ui-kicker">Estratégia</p>
-                        </div>
-                        <ChevronDown
-                            size={16}
-                            className={`text-secondary transition-transform ${showStrategy ? 'rotate-180' : ''}`}
-                        />
-                    </button>
-
-                    {showStrategy && (
-                        <p className="mt-3 text-sm leading-relaxed text-primary">{exercise.estrategia}</p>
-                    )}
-                </div>
+                <SupportSection
+                    title="Estratégia"
+                    subtitle="Resumo curto do caminho recomendado."
+                    icon={<Brain size={16} />}
+                    iconClassName="text-ios-blue"
+                    isOpen={showStrategy}
+                    onToggle={() => setShowStrategy((current) => !current)}
+                >
+                    <p className="text-sm leading-relaxed text-primary">{exercise.estrategia}</p>
+                </SupportSection>
             )}
 
-            {exercise.guidedSolution && exercise.guidedSolution.length > 0 && (
-                <div className="rounded-[24px] border border-default bg-surface-2/95 p-4">
-                    <button
-                        type="button"
-                        onClick={() => setShowGuidedSolution((current) => !current)}
-                        className="flex w-full items-center justify-between gap-3 text-left"
-                    >
-                        <div className="flex items-center gap-2 text-ios-green">
-                            <ArrowRight size={16} />
-                            <p className="ui-kicker">Solução guiada</p>
-                        </div>
-                        <ChevronDown
-                            size={16}
-                            className={`text-secondary transition-transform ${showGuidedSolution ? 'rotate-180' : ''}`}
-                        />
-                    </button>
+            {exercise.metadata && (
+                <SupportSection
+                    title="Contexto e teoria"
+                    subtitle="Objetivo, pré-requisitos e trilha relacionada."
+                    badge={relatedTheory.length > 0 ? `${relatedTheory.length} links` : undefined}
+                    icon={<BookOpen size={16} />}
+                    iconClassName="text-ios-indigo"
+                    isOpen={showContext}
+                    onToggle={() => setShowContext((current) => !current)}
+                >
+                    <div className="space-y-4">
+                        {metadataBadges.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {metadataBadges.map((badge) => (
+                                    <span key={badge} className="badge border-default bg-surface-muted text-secondary">
+                                        {badge}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
 
-                    {showGuidedSolution && (
-                        <div className="mt-4 space-y-3">
-                            {exercise.guidedSolution.map((step, index) => (
-                                <div key={step.id} className="surface-soft-panel rounded-[22px] border border-default p-4 dark:bg-black/10">
-                                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-ios-green">
-                                        Etapa {index + 1}
-                                    </p>
-                                    <h3 className="mt-2 text-sm font-bold text-primary">{step.title}</h3>
-                                    <p className="mt-2 text-sm leading-relaxed text-secondary">{step.explanation}</p>
-                                    {step.expectedStudentAction && (
-                                        <p className="mt-3 text-sm font-medium leading-relaxed text-primary">
-                                            Ação esperada: {step.expectedStudentAction}
-                                        </p>
-                                    )}
-                                    {step.checkpointQuestion && (
-                                        <p className="mt-3 text-sm font-medium leading-relaxed text-ios-blue">
-                                            Checkpoint: {step.checkpointQuestion}
-                                        </p>
-                                    )}
+                        {exercise.metadata?.learningGoal && (
+                            <div>
+                                <p className="ui-kicker text-secondary">Objetivo</p>
+                                <p className="mt-1 text-sm leading-relaxed text-primary">
+                                    {exercise.metadata.learningGoal}
+                                </p>
+                            </div>
+                        )}
+
+                        {exercise.metadata?.prerequisites && exercise.metadata.prerequisites.length > 0 && (
+                            <div>
+                                <p className="ui-kicker text-secondary">Pré-requisitos</p>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {exercise.metadata.prerequisites.map((prerequisite) => (
+                                        <span key={prerequisite} className="badge border-default bg-surface-muted text-secondary">
+                                            {prerequisite}
+                                        </span>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
+                            </div>
+                        )}
 
-            {exercise.commonMistakes && exercise.commonMistakes.length > 0 && (
-                <div className="rounded-[24px] border border-status-danger/35 bg-status-danger-soft/50 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2 text-status-danger">
-                            <AlertTriangle size={16} />
-                            <p className="ui-kicker">Erros comuns</p>
-                        </div>
-                        {highlightedMistakeId && (
-                            <div className="surface-chip rounded-full border border-status-danger/20 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-status-danger dark:bg-black/10">
-                                Revise primeiro
+                        {exercise.metadata?.theoryRefs && exercise.metadata.theoryRefs.length > 0 && (
+                            <div>
+                                <p className="ui-kicker text-secondary">Trilha associada</p>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {exercise.metadata.theoryRefs.map((reference) => {
+                                        const resolvedReference = relatedTheory.find((item) => item.ref === reference);
+
+                                        if (resolvedReference && onOpenTheory) {
+                                            return (
+                                                <button
+                                                    key={reference}
+                                                    type="button"
+                                                    onClick={() => onOpenTheory(resolvedReference.moduleId, resolvedReference.lessonId)}
+                                                    className="badge border-status-info bg-status-info-soft text-status-info transition-colors hover:bg-ios-blue hover:text-white"
+                                                >
+                                                    {resolvedReference.label}
+                                                </button>
+                                            );
+                                        }
+
+                                        return (
+                                            <span key={reference} className="badge border-default bg-surface-muted text-secondary">
+                                                {resolvedReference?.label ?? reference}
+                                            </span>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         )}
                     </div>
-                    <div className="mt-4 space-y-3">
+                </SupportSection>
+            )}
+
+            {exercise.commonMistakes && exercise.commonMistakes.length > 0 && (
+                <SupportSection
+                    title="Erros comuns"
+                    subtitle="Pontos para revisar quando algo falhar."
+                    badge={highlightedMistakeId ? 'Revisar' : undefined}
+                    icon={<AlertTriangle size={16} />}
+                    iconClassName="text-status-danger"
+                    isOpen={showMistakes}
+                    onToggle={() => setShowMistakes((current) => !current)}
+                >
+                    <div className="space-y-3">
                         {exercise.commonMistakes.map((mistake) => (
                             <div
                                 key={mistake.id}
-                                className={`surface-soft-panel rounded-[22px] border p-4 dark:bg-black/10 ${
+                                className={`rounded-[18px] border px-3 py-3 ${
                                     highlightedMistakeId === mistake.id
-                                        ? 'border-status-danger/35 shadow-[0_0_0_1px_rgba(255,59,48,0.12)]'
-                                        : 'border-status-danger/20'
+                                        ? 'border-status-danger/30 bg-status-danger-soft/45'
+                                        : 'border-default/70 bg-surface-1/65'
                                 }`}
                             >
-                                <h3 className="text-sm font-bold text-primary">{mistake.title}</h3>
+                                <div className="flex items-start justify-between gap-3">
+                                    <p className="text-sm font-semibold text-primary">{mistake.title}</p>
+                                    {highlightedMistakeId === mistake.id && (
+                                        <span className="surface-chip rounded-full border border-status-danger/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-status-danger dark:bg-black/10">
+                                            Revise primeiro
+                                        </span>
+                                    )}
+                                </div>
                                 <p className="mt-2 text-sm leading-relaxed text-secondary">{mistake.symptom}</p>
-                                <p className="mt-3 text-sm font-medium leading-relaxed text-primary">
+                                <p className="mt-3 text-sm leading-relaxed text-primary">
                                     Como corrigir: {mistake.correction}
                                 </p>
                             </div>
                         ))}
                     </div>
-                </div>
+                </SupportSection>
+            )}
+
+            {exercise.guidedSolution && exercise.guidedSolution.length > 0 && (
+                <SupportSection
+                    title="Solução guiada"
+                    subtitle="Etapas comentadas para comparar com a sua linha de raciocínio."
+                    badge={`${exercise.guidedSolution.length} etapas`}
+                    icon={<ArrowRight size={16} />}
+                    iconClassName="text-ios-green"
+                    isOpen={showGuidedSolution}
+                    onToggle={() => setShowGuidedSolution((current) => !current)}
+                >
+                    <div className="space-y-3">
+                        {exercise.guidedSolution.map((step, index) => (
+                            <div key={step.id} className="rounded-[18px] border border-default/70 bg-surface-1/65 px-3 py-3">
+                                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-ios-green">
+                                    Etapa {index + 1}
+                                </p>
+                                <h3 className="mt-2 text-sm font-semibold text-primary">{step.title}</h3>
+                                <p className="mt-2 text-sm leading-relaxed text-secondary">{step.explanation}</p>
+                                {step.expectedStudentAction && (
+                                    <p className="mt-3 text-sm leading-relaxed text-primary">
+                                        Ação esperada: {step.expectedStudentAction}
+                                    </p>
+                                )}
+                                {step.checkpointQuestion && (
+                                    <p className="mt-3 text-sm leading-relaxed text-ios-blue">
+                                        Checkpoint: {step.checkpointQuestion}
+                                    </p>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </SupportSection>
             )}
 
             {(exercise.respostaTexto || exercise.respostaAutomato) && (
-                <div className="rounded-[24px] border border-default bg-surface-2/95 p-4">
-                    <button
-                        type="button"
-                        onClick={() => setShowFinalAnswer((current) => !current)}
-                        className="flex w-full items-center justify-between gap-3 text-left"
-                    >
-                        <div className="flex items-center gap-2 text-ios-indigo">
-                            <CheckCircle2 size={16} />
-                            <p className="ui-kicker">Gabarito final</p>
-                        </div>
-                        <ChevronDown
-                            size={16}
-                            className={`text-secondary transition-transform ${showFinalAnswer ? 'rotate-180' : ''}`}
-                        />
-                    </button>
+                <SupportSection
+                    title="Gabarito final"
+                    subtitle="Abra apenas para comparar com a sua solução."
+                    icon={<CheckCircle2 size={16} />}
+                    iconClassName="text-ios-indigo"
+                    isOpen={showFinalAnswer}
+                    onToggle={() => setShowFinalAnswer((current) => !current)}
+                >
+                    <div className="space-y-4">
+                        {exercise.respostaTexto && (
+                            <div className="rounded-[18px] border border-default/70 bg-surface-1/65 px-3 py-3">
+                                <p className="whitespace-pre-line text-sm font-mono leading-relaxed text-primary">
+                                    {exercise.respostaTexto}
+                                </p>
+                            </div>
+                        )}
 
-                    {showFinalAnswer && (
-                        <div className="mt-4 space-y-4">
-                            {exercise.respostaTexto && (
-                                <div className="surface-soft-panel rounded-[22px] border border-default p-4 dark:bg-black/10">
-                                    <p className="whitespace-pre-line text-sm font-mono leading-relaxed text-primary">
-                                        {exercise.respostaTexto}
-                                    </p>
+                        {exercise.respostaAutomato && (
+                            <div className="rounded-[18px] border border-default/70 bg-surface-1/65 px-3 py-3">
+                                <div className="mb-3 flex items-center justify-between gap-3">
+                                    <p className="text-sm font-semibold text-primary">Gabarito visual</p>
+                                    {onLoadAnswerAutomaton && (
+                                        <button
+                                            type="button"
+                                            onClick={() => onLoadAnswerAutomaton(exercise.respostaAutomato!)}
+                                            className="flex items-center gap-2 rounded-full bg-status-info-soft px-3 py-1.5 text-xs font-bold text-status-info transition-colors hover:bg-ios-blue hover:text-white"
+                                        >
+                                            <Play size={12} fill="currentColor" />
+                                            Carregar no canvas
+                                        </button>
+                                    )}
                                 </div>
-                            )}
-
-                            {exercise.respostaAutomato && (
-                                <div className="surface-soft-panel rounded-[22px] border border-default p-4 dark:bg-black/10">
-                                    <div className="mb-3 flex items-center justify-between gap-3">
-                                        <p className="text-sm font-semibold text-primary">Gabarito visual</p>
-                                        {onLoadAnswerAutomaton && (
-                                            <button
-                                                type="button"
-                                                onClick={() => onLoadAnswerAutomaton(exercise.respostaAutomato!)}
-                                                className="flex items-center gap-2 rounded-full bg-status-info-soft px-3 py-1.5 text-xs font-bold text-status-info transition-colors hover:bg-ios-blue hover:text-white"
-                                            >
-                                                <Play size={12} fill="currentColor" />
-                                                Carregar no canvas
-                                            </button>
-                                        )}
-                                    </div>
-                                    <div className="aspect-[16/10] overflow-hidden rounded-2xl border border-default bg-canvas shadow-inner">
-                                        <AutomatonPreview
-                                            data={exercise.respostaAutomato}
-                                            ariaLabel={`Gabarito visual do exercício ${exercise.id}`}
-                                        />
-                                    </div>
+                                <div className="aspect-[16/10] overflow-hidden rounded-2xl border border-default bg-canvas shadow-inner">
+                                    <AutomatonPreview
+                                        data={exercise.respostaAutomato}
+                                        ariaLabel={`Gabarito visual do exercício ${exercise.id}`}
+                                    />
                                 </div>
-                            )}
-                        </div>
-                    )}
-                </div>
+                            </div>
+                        )}
+                    </div>
+                </SupportSection>
             )}
         </section>
     );
