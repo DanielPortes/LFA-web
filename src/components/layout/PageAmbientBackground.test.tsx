@@ -22,7 +22,6 @@ type RenderAmbientOptions = {
     };
     settings?: Partial<{
         focusMode: boolean;
-        cursorEnabled: boolean;
         reduceMotion: boolean;
         snapToGrid: boolean;
         simulatorLayout: 'bottom' | 'side' | 'top_side';
@@ -33,7 +32,6 @@ type RenderAmbientOptions = {
 
 const defaultSettings = {
     focusMode: false,
-    cursorEnabled: false,
     reduceMotion: false,
     snapToGrid: false,
     simulatorLayout: 'bottom' as const,

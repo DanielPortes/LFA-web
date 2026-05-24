@@ -912,29 +912,6 @@
     opacity: 1 !important;
 }
 
-.cursor-none,
-.cursor-none * {
-    cursor: none !important;
-}
-
-/* Global cursor hide when custom cursor is active */
-body.custom-cursor-active,
-body.custom-cursor-active *:not(input):not(textarea):not(select):not([contenteditable="true"]) {
-    cursor: none !important;
-}
-
-body.custom-cursor-active input,
-body.custom-cursor-active textarea,
-body.custom-cursor-active select,
-body.custom-cursor-active [contenteditable="true"] {
-    cursor: text !important;
-}
-
-body.custom-cursor-active.custom-cursor-paused,
-body.custom-cursor-active.custom-cursor-paused * {
-    cursor: auto !important;
-}
-
 /* Animation Utilities */
 @keyframes fade-in {
     from {

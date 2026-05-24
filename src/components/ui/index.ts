@@ -1,7 +1,6 @@
 export { BatchTestPanel } from './BatchTestPanel';
 export { ContextMenu } from './ContextMenu';
 export { ConversionTool } from './ConversionTool';
-export { CustomCursor } from './CustomCursor';
 export { DeleteConfirmDialog } from './DeleteConfirmDialog';
 export { DerivationTreeVisualizer } from './DerivationTreeVisualizer';
 export { EquivalentsPanel } from './EquivalentsPanel';

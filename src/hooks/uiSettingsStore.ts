@@ -3,7 +3,6 @@ import type { SimulatorLayout } from '../features/simulator/types';
 
 export type UiSettings = {
     focusMode: boolean;
-    cursorEnabled: boolean;
     reduceMotion: boolean;
     effectiveReduceMotion: boolean;
     snapToGrid: boolean;
@@ -11,7 +10,6 @@ export type UiSettings = {
     inputTokenization: 'auto' | 'char' | 'separator';
     inputSeparator: string;
     setFocusMode: (value: boolean) => void;
-    setCursorEnabled: (value: boolean) => void;
     setReduceMotion: (value: boolean) => void;
     setSnapToGrid: (value: boolean) => void;
     setSimulatorLayout: (value: SimulatorLayout) => void;

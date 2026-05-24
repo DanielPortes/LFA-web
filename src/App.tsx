@@ -1,7 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { ThemeProvider } from './hooks/ThemeContext';
 import type { AutomatoData, Tab } from './types';
-import { CustomCursor, SettingsModal, ToastProvider, Tutorial, useTutorial } from './components/ui';
+import { SettingsModal, ToastProvider, Tutorial, useTutorial } from './components/ui';
 import { getAutomatonFromUrl } from './utils/sharing';
 import { UiSettingsProvider } from './hooks/UiSettingsContext';
 import { PageAmbientBackground, TopNav } from './components/layout';
@@ -182,7 +182,6 @@ function MainApp() {
     const sharedAutomatonHandled = useRef(false);
     const isWorkspaceTab = route.tab === 'simulador' || route.tab === 'gramatica';
     const showAmbientBackground = !isWorkspaceTab;
-    const showCustomCursor = !isWorkspaceTab;
 
     useEffect(() => {
         if (sharedAutomatonHandled.current) return;
@@ -346,8 +345,6 @@ function MainApp() {
             <a href="#main-content" className="skip-link">
                 Pular para o conteúdo principal
             </a>
-
-            {showCustomCursor && <CustomCursor />}
 
             <TopNav
                 activeTab={route.tab}

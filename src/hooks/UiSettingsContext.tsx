@@ -12,7 +12,6 @@ export const UiSettingsProvider = ({ children }: { children: React.ReactNode }) 
                     const parsed = JSON.parse(saved);
                     return {
                         focusMode: !!parsed.focusMode,
-                        cursorEnabled: parsed.cursorEnabled === true, // default false
                         reduceMotion: !!parsed.reduceMotion,
                         snapToGrid: !!parsed.snapToGrid,
                         simulatorLayout: isSimulatorLayout(parsed.simulatorLayout) ? parsed.simulatorLayout : 'bottom',
@@ -26,7 +25,6 @@ export const UiSettingsProvider = ({ children }: { children: React.ReactNode }) 
         }
         return {
             focusMode: false,
-            cursorEnabled: false,
             reduceMotion: false,
             snapToGrid: false,
             simulatorLayout: 'bottom',
@@ -39,14 +37,13 @@ export const UiSettingsProvider = ({ children }: { children: React.ReactNode }) 
 
     // Individual state setters for compatibility
     const setFocusMode = (val: boolean) => setSettings(s => ({ ...s, focusMode: val }));
-    const setCursorEnabled = (val: boolean) => setSettings(s => ({ ...s, cursorEnabled: val }));
     const setReduceMotion = (val: boolean) => setSettings(s => ({ ...s, reduceMotion: val }));
     const setSnapToGrid = (val: boolean) => setSettings(s => ({ ...s, snapToGrid: val }));
     const setSimulatorLayout = (val: 'bottom' | 'side' | 'top_side') => setSettings(s => ({ ...s, simulatorLayout: val }));
     const setInputTokenization = (val: 'auto' | 'char' | 'separator') => setSettings(s => ({ ...s, inputTokenization: val }));
     const setInputSeparator = (val: string) => setSettings(s => ({ ...s, inputSeparator: val }));
 
-    const { focusMode, cursorEnabled, reduceMotion, snapToGrid, simulatorLayout, inputTokenization, inputSeparator } = settings;
+    const { focusMode, reduceMotion, snapToGrid, simulatorLayout, inputTokenization, inputSeparator } = settings;
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -76,7 +73,6 @@ export const UiSettingsProvider = ({ children }: { children: React.ReactNode }) 
 
     const value = useMemo(() => ({
         focusMode,
-        cursorEnabled,
         reduceMotion,
         effectiveReduceMotion,
         snapToGrid,
@@ -84,13 +80,12 @@ export const UiSettingsProvider = ({ children }: { children: React.ReactNode }) 
         inputTokenization,
         inputSeparator,
         setFocusMode,
-        setCursorEnabled,
         setReduceMotion,
         setSnapToGrid,
         setSimulatorLayout,
         setInputTokenization,
         setInputSeparator
-    }), [focusMode, cursorEnabled, reduceMotion, effectiveReduceMotion, snapToGrid, simulatorLayout, inputTokenization, inputSeparator]);
+    }), [focusMode, reduceMotion, effectiveReduceMotion, snapToGrid, simulatorLayout, inputTokenization, inputSeparator]);
 
     return (
         <UiSettingsContext.Provider value={value}>

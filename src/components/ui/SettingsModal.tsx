@@ -1,9 +1,7 @@
 ﻿import React from 'react';
-import { Focus, MousePointer2, Activity, CheckCircle2, XCircle, Grid3X3 } from 'lucide-react';
+import { Focus, Activity, XCircle, Grid3X3 } from 'lucide-react';
 import { useUiSettings } from '../../hooks/useUiSettings';
 import { Modal } from './Modal';
-import { useToast } from './toast-context';
-import { runSelfCheck } from '../../utils/selfCheck';
 import type { ModalBaseProps } from './types';
 
 const ToggleRow = ({
@@ -49,7 +47,6 @@ const ToggleRow = ({
 export const SettingsModal: React.FC<ModalBaseProps> = ({ isOpen, onClose }) => {
     const {
         focusMode,
-        cursorEnabled,
         reduceMotion,
         effectiveReduceMotion,
         snapToGrid,
@@ -57,25 +54,12 @@ export const SettingsModal: React.FC<ModalBaseProps> = ({ isOpen, onClose }) => 
         inputTokenization,
         inputSeparator,
         setFocusMode,
-        setCursorEnabled,
         setReduceMotion,
         setSnapToGrid,
         setSimulatorLayout,
         setInputTokenization,
         setInputSeparator
     } = useUiSettings();
-    const { addToast } = useToast();
-
-    const handleSelfCheck = () => {
-        const results = runSelfCheck();
-        const failed = results.filter(r => !r.ok);
-        if (failed.length === 0) {
-            addToast('Auto-testes: tudo OK', 'success');
-        } else {
-            addToast(`Auto-testes: ${failed.length} falha(s)`, 'error', 4000);
-        }
-    };
-
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Preferências">
             <div className="space-y-6">
@@ -86,13 +70,6 @@ export const SettingsModal: React.FC<ModalBaseProps> = ({ isOpen, onClose }) => 
                         checked={focusMode}
                         onChange={setFocusMode}
                         icon={<Focus size={18} />}
-                    />
-                    <ToggleRow
-                        label="Cursor customizado"
-                        description="Desative para manter cursor nativo em toda a interface."
-                        checked={cursorEnabled}
-                        onChange={setCursorEnabled}
-                        icon={<MousePointer2 size={18} />}
                     />
                     <ToggleRow
                         label="Reduzir animações"
@@ -160,21 +137,6 @@ export const SettingsModal: React.FC<ModalBaseProps> = ({ isOpen, onClose }) => 
                     <div className="text-xs text-muted">
                         Use o modo "Separador" para símbolos multi-caractere sem espaços.
                     </div>
-                </div>
-
-                <div className="rounded-2xl border border-default p-4 flex items-center justify-between gap-3">
-                    <div>
-                        <div className="font-bold text-sm text-primary">Auto-testes rápidos</div>
-                        <div className="text-xs text-secondary">Verifica lógica básica de autômatos e regex.</div>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={handleSelfCheck}
-                        className="px-3 py-2 rounded-xl bg-ios-blue text-white text-xs font-bold hover:bg-blue-600 transition-colors flex items-center gap-2"
-                    >
-                        <CheckCircle2 size={14} />
-                        Rodar
-                    </button>
                 </div>
 
                 <div className="text-xs text-muted flex items-center gap-2">
