@@ -6,8 +6,8 @@ import type { AutomatoData, SimulationStep } from '../../../types';
 const automaton: AutomatoData = {
     tipo: 'AP',
     estados: [
-        { id: 'q0', label: 'q0', x: 0, y: 0, isInitial: true, isFinal: false },
-        { id: 'q1', label: 'q1', x: 100, y: 0, isInitial: false, isFinal: true },
+        { id: 'q0', label: 'q0', x: 0, y: 0, isInicial: true, isFinal: false },
+        { id: 'q1', label: 'q1', x: 100, y: 0, isInicial: false, isFinal: true },
     ],
     transicoes: [],
 };
@@ -16,10 +16,10 @@ const pdaStep: SimulationStep = {
     activeStates: ['q0'],
     processedInput: [],
     remainingInput: ['a', 'b'],
+    status: 'running',
     activeConfigs: [
         {
             stateId: 'q0',
-            remainingInput: ['a', 'b'],
             stack: ['Z', 'A'],
         },
     ],

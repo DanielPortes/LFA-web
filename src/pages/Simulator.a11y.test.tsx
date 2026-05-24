@@ -4,6 +4,7 @@ import { ToastProvider } from '../components/ui';
 import { UiSettingsProvider } from '../hooks/UiSettingsContext';
 import { runAxe } from '../test/axe';
 import { mockAnimationFrames, mockResizeObserver, mockViewport } from '../test/browserMocks';
+import { simpleDFA } from '../test/fixtures';
 import { SimulatorPage } from './Simulator';
 
 describe('SimulatorPage accessibility', () => {
@@ -20,7 +21,7 @@ describe('SimulatorPage accessibility', () => {
         const { container } = render(
             <UiSettingsProvider>
                 <ToastProvider>
-                    <SimulatorPage />
+                    <SimulatorPage initialData={simpleDFA} />
                 </ToastProvider>
             </UiSettingsProvider>
         );
@@ -30,6 +31,9 @@ describe('SimulatorPage accessibility', () => {
             await Promise.resolve();
         });
 
+        fireEvent.change(screen.getByPlaceholderText('Digite a entrada para o autômato...'), {
+            target: { value: 'x' },
+        });
         fireEvent.click(screen.getByRole('button', { name: 'Abrir painel de diagnóstico da simulação' }));
 
         await waitFor(() => {

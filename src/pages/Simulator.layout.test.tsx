@@ -201,6 +201,79 @@ describe('SimulatorPage layout', () => {
         expect(screen.queryByTestId('pda-input-rail')).not.toBeInTheDocument();
     });
 
+    it('esconde a fita do AP ao reiniciar ou editar antes de iniciar novamente', async () => {
+        mockAnimationFrames();
+        mockResizeObserver();
+        mockViewport({ width: 1280, height: 800 });
+
+        await act(async () => {
+            render(
+                <UiSettingsProvider>
+                    <ToastProvider>
+                        <SimulatorPage initialData={simplePDA} />
+                    </ToastProvider>
+                </UiSettingsProvider>
+            );
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+
+        const input = screen.getByPlaceholderText('Digite a entrada para o autômato...');
+        fireEvent.change(input, { target: { value: 'aabb' } });
+        expect(screen.queryByTestId('pda-input-rail')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Iniciar simulação' }));
+        expect(screen.getByTestId('pda-input-rail')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Reiniciar simulação' }));
+        expect(screen.queryByTestId('pda-input-rail')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('pda-stack-widget')).not.toBeInTheDocument();
+
+        fireEvent.change(input, { target: { value: 'aaabbb' } });
+        expect(screen.queryByTestId('pda-input-rail')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Iniciar simulação' }));
+        expect(screen.getByTestId('pda-input-rail')).toBeInTheDocument();
+    });
+
+    it('esconde a fita do AP ao trocar o modo de leitura antes de iniciar novamente', async () => {
+        mockAnimationFrames();
+        mockResizeObserver();
+        mockViewport({ width: 1280, height: 800 });
+
+        await act(async () => {
+            render(
+                <UiSettingsProvider>
+                    <ToastProvider>
+                        <SimulatorPage initialData={simplePDA} />
+                    </ToastProvider>
+                </UiSettingsProvider>
+            );
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+
+        const input = screen.getByPlaceholderText('Digite a entrada para o autômato...');
+        fireEvent.change(input, { target: { value: 'aabb' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Iniciar simulação' }));
+
+        expect(screen.getByTestId('pda-input-rail')).toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText('Modo de leitura da entrada'), {
+            target: { value: 'separator' },
+        });
+
+        expect(screen.queryByTestId('pda-input-rail')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('pda-stack-widget')).not.toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText('Símbolo separador da entrada'), {
+            target: { value: '|' },
+        });
+
+        expect(screen.queryByTestId('pda-input-rail')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('pda-stack-widget')).not.toBeInTheDocument();
+    });
+
     it('reflete no canvas e no status o tipo inferido do autômato finito em edição', async () => {
         mockAnimationFrames();
         mockResizeObserver();

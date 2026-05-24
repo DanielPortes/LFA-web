@@ -152,16 +152,29 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
     }, []);
 
     const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        setHasRequestedSimulationView(false);
         setInputString(event.target.value);
     }, []);
 
+    const handleInputTokenizationChange = useCallback((value: 'auto' | 'char' | 'separator') => {
+        setHasRequestedSimulationView(false);
+        setInputTokenization(value);
+    }, [setInputTokenization]);
+
+    const handleInputSeparatorChange = useCallback((value: string) => {
+        setHasRequestedSimulationView(false);
+        setInputSeparator(value);
+    }, [setInputSeparator]);
+
     const clearInput = useCallback(() => {
+        setHasRequestedSimulationView(false);
         setInputString('');
         resetSimulation(true);
         inputRef.current?.focus();
     }, [resetSimulation]);
 
     const useEmptyInputAlias = useCallback(() => {
+        setHasRequestedSimulationView(false);
         setInputString('eps');
         resetSimulation(true);
         inputRef.current?.focus();
@@ -238,6 +251,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
                     break;
                 case 'KeyR':
                     event.preventDefault();
+                    setHasRequestedSimulationView(false);
                     resetSimulation();
                     break;
                 default:
@@ -404,8 +418,8 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
             onInputChange={handleInputChange}
             inputTokenization={inputTokenization}
             inputSeparator={inputSeparator}
-            setInputTokenization={setInputTokenization}
-            setInputSeparator={setInputSeparator}
+            setInputTokenization={handleInputTokenizationChange}
+            setInputSeparator={handleInputSeparatorChange}
             clearInput={clearInput}
             useEmptyInputAlias={useEmptyInputAlias}
             hasInvalidInput={hasInvalidInput}
@@ -439,13 +453,22 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
                 step();
             }}
             onStepBack={stepBack}
-            onReset={() => resetSimulation()}
-            onResetToEditor={() => resetSimulation(true)}
+            onReset={() => {
+                setHasRequestedSimulationView(false);
+                resetSimulation();
+            }}
+            onResetToEditor={() => {
+                setHasRequestedSimulationView(false);
+                resetSimulation(true);
+            }}
             onSpeedChange={setSpeed}
         />
     );
 
     const hasSideInspector = isDesktopViewport && inspectorOpen && Boolean(disableReason || (!isPda && (history.length > 1 || hasSimulationProgress)));
+    const showSimulationReadout = isPda
+        ? hasRequestedSimulationView || hasSimulationProgress
+        : inputTokens.length > 0 || isTuring || hasRequestedSimulationView || hasSimulationProgress;
 
     return (
         <>
@@ -471,7 +494,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
                 isPda={isPda}
                 showWarningsPanel={Boolean(disableReason)}
                 showDetailsPanel={history.length > 1 || hasSimulationProgress}
-                showTapePanel={inputTokens.length > 0 || isTuring || (isPda && hasSimulationProgress) || hasRequestedSimulationView || hasSimulationProgress}
+                showTapePanel={showSimulationReadout}
             >
                 {({ rightDock, bottomDock }) => (
                     <AutomatonWorkspace
