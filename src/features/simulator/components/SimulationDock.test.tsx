@@ -38,7 +38,7 @@ describe('SimulationDock', () => {
         expect(screen.getByRole('button', { name: 'Fechar painel lateral de diagnóstico' })).toBeInTheDocument();
     });
 
-    it('posiciona a importação por regex acima dos controles da simulação', () => {
+    it('ancora a importação por regex fora do fluxo vertical do player', () => {
         render(
             <SimulationDock
                 desktopInspector={true}
@@ -62,7 +62,9 @@ describe('SimulationDock', () => {
         const regexSlot = screen.getByTestId('regex-import-slot');
         const controlsSlot = screen.getByTestId('simulation-controls-slot');
 
-        expect(regexSlot.compareDocumentPosition(controlsSlot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(regexSlot).toHaveClass('absolute');
+        expect(regexSlot).toHaveClass('right-0');
+        expect(regexSlot).toHaveClass('bottom-[4.75rem]');
         expect(within(regexSlot).getByText('REGEX')).toBeInTheDocument();
         expect(within(controlsSlot).getByText('CONTROLS')).toBeInTheDocument();
     });
@@ -217,7 +219,44 @@ describe('SimulationDock', () => {
 
         expect(within(screen.getByTestId('right')).queryByText('TAPE')).not.toBeInTheDocument();
         expect(screen.queryByTestId('simulation-inspector-shell')).not.toBeInTheDocument();
-        expect(within(screen.getByTestId('native-simulation-readout')).getByText('TAPE')).toBeInTheDocument();
+        expect(within(screen.getByTestId('pda-native-readout-slot')).getByText('TAPE')).toBeInTheDocument();
         expect(within(screen.getByTestId('simulation-controls-slot')).getByText('CONTROLS')).toBeInTheDocument();
+    });
+
+    it('posiciona a pilha de AP no canto sem empurrar o player nativo', () => {
+        render(
+            <SimulationDock
+                desktopInspector={true}
+                inspectorOpen={true}
+                onCloseInspector={() => {}}
+                regexImportPanel={<span>REGEX</span>}
+                warningsPanel={<span>WARNINGS</span>}
+                detailsPanel={<span>DETAILS</span>}
+                tapePanel={(
+                    <div>
+                        <div data-testid="pda-input-rail">FITA</div>
+                    </div>
+                )}
+                nativeSidePanel={<div data-testid="pda-stack-widget">PILHA</div>}
+                controlsBar={<span>CONTROLS</span>}
+                disableReason={null}
+                isPda={true}
+                showWarningsPanel={false}
+                showDetailsPanel={false}
+                showTapePanel={true}
+            >
+                {({ bottomDock }) => <section data-testid="bottom">{bottomDock}</section>}
+            </SimulationDock>
+        );
+
+        const stackSlot = screen.getByTestId('pda-stack-corner-slot');
+
+        expect(screen.getByTestId('pda-native-readout-slot')).toHaveClass('min-h-10');
+        expect(within(screen.getByTestId('pda-native-readout-slot')).getByText('FITA')).toBeInTheDocument();
+        expect(stackSlot).toHaveClass('absolute');
+        expect(stackSlot).toHaveClass('right-0');
+        expect(within(stackSlot).getByText('PILHA')).toBeInTheDocument();
+        expect(within(screen.getByTestId('pda-player-row')).getByText('CONTROLS')).toBeInTheDocument();
+        expect(within(screen.getByTestId('pda-player-row')).queryByText('PILHA')).not.toBeInTheDocument();
     });
 });

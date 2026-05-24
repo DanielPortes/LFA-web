@@ -191,11 +191,14 @@ describe('SimulatorPage layout', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Iniciar simulação' }));
 
-        const stackTitle = screen.getByText('Topo da pilha');
-        expect(stackTitle).toBeVisible();
-        expect(stackTitle.closest('.opacity-0')).toBeNull();
+        const stackWidget = screen.getByTestId('pda-stack-widget');
+        expect(stackWidget).toBeVisible();
+        expect(stackWidget).toHaveClass('bg-transparent');
+        expect(stackWidget).not.toHaveClass('border');
+        expect(stackWidget.closest('.opacity-0')).toBeNull();
         expect(screen.queryByRole('button', { name: 'Alertas' })).not.toBeInTheDocument();
-        expect(screen.getByText(/AP:/)).toBeVisible();
+        expect(screen.queryByText(/AP:/)).not.toBeInTheDocument();
+        expect(screen.queryByTestId('pda-input-rail')).not.toBeInTheDocument();
     });
 
     it('reflete no canvas e no status o tipo inferido do autômato finito em edição', async () => {
@@ -246,7 +249,7 @@ describe('SimulatorPage layout', () => {
         });
 
         expect(screen.queryByText('Simulação e diagnóstico')).not.toBeInTheDocument();
-        expect(screen.getByTestId('native-simulation-readout')).toBeInTheDocument();
+        expect(screen.queryByTestId('pda-player-row')).not.toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Abrir inspetor do editor' })).toBeInTheDocument();
     });
 });

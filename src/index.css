@@ -413,6 +413,7 @@
     .bg-surface-2 { background-color: var(--color-surface-2); }
     .bg-surface-2\/55 { background-color: color-mix(in srgb, var(--color-surface-2) 55%, transparent); }
     .bg-surface-3 { background-color: var(--color-surface-3); }
+    .bg-surface-1\/25 { background-color: color-mix(in srgb, var(--color-surface-1) 25%, transparent); }
     .bg-surface-1\/35 { background-color: color-mix(in srgb, var(--color-surface-1) 35%, transparent); }
     .bg-surface-1\/45 { background-color: color-mix(in srgb, var(--color-surface-1) 45%, transparent); }
     .bg-surface-1\/50 { background-color: color-mix(in srgb, var(--color-surface-1) 50%, transparent); }
@@ -468,6 +469,7 @@
     /* Core Border Tokens */
     .border-default { border-color: var(--color-border); }
     .border-default\/20 { border-color: color-mix(in srgb, var(--color-border) 20%, transparent); }
+    .border-default\/25 { border-color: color-mix(in srgb, var(--color-border) 25%, transparent); }
     .border-default\/30 { border-color: color-mix(in srgb, var(--color-border) 30%, transparent); }
     .border-default\/35 { border-color: color-mix(in srgb, var(--color-border) 35%, transparent); }
     .border-default\/40 { border-color: color-mix(in srgb, var(--color-border) 40%, transparent); }

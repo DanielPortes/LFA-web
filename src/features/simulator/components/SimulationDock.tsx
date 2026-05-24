@@ -10,6 +10,8 @@ interface SimulationDockProps {
     warningsPanel: React.ReactNode;
     detailsPanel: React.ReactNode;
     tapePanel: React.ReactNode;
+    nativeTapePanel?: React.ReactNode;
+    nativeSidePanel?: React.ReactNode;
     controlsBar: React.ReactNode;
     disableReason: string | null;
     isPda: boolean;
@@ -27,6 +29,8 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
     warningsPanel,
     detailsPanel,
     tapePanel,
+    nativeTapePanel,
+    nativeSidePanel,
     controlsBar,
     disableReason,
     isPda,
@@ -35,7 +39,8 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
     showTapePanel,
     children,
 }) => {
-    const showNativeReadout = desktopInspector && inspectorOpen && showTapePanel && !showWarningsPanel && !showDetailsPanel;
+    const showNativeReadout = desktopInspector && inspectorOpen && showTapePanel && !showWarningsPanel && (isPda || !showDetailsPanel);
+    const nativeReadoutPanel = nativeTapePanel ?? tapePanel;
     const inspectorPanel = (
         <SimulationInspectorPanel
             preferredItemId={disableReason ? 'warnings' : 'tape'}
@@ -102,18 +107,36 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
                     {inspectorShell}
                 </div>
             )}
-            <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-2">
-                <div data-testid="regex-import-slot" className="flex justify-end">
+            <div className="relative mx-auto flex w-full max-w-[1040px] flex-col gap-2 pt-10">
+                <div data-testid="regex-import-slot" className="pointer-events-auto absolute bottom-[4.75rem] right-0 z-10 flex justify-end">
                     {regexImportPanel}
                 </div>
-                {showNativeReadout && (
+                {showNativeReadout && !isPda && (
                     <div data-testid="native-simulation-readout" className="pointer-events-auto mx-auto w-full max-w-[760px]">
-                        {tapePanel}
+                        {nativeReadoutPanel}
                     </div>
                 )}
-                <div data-testid="simulation-controls-slot" className="min-w-0">
-                    {controlsBar}
-                </div>
+                {showNativeReadout && isPda ? (
+                    <>
+                        <div data-testid="pda-native-readout-slot" className="pointer-events-auto mx-auto flex min-h-10 w-full max-w-[760px] items-center justify-center">
+                            {nativeReadoutPanel}
+                        </div>
+                        <div data-testid="pda-player-row" className="flex min-w-0 items-end justify-center gap-3">
+                            <div data-testid="simulation-controls-slot" className="min-w-0 flex-1">
+                                {controlsBar}
+                            </div>
+                        </div>
+                        {nativeSidePanel && (
+                            <div data-testid="pda-stack-corner-slot" className="pointer-events-auto absolute bottom-0 right-0 translate-x-[calc(100%+0.75rem)]">
+                                {nativeSidePanel}
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <div data-testid="simulation-controls-slot" className="min-w-0">
+                        {controlsBar}
+                    </div>
+                )}
             </div>
         </div>
     );

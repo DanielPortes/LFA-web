@@ -32,6 +32,10 @@ describe('SimulationControls', () => {
         expect(screen.getByRole('button', { name: 'Rápido' })).toHaveAttribute('aria-pressed', 'false');
         expect(screen.getByRole('button', { name: 'Normal' })).toHaveAttribute('aria-pressed', 'true');
         expect(screen.getByRole('button', { name: 'Lento' })).toHaveAttribute('aria-pressed', 'false');
+        expect(
+            screen.getByRole('button', { name: 'Lento' }).compareDocumentPosition(screen.getByRole('button', { name: 'Rápido' }))
+            & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
         expect(screen.queryByText('Rápido')).not.toBeInTheDocument();
         expect(screen.queryByText('Normal')).not.toBeInTheDocument();
         expect(screen.queryByText('Lento')).not.toBeInTheDocument();

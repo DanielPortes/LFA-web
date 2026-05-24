@@ -345,6 +345,42 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
         />
     );
 
+    const nativeTapePanel = isPda ? (
+        <SimulationTapePanel
+            data={effectiveData}
+            inputTokens={inputTokens}
+            history={history}
+            simulationState={simulationState}
+            simulationStatus={rawSimulationStatus}
+            isTuring={isTuring}
+            isAll={isAll}
+            isMoore={isMoore}
+            isMealy={isMealy}
+            isPda={isPda}
+            stepCount={stepCount}
+            totalSteps={totalSteps}
+            pdaMode="input"
+        />
+    ) : tapePanel;
+
+    const nativeSidePanel = isPda ? (
+        <SimulationTapePanel
+            data={effectiveData}
+            inputTokens={inputTokens}
+            history={history}
+            simulationState={simulationState}
+            simulationStatus={rawSimulationStatus}
+            isTuring={isTuring}
+            isAll={isAll}
+            isMoore={isMoore}
+            isMealy={isMealy}
+            isPda={isPda}
+            stepCount={stepCount}
+            totalSteps={totalSteps}
+            pdaMode="stack"
+        />
+    ) : null;
+
     const warningsPanel = (
         <SimulationWarningsPanel
             disableReason={disableReason}
@@ -409,7 +445,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
         />
     );
 
-    const hasSideInspector = isDesktopViewport && inspectorOpen && Boolean(disableReason || history.length > 1 || hasSimulationProgress);
+    const hasSideInspector = isDesktopViewport && inspectorOpen && Boolean(disableReason || (!isPda && (history.length > 1 || hasSimulationProgress)));
 
     return (
         <>
@@ -428,12 +464,14 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
                 warningsPanel={warningsPanel}
                 detailsPanel={detailsPanel}
                 tapePanel={tapePanel}
+                nativeTapePanel={nativeTapePanel}
+                nativeSidePanel={nativeSidePanel}
                 controlsBar={controlsBar}
                 disableReason={disableReason}
                 isPda={isPda}
                 showWarningsPanel={Boolean(disableReason)}
                 showDetailsPanel={history.length > 1 || hasSimulationProgress}
-                showTapePanel={inputTokens.length > 0 || isTuring || isPda || hasRequestedSimulationView || hasSimulationProgress}
+                showTapePanel={inputTokens.length > 0 || isTuring || (isPda && hasSimulationProgress) || hasRequestedSimulationView || hasSimulationProgress}
             >
                 {({ rightDock, bottomDock }) => (
                     <AutomatonWorkspace

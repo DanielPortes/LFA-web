@@ -25,9 +25,9 @@ interface SimulationControlsProps {
 }
 
 const speedPresets = [
-    { label: 'Rápido', value: 500, Icon: Rabbit },
-    { label: 'Normal', value: 1000, Icon: Gauge },
     { label: 'Lento', value: 1800, Icon: Turtle },
+    { label: 'Normal', value: 1000, Icon: Gauge },
+    { label: 'Rápido', value: 500, Icon: Rabbit },
 ] as const;
 
 const getClosestSpeedPreset = (speed: number) => speedPresets.reduce((closest, preset) => (
