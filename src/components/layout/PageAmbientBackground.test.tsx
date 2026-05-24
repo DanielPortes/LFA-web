@@ -79,8 +79,9 @@ describe('PageAmbientBackground', () => {
         let ambient = getAmbientElement();
 
         expect(ambient).not.toBeNull();
-        expect(ambient!.style.getPropertyValue('--ambient-base')).toContain('#ecf5ff');
-        expect(ambient!.style.getPropertyValue('--ambient-orb-b')).toContain('73, 221, 255');
+        expect(ambient!.style.getPropertyValue('--ambient-base')).toContain('#eaf4ff');
+        expect(ambient!.style.getPropertyValue('--ambient-orb-b')).toContain('56, 214, 255');
+        expect(parseFloat(ambient!.style.getPropertyValue('--ambient-intensity'))).toBeGreaterThanOrEqual(0.7);
 
         lightRender.unmount();
 
@@ -90,6 +91,7 @@ describe('PageAmbientBackground', () => {
         expect(ambient).not.toBeNull();
         expect(ambient!.style.getPropertyValue('--ambient-base')).toContain('#071422');
         expect(ambient!.style.getPropertyValue('--ambient-orb-b')).toContain('24, 214, 255');
+        expect(parseFloat(ambient!.style.getPropertyValue('--ambient-intensity'))).toBeGreaterThanOrEqual(0.58);
     });
 
     it('fica estático quando reduce motion está ativo', () => {

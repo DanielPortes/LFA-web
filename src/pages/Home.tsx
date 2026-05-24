@@ -1,4 +1,4 @@
-import { BookOpen, ChevronRight, Code, GraduationCap, Move, PenTool, Play } from 'lucide-react';
+import { BookOpen, ChevronRight, Code, Github, GraduationCap, Move, PenTool, Play } from 'lucide-react';
 import type { Tab } from '../types';
 
 const entryPoints = [
@@ -65,10 +65,12 @@ const studySignals = [
 ] as const;
 
 export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => (
-    <div className="render-lite-shell animate-fade-in space-y-6 md:space-y-8">
-        <div className="relative flex min-h-[360px] items-center overflow-hidden rounded-[28px] text-white shadow-apple-xl md:min-h-[420px] md:rounded-[32px]">
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" />
-            <div className="absolute -top-24 right-[-10%] h-[360px] w-[360px] rounded-full bg-blue-500/20 blur-[90px]" />
+    <div className="home-page render-lite-shell animate-fade-in space-y-8 pb-8 md:space-y-10">
+        <div className="home-hero relative flex min-h-[360px] items-center overflow-hidden rounded-[28px] text-white shadow-apple-xl md:min-h-[420px] md:rounded-[32px]">
+            <div className="home-hero__base absolute inset-0" />
+            <div className="home-hero__grid absolute inset-0" />
+            <div className="home-hero__orb home-hero__orb--a absolute rounded-full" />
+            <div className="home-hero__orb home-hero__orb--b absolute rounded-full" />
 
             <div className="relative z-10 flex w-full flex-col items-start justify-between gap-10 p-6 sm:p-8 lg:flex-row lg:items-center lg:gap-12 lg:p-12">
                 <div className="max-w-3xl">
@@ -110,7 +112,7 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) 
                 </div>
 
                 <div className="hidden h-72 w-72 items-center justify-center lg:flex">
-                    <div className="glass-panel z-20 flex h-44 w-44 flex-col items-center justify-center rounded-[32px] border border-white/15">
+                    <div className="home-lab-card z-20 flex h-44 w-44 flex-col items-center justify-center rounded-[32px] border">
                         <Code className="text-blue-200" size={38} />
                         <span className="mt-3 text-sm font-semibold text-slate-200">Laboratório visual</span>
                     </div>
@@ -118,28 +120,36 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) 
             </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3" data-deferred-render="section">
+        <div
+            className="home-card-grid home-section-grid grid gap-6 md:grid-cols-3 md:gap-8"
+            data-deferred-render="section"
+            data-testid="home-entry-cards"
+        >
             {entryPoints.map((entryPoint) => (
-                <button
+                <article
                     key={entryPoint.title}
-                    onClick={() => onNavigate(entryPoint.tab)}
-                    className="glass-card group p-6 text-left transition-all hover:-translate-y-0.5 hover:shadow-apple-lg md:p-8"
+                    className="home-glass-card home-card-subtle home-card-interactive group p-6 text-left md:p-8"
                 >
                     <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/10 text-ios-blue">
                         <entryPoint.icon size={20} />
                     </div>
                     <h2 className="ui-title-4 text-primary">{entryPoint.title}</h2>
                     <p className="mt-3 text-sm leading-relaxed text-secondary">{entryPoint.description}</p>
-                    <div className="mt-5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-ios-blue">
+                    <button
+                        type="button"
+                        onClick={() => onNavigate(entryPoint.tab)}
+                        aria-label={`Abrir ${entryPoint.title}`}
+                        className="home-card-cta mt-5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-ios-blue"
+                    >
                         Abrir
                         <ChevronRight size={12} className="transition-transform group-hover:translate-x-0.5" />
-                    </div>
-                </button>
+                    </button>
+                </article>
             ))}
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3" data-deferred-render="section">
-            <div className="glass-card p-6 md:p-8">
+        <div className="home-section-grid grid gap-6 md:grid-cols-3 md:gap-8" data-deferred-render="section">
+            <div className="home-glass-card p-6 md:p-8">
                 <h3 className="ui-title-4 mb-6 flex items-center gap-3 text-primary">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/10 text-ios-blue">
                         <GraduationCap size={20} />
@@ -148,7 +158,7 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) 
                 </h3>
                 <ul className="space-y-4">
                     {studySignals.map((signal) => (
-                        <li key={signal.title} className="rounded-2xl border border-default bg-surface-muted/60 p-4">
+                        <li key={signal.title} className="home-mini-card rounded-2xl border p-4">
                             <span className="block text-sm font-semibold text-primary">{signal.title}</span>
                             <span className="mt-2 block text-sm leading-relaxed text-secondary">{signal.description}</span>
                         </li>
@@ -156,49 +166,69 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) 
                 </ul>
             </div>
 
-            <div className="glass-card relative overflow-hidden p-6 md:col-span-2 md:p-8">
+            <div className="home-glass-card home-journey-card relative flex flex-col overflow-hidden p-6 md:col-span-2 md:p-8">
                 <div className="pointer-events-none absolute right-0 top-0 -mr-16 -mt-16 rounded-full bg-indigo-500/10 p-24 blur-3xl" />
 
-                <h3 className="ui-title-4 mb-8 flex items-center gap-3 text-primary md:mb-10">
+                <h3 className="ui-title-4 flex items-center gap-3 text-primary">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500/10 text-ios-indigo">
                         <Move size={20} />
                     </div>
                     Trilha sugerida de estudo
                 </h3>
 
-                <div className="relative flex flex-col gap-6 px-2 md:flex-row md:items-start md:justify-between md:gap-0 md:px-8">
-                    <div className="absolute bottom-[10px] left-[19px] top-[10px] w-px bg-border md:left-12 md:right-12 md:bottom-auto md:top-[18px] md:h-0.5 md:w-auto" />
-                    {learningJourney.map((item) => (
-                        <div key={item.label} className="relative flex items-start gap-4 md:w-1/4 md:flex-col md:items-center">
-                            <div
-                                className={`z-10 flex h-10 w-10 items-center justify-center rounded-full border-[3px] shadow-sm transition-all duration-300 ${
-                                    item.status === 'active'
-                                        ? 'scale-105 border-white/30 bg-ios-blue text-white ring-4 ring-blue-500/20'
-                                        : item.status === 'done'
-                                            ? 'border-white/20 bg-ios-green/90 text-white'
-                                            : 'border-default bg-surface-muted'
-                                }`}
-                            >
-                                {item.status === 'active' ? (
-                                    <div className="h-2 w-2 rounded-full bg-white" />
-                                ) : (
-                                    <ChevronRight size={16} className={item.status === 'done' ? 'text-white' : 'text-muted'} />
-                                )}
-                            </div>
+                <div className="home-journey-diagram flex flex-1 items-center px-2 pt-8 md:px-8 md:pt-0">
+                    <div className="home-journey-track relative flex w-full flex-col gap-6 md:flex-row md:items-start md:justify-between md:gap-0">
+                        <div
+                            data-testid="home-journey-line"
+                            className="home-journey-line absolute bottom-[10px] left-[19px] top-[10px] w-px bg-border md:left-12 md:right-12 md:bottom-auto md:top-[18px] md:h-0.5 md:w-auto"
+                        />
+                        {learningJourney.map((item) => (
+                            <div key={item.label} className="relative flex items-start gap-4 md:w-1/4 md:flex-col md:items-center">
+                                <div
+                                    className={`z-10 flex h-10 w-10 items-center justify-center rounded-full border-[3px] shadow-sm transition-all duration-300 ${
+                                        item.status === 'active'
+                                            ? 'scale-105 border-white/30 bg-ios-blue text-white ring-4 ring-blue-500/20'
+                                            : item.status === 'done'
+                                                ? 'border-white/20 bg-ios-green/90 text-white'
+                                                : 'border-default bg-surface-muted'
+                                    }`}
+                                >
+                                    {item.status === 'active' ? (
+                                        <div className="h-2 w-2 rounded-full bg-white" />
+                                    ) : (
+                                        <ChevronRight size={16} className={item.status === 'done' ? 'text-white' : 'text-muted'} />
+                                    )}
+                                </div>
 
-                            <div className="w-full text-left md:text-center">
-                                <span className={`mb-1 block text-sm font-bold ${item.status === 'active' ? 'text-ios-blue' : 'text-muted'}`}>
-                                    {item.label}
-                                </span>
-                                <span className="ui-kicker-xs mb-2 inline-block rounded-md bg-surface-muted px-2 py-1 text-muted">
-                                    {item.eyebrow}
-                                </span>
-                                <p className="text-xs leading-normal text-muted">{item.description}</p>
+                                <div className="w-full text-left md:text-center">
+                                    <span className={`mb-1 block text-sm font-bold ${item.status === 'active' ? 'text-ios-blue' : 'text-muted'}`}>
+                                        {item.label}
+                                    </span>
+                                    <span className="ui-kicker-xs mb-2 inline-block rounded-md bg-surface-muted px-2 py-1 text-muted">
+                                        {item.eyebrow}
+                                    </span>
+                                    <p className="text-xs leading-normal text-muted">{item.description}</p>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
+
+        <footer className="home-signature flex min-h-28 items-end justify-center pb-2 pt-10">
+            <div className="inline-flex items-center gap-2 rounded-full border border-default bg-surface-1/70 px-3 py-1.5 text-[0.68rem] font-semibold text-muted shadow-apple-sm backdrop-blur-md">
+                <span>Daniel Fagundes</span>
+                <a
+                    href="https://github.com/DanielPortes/"
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="GitHub de Daniel Fagundes"
+                    className="home-signature__github flex h-6 w-6 items-center justify-center rounded-full text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
+                >
+                    <Github size={14} />
+                </a>
+            </div>
+        </footer>
     </div>
 );
