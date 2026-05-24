@@ -1,5 +1,6 @@
-import React from 'react';
-import { ChevronDown, ChevronUp, Circle, CircleCheck, GraduationCap, RotateCcw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Bookmark, BookmarkCheck, ChevronDown, ChevronUp, Circle, CircleCheck, GraduationCap, RotateCcw } from 'lucide-react';
+import { ContextMenu } from '../../components/ui/ContextMenu';
 import type { CourseModule, Lesson } from '../../types';
 import type { ContentSearchResultPreview } from './useContentSelection';
 
@@ -25,6 +26,9 @@ interface ContentSidebarProps {
     searchResultPosition: { current: number; total: number } | null;
     filteredModules: CourseModule[];
     isLessonCompleted: (lessonId: string) => boolean;
+    isLessonMarkedForReview: (lessonId: string) => boolean;
+    onMarkLessonCompleted: (lessonId: string) => void;
+    onToggleLessonReview: (lessonId: string) => void;
     onNavigate: (moduleId: string, lessonId: string) => void;
 }
 
@@ -45,8 +49,17 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
     searchResultPosition,
     filteredModules,
     isLessonCompleted,
+    isLessonMarkedForReview,
+    onMarkLessonCompleted,
+    onToggleLessonReview,
     onNavigate
 }) => {
+    const [lessonMenu, setLessonMenu] = useState<{
+        x: number;
+        y: number;
+        lessonId: string;
+        isMarkedForReview: boolean;
+    } | null>(null);
     const trimmedSearch = searchQuery.trim();
     const visibleSearchResult = activeSearchResult ?? firstSearchResult;
     const canMoveSearchResult = (searchResultPosition?.total ?? 0) > 1;
@@ -204,12 +217,22 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                             {module.lessons.map((lesson) => {
                                 const isActive = lesson.id === activeLessonId;
                                 const completed = isLessonCompleted(lesson.id);
+                                const markedForReview = isLessonMarkedForReview(lesson.id);
                                 const isEnterTarget = visibleSearchResult?.lessonId === lesson.id;
 
                                 return (
                                     <button
                                         key={lesson.id}
                                         onClick={() => onNavigate(module.id, lesson.id)}
+                                        onContextMenu={(event) => {
+                                            event.preventDefault();
+                                            setLessonMenu({
+                                                x: event.clientX,
+                                                y: event.clientY,
+                                                lessonId: lesson.id,
+                                                isMarkedForReview: markedForReview
+                                            });
+                                        }}
                                         className={`group relative flex w-full items-start gap-2 overflow-hidden rounded-xl pl-10 pr-4 py-3 text-left text-sm font-medium transition-all duration-200
                                             ${isActive
                                                 ? 'bg-status-info-soft font-bold text-status-info shadow-sm'
@@ -223,6 +246,11 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                                         {isEnterTarget && (
                                             <span className="search-target-badge mt-0.5 flex-shrink-0 rounded-full border border-ios-blue/25 bg-ios-blue/10 px-2 py-0.5 text-[0.65rem] font-black uppercase text-ios-blue">
                                                 Enter
+                                            </span>
+                                        )}
+                                        {markedForReview && (
+                                            <span className="mt-0.5 flex-shrink-0 rounded-full border border-status-warning/35 bg-status-warning-soft px-2 py-0.5 text-[0.65rem] font-black uppercase tracking-wide text-status-warning">
+                                                Revisar
                                             </span>
                                         )}
                                         {completed ? (
@@ -243,6 +271,26 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                     </div>
                 )}
             </div>
+
+            {lessonMenu && (
+                <ContextMenu
+                    x={lessonMenu.x}
+                    y={lessonMenu.y}
+                    onClose={() => setLessonMenu(null)}
+                    options={[
+                        {
+                            label: 'Marcar como concluída',
+                            icon: <CircleCheck size={14} />,
+                            action: () => onMarkLessonCompleted(lessonMenu.lessonId)
+                        },
+                        {
+                            label: lessonMenu.isMarkedForReview ? 'Remover revisão' : 'Marcar para revisar',
+                            icon: lessonMenu.isMarkedForReview ? <BookmarkCheck size={14} /> : <Bookmark size={14} />,
+                            action: () => onToggleLessonReview(lessonMenu.lessonId)
+                        }
+                    ]}
+                />
+            )}
         </div>
     </aside>
     );

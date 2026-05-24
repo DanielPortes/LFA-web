@@ -52,6 +52,9 @@ describe('ContentSidebar', () => {
                 searchResultPosition={{ current: 1, total: 1 }}
                 filteredModules={modules}
                 isLessonCompleted={() => false}
+                isLessonMarkedForReview={() => false}
+                onMarkLessonCompleted={vi.fn()}
+                onToggleLessonReview={vi.fn()}
                 onNavigate={vi.fn()}
             />
         );
@@ -91,6 +94,9 @@ describe('ContentSidebar', () => {
                 searchResultPosition={{ current: 2, total: 3 }}
                 filteredModules={modules}
                 isLessonCompleted={() => false}
+                isLessonMarkedForReview={() => false}
+                onMarkLessonCompleted={vi.fn()}
+                onToggleLessonReview={vi.fn()}
                 onNavigate={vi.fn()}
             />
         );
@@ -100,5 +106,80 @@ describe('ContentSidebar', () => {
 
         expect(onMoveSearchResult).toHaveBeenNthCalledWith(1, 1);
         expect(onMoveSearchResult).toHaveBeenNthCalledWith(2, -1);
+    });
+
+    it('abre menu de contexto da aula para concluir ou marcar revisão', () => {
+        const onMarkLessonCompleted = vi.fn();
+        const onToggleLessonReview = vi.fn();
+
+        render(
+            <ContentSidebar
+                sidebarId="conteudo-sidebar"
+                isSidebarOpen={false}
+                progressPercent={10}
+                onResetProgress={vi.fn()}
+                lastVisitedLesson={null}
+                activeLessonId="lesson-1"
+                onContinue={vi.fn()}
+                searchQuery=""
+                onSearchChange={vi.fn()}
+                onSearchSubmit={vi.fn()}
+                onMoveSearchResult={vi.fn()}
+                firstSearchResult={null}
+                activeSearchResult={null}
+                searchResultPosition={null}
+                filteredModules={modules}
+                isLessonCompleted={() => false}
+                isLessonMarkedForReview={() => false}
+                onMarkLessonCompleted={onMarkLessonCompleted}
+                onToggleLessonReview={onToggleLessonReview}
+                onNavigate={vi.fn()}
+            />
+        );
+
+        fireEvent.contextMenu(screen.getByRole('button', { name: /Pilhas/ }), {
+            clientX: 120,
+            clientY: 160
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Marcar como concluída' }));
+        expect(onMarkLessonCompleted).toHaveBeenCalledWith('lesson-3');
+
+        fireEvent.contextMenu(screen.getByRole('button', { name: /Pilhas/ }), {
+            clientX: 120,
+            clientY: 160
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Marcar para revisar' }));
+
+        expect(onToggleLessonReview).toHaveBeenCalledWith('lesson-3');
+    });
+
+    it('mostra indicador claro quando a aula está marcada para revisão', () => {
+        render(
+            <ContentSidebar
+                sidebarId="conteudo-sidebar"
+                isSidebarOpen={false}
+                progressPercent={10}
+                onResetProgress={vi.fn()}
+                lastVisitedLesson={null}
+                activeLessonId="lesson-1"
+                onContinue={vi.fn()}
+                searchQuery=""
+                onSearchChange={vi.fn()}
+                onSearchSubmit={vi.fn()}
+                onMoveSearchResult={vi.fn()}
+                firstSearchResult={null}
+                activeSearchResult={null}
+                searchResultPosition={null}
+                filteredModules={modules}
+                isLessonCompleted={() => false}
+                isLessonMarkedForReview={(lessonId) => lessonId === 'lesson-3'}
+                onMarkLessonCompleted={vi.fn()}
+                onToggleLessonReview={vi.fn()}
+                onNavigate={vi.fn()}
+            />
+        );
+
+        expect(screen.getByText('Revisar')).toBeInTheDocument();
     });
 });

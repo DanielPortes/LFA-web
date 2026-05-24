@@ -43,8 +43,10 @@ const LoadedContentSection = ({
     const {
         progress,
         isLessonCompleted,
+        isLessonMarkedForReview,
         markLessonVisited,
         markLessonCompleted,
+        toggleLessonReview,
         getProgressPercentage,
         resetProgress
     } = useProgress();
@@ -116,6 +118,9 @@ const LoadedContentSection = ({
                 searchResultPosition={searchResultPosition}
                 filteredModules={filteredModules}
                 isLessonCompleted={isLessonCompleted}
+                isLessonMarkedForReview={isLessonMarkedForReview}
+                onMarkLessonCompleted={markLessonCompleted}
+                onToggleLessonReview={toggleLessonReview}
                 onNavigate={handleNavigate}
             />
 

@@ -10,6 +10,7 @@ interface ProgressData {
     completedLessons: string[];
     currentLesson: string | null;
     lastVisited: string | null;
+    reviewLessons: string[];
     visitedLessons: string[];
     exercises: ExerciseProgress;
 }
@@ -22,6 +23,7 @@ const createDefaultProgress = (): ProgressData => ({
     completedLessons: [],
     currentLesson: null,
     lastVisited: null,
+    reviewLessons: [],
     visitedLessons: [],
     exercises: {
         completed: {},
@@ -45,6 +47,7 @@ const normalizeProgress = (value?: Partial<ProgressData> | null): ProgressData =
         completedLessons: Array.isArray(value.completedLessons) ? value.completedLessons.filter(Boolean) : [],
         currentLesson: typeof value.currentLesson === 'string' ? value.currentLesson : null,
         lastVisited: typeof value.lastVisited === 'string' ? value.lastVisited : null,
+        reviewLessons: Array.isArray(value.reviewLessons) ? value.reviewLessons.filter(Boolean) : [],
         visitedLessons: Array.isArray(value.visitedLessons) ? value.visitedLessons.filter(Boolean) : [],
         exercises: normalizeExercises(value.exercises)
     };
@@ -106,7 +109,20 @@ export function useProgress() {
             if (prev.completedLessons.includes(lessonId)) return prev;
             return {
                 ...prev,
-                completedLessons: [...prev.completedLessons, lessonId]
+                completedLessons: [...prev.completedLessons, lessonId],
+                reviewLessons: prev.reviewLessons.filter(id => id !== lessonId)
+            };
+        });
+    }, [setProgress]);
+
+    const toggleLessonReview = useCallback((lessonId: string) => {
+        setProgress(prev => {
+            const isMarked = prev.reviewLessons.includes(lessonId);
+            return {
+                ...prev,
+                reviewLessons: isMarked
+                    ? prev.reviewLessons.filter(id => id !== lessonId)
+                    : [...prev.reviewLessons, lessonId]
             };
         });
     }, [setProgress]);
@@ -118,6 +134,10 @@ export function useProgress() {
     const isLessonVisited = useCallback((lessonId: string) => {
         return progress.visitedLessons.includes(lessonId);
     }, [progress.visitedLessons]);
+
+    const isLessonMarkedForReview = useCallback((lessonId: string) => {
+        return progress.reviewLessons.includes(lessonId);
+    }, [progress.reviewLessons]);
 
     const getProgressPercentage = useCallback((totalLessons: number) => {
         if (totalLessons === 0) return 0;
@@ -180,7 +200,9 @@ export function useProgress() {
         progress,
         markLessonVisited,
         markLessonCompleted,
+        toggleLessonReview,
         isLessonCompleted,
+        isLessonMarkedForReview,
         isLessonVisited,
         getProgressPercentage,
         resetProgress,
