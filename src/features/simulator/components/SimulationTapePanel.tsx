@@ -1,6 +1,6 @@
 import React from 'react';
 import type { AutomatoData, SimulationStep } from '../../../types';
-import { History } from 'lucide-react';
+import { History, LayoutList } from 'lucide-react';
 import { StackVisualizer, TuringTape, InputTape } from '../../../components/ui';
 
 interface SimulationTapePanelProps {
@@ -32,7 +32,7 @@ export const SimulationTapePanel: React.FC<SimulationTapePanelProps> = ({
     stepCount,
     totalSteps,
 }) => (
-    <div className="glass-panel p-5 rounded-3xl shadow-apple-md border border-default transition-all duration-500 bg-surface-1/90 opacity-100 translate-y-0">
+    <div className="rounded-[22px] border border-default/45 bg-surface-1/45 p-4 opacity-100 shadow-none backdrop-blur-sm transition-all duration-500 translate-y-0">
         <div className="flex items-center justify-between mb-4 px-1">
             <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${
@@ -124,6 +124,13 @@ export const SimulationTapePanel: React.FC<SimulationTapePanelProps> = ({
 
         {isPda && simulationState?.activeConfigs && simulationState.activeConfigs.length > 0 && (
             <div className="mt-3 rounded-2xl border border-default/40 bg-surface-muted/25 p-3 shadow-inner">
+                <div className="mb-3 flex items-start gap-2 rounded-2xl border border-default/40 bg-surface-1/55 px-3 py-2 text-[11px] font-medium leading-relaxed text-secondary">
+                    <LayoutList size={15} className="mt-0.5 shrink-0 text-ios-purple" />
+                    <p>
+                        AP: <code className="rounded bg-black/5 px-1.5 py-0.5 font-black text-ios-purple dark:bg-white/10">símbolo, topo -&gt; novos</code>.
+                        O topo fica no alto; ε indica não consumir ou não empilhar.
+                    </p>
+                </div>
                 <div className="mb-2 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-wide text-secondary">
                     <span>Topo da pilha</span>
                 </div>

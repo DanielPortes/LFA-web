@@ -349,7 +349,6 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
         <SimulationWarningsPanel
             disableReason={disableReason}
             hasInvalidInput={hasInvalidInput}
-            isPda={isPda}
         />
     );
 
@@ -410,6 +409,8 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
         />
     );
 
+    const hasSideInspector = isDesktopViewport && inspectorOpen && Boolean(disableReason || history.length > 1 || hasSimulationProgress);
+
     return (
         <>
             <div className="sr-only" aria-live="polite">
@@ -430,7 +431,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
                 controlsBar={controlsBar}
                 disableReason={disableReason}
                 isPda={isPda}
-                showWarningsPanel={Boolean(disableReason || isPda)}
+                showWarningsPanel={Boolean(disableReason)}
                 showDetailsPanel={history.length > 1 || hasSimulationProgress}
                 showTapePanel={inputTokens.length > 0 || isTuring || isPda || hasRequestedSimulationView || hasSimulationProgress}
             >
@@ -449,11 +450,11 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
                                 compact
                                 compactVariant="workspace"
                                 fitRequestToken={fitRequestToken}
-                                hideCompactInspectorLauncher={isDesktopViewport && inspectorOpen}
+                                hideCompactInspectorLauncher={hasSideInspector}
                             />
                         )}
                         topBar={topBar}
-                        showRightDock={isDesktopViewport && inspectorOpen}
+                        showRightDock={hasSideInspector}
                         rightDock={rightDock}
                         bottomDock={bottomDock}
                     />

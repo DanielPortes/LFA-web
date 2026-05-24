@@ -413,7 +413,10 @@
     .bg-surface-2 { background-color: var(--color-surface-2); }
     .bg-surface-2\/55 { background-color: color-mix(in srgb, var(--color-surface-2) 55%, transparent); }
     .bg-surface-3 { background-color: var(--color-surface-3); }
+    .bg-surface-1\/35 { background-color: color-mix(in srgb, var(--color-surface-1) 35%, transparent); }
+    .bg-surface-1\/45 { background-color: color-mix(in srgb, var(--color-surface-1) 45%, transparent); }
     .bg-surface-1\/50 { background-color: color-mix(in srgb, var(--color-surface-1) 50%, transparent); }
+    .bg-surface-1\/55 { background-color: color-mix(in srgb, var(--color-surface-1) 55%, transparent); }
     .bg-surface-1\/60 { background-color: color-mix(in srgb, var(--color-surface-1) 60%, transparent); }
     .bg-surface-1\/65 { background-color: color-mix(in srgb, var(--color-surface-1) 65%, transparent); }
     .bg-surface-1\/70 { background-color: color-mix(in srgb, var(--color-surface-1) 70%, transparent); }
@@ -424,6 +427,7 @@
     .bg-surface-1\/92 { background-color: color-mix(in srgb, var(--color-surface-1) 92%, transparent); }
     .bg-surface-1\/95 { background-color: color-mix(in srgb, var(--color-surface-1) 95%, transparent); }
     .bg-surface-2\/30 { background-color: color-mix(in srgb, var(--color-surface-2) 30%, transparent); }
+    .bg-surface-2\/40 { background-color: color-mix(in srgb, var(--color-surface-2) 40%, transparent); }
     .bg-surface-2\/50 { background-color: color-mix(in srgb, var(--color-surface-2) 50%, transparent); }
     .bg-surface-2\/60 { background-color: color-mix(in srgb, var(--color-surface-2) 60%, transparent); }
     .bg-surface-2\/70 { background-color: color-mix(in srgb, var(--color-surface-2) 70%, transparent); }
@@ -433,6 +437,7 @@
     .bg-surface-1-90 { background-color: color-mix(in srgb, var(--color-surface-1) 90%, transparent); }
     .bg-surface-muted { background-color: var(--color-surface-muted); }
     .bg-surface-muted\/20 { background-color: color-mix(in srgb, var(--color-surface-muted) 20%, transparent); }
+    .bg-surface-muted\/25 { background-color: color-mix(in srgb, var(--color-surface-muted) 25%, transparent); }
     .bg-surface-muted\/30 { background-color: color-mix(in srgb, var(--color-surface-muted) 30%, transparent); }
     .bg-surface-muted\/40 { background-color: color-mix(in srgb, var(--color-surface-muted) 40%, transparent); }
     .bg-surface-muted\/50 { background-color: color-mix(in srgb, var(--color-surface-muted) 50%, transparent); }
@@ -464,7 +469,9 @@
     .border-default { border-color: var(--color-border); }
     .border-default\/20 { border-color: color-mix(in srgb, var(--color-border) 20%, transparent); }
     .border-default\/30 { border-color: color-mix(in srgb, var(--color-border) 30%, transparent); }
+    .border-default\/35 { border-color: color-mix(in srgb, var(--color-border) 35%, transparent); }
     .border-default\/40 { border-color: color-mix(in srgb, var(--color-border) 40%, transparent); }
+    .border-default\/45 { border-color: color-mix(in srgb, var(--color-border) 45%, transparent); }
     .border-default\/50 { border-color: color-mix(in srgb, var(--color-border) 50%, transparent); }
     .border-default\/60 { border-color: color-mix(in srgb, var(--color-border) 60%, transparent); }
     .border-default\/70 { border-color: color-mix(in srgb, var(--color-border) 70%, transparent); }

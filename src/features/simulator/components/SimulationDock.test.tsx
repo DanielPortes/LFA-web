@@ -156,4 +156,68 @@ describe('SimulationDock', () => {
         expect(within(screen.getByTestId('right')).getByRole('button', { name: 'Visualização' })).toBeInTheDocument();
         expect(within(screen.getByTestId('right')).getByRole('button', { name: 'Alertas' })).toBeInTheDocument();
     });
+
+    it('mantém o inspetor desktop compacto para não sobrepor o player inferior', () => {
+        render(
+            <SimulationDock
+                desktopInspector={true}
+                inspectorOpen={true}
+                onCloseInspector={() => {}}
+                regexImportPanel={<span>REGEX</span>}
+                warningsPanel={<span>WARNINGS</span>}
+                detailsPanel={<span>DETAILS</span>}
+                tapePanel={<div className="h-[900px]">TAPE</div>}
+                controlsBar={<span>CONTROLS</span>}
+                disableReason={null}
+                isPda={true}
+                showWarningsPanel={true}
+                showDetailsPanel={true}
+                showTapePanel={true}
+            >
+                {({ rightDock }) => <section data-testid="right">{rightDock}</section>}
+            </SimulationDock>
+        );
+
+        const inspector = screen.getByTestId('simulation-inspector-shell');
+        const inspectorBody = screen.getByTestId('simulation-inspector-body');
+
+        expect(inspector).toHaveClass('max-h-[min(34rem,calc(100dvh-14rem))]');
+        expect(inspector).toHaveClass('bg-surface-1/35');
+        expect(inspector).toHaveClass('shadow-none');
+        expect(inspector).toHaveClass('backdrop-blur-sm');
+        expect(inspector).not.toHaveClass('h-full');
+        expect(inspectorBody).toHaveClass('overflow-y-auto');
+    });
+
+    it('renderiza apenas a visualização como faixa nativa acima do player quando não há alerta nem histórico', () => {
+        render(
+            <SimulationDock
+                desktopInspector={true}
+                inspectorOpen={true}
+                onCloseInspector={() => {}}
+                regexImportPanel={<span>REGEX</span>}
+                warningsPanel={<span>WARNINGS</span>}
+                detailsPanel={<span>DETAILS</span>}
+                tapePanel={<span>TAPE</span>}
+                controlsBar={<span>CONTROLS</span>}
+                disableReason={null}
+                isPda={true}
+                showWarningsPanel={false}
+                showDetailsPanel={false}
+                showTapePanel={true}
+            >
+                {({ rightDock, bottomDock }) => (
+                    <div>
+                        <section data-testid="right">{rightDock}</section>
+                        <section data-testid="bottom">{bottomDock}</section>
+                    </div>
+                )}
+            </SimulationDock>
+        );
+
+        expect(within(screen.getByTestId('right')).queryByText('TAPE')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('simulation-inspector-shell')).not.toBeInTheDocument();
+        expect(within(screen.getByTestId('native-simulation-readout')).getByText('TAPE')).toBeInTheDocument();
+        expect(within(screen.getByTestId('simulation-controls-slot')).getByText('CONTROLS')).toBeInTheDocument();
+    });
 });

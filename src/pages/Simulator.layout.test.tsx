@@ -141,7 +141,8 @@ describe('SimulatorPage layout', () => {
         fireEvent.change(input, { target: { value: 'ab' } });
         fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
 
-        expect(screen.getByText('Simulação e diagnóstico')).toBeInTheDocument();
+        expect(screen.queryByText('Simulação e diagnóstico')).not.toBeInTheDocument();
+        expect(screen.getByTestId('native-simulation-readout')).toBeInTheDocument();
         expect(screen.getByText('Visualização')).toBeInTheDocument();
     });
 
@@ -164,7 +165,8 @@ describe('SimulatorPage layout', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Iniciar simulação' }));
 
-        expect(screen.getByText('Simulação e diagnóstico')).toBeInTheDocument();
+        expect(screen.queryByText('Simulação e diagnóstico')).not.toBeInTheDocument();
+        expect(screen.getByTestId('native-simulation-readout')).toBeInTheDocument();
         const emptyInputNotice = screen.getByText(/Entrada vazia/);
         expect(emptyInputNotice).toBeVisible();
         expect(emptyInputNotice.closest('.opacity-0')).toBeNull();
@@ -192,6 +194,8 @@ describe('SimulatorPage layout', () => {
         const stackTitle = screen.getByText('Topo da pilha');
         expect(stackTitle).toBeVisible();
         expect(stackTitle.closest('.opacity-0')).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Alertas' })).not.toBeInTheDocument();
+        expect(screen.getByText(/AP:/)).toBeVisible();
     });
 
     it('reflete no canvas e no status o tipo inferido do autômato finito em edição', async () => {
@@ -224,7 +228,7 @@ describe('SimulatorPage layout', () => {
         expect(screen.getByText('AFN')).toBeInTheDocument();
     });
 
-    it('remove o inspetor compacto do editor enquanto o painel lateral de simulação ocupa a área', async () => {
+    it('mantém o inspetor compacto do editor quando só há visualização nativa de simulação', async () => {
         mockAnimationFrames();
         mockResizeObserver();
         mockViewport({ width: 1280, height: 800 });
@@ -241,11 +245,8 @@ describe('SimulatorPage layout', () => {
             await Promise.resolve();
         });
 
-        expect(screen.getByText('Simulação e diagnóstico')).toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: 'Abrir inspetor do editor' })).not.toBeInTheDocument();
-
-        fireEvent.click(screen.getByRole('button', { name: 'Fechar painel lateral de diagnóstico' }));
-
+        expect(screen.queryByText('Simulação e diagnóstico')).not.toBeInTheDocument();
+        expect(screen.getByTestId('native-simulation-readout')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Abrir inspetor do editor' })).toBeInTheDocument();
     });
 });

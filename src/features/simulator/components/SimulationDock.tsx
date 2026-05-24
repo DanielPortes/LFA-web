@@ -35,6 +35,7 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
     showTapePanel,
     children,
 }) => {
+    const showNativeReadout = desktopInspector && inspectorOpen && showTapePanel && !showWarningsPanel && !showDetailsPanel;
     const inspectorPanel = (
         <SimulationInspectorPanel
             preferredItemId={disableReason ? 'warnings' : 'tape'}
@@ -63,9 +64,16 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
         />
     );
 
-    const inspectorShell = inspectorOpen ? (
-        <section className={`glass-panel flex h-full min-h-0 flex-col rounded-[24px] border border-default bg-surface-1/95 shadow-apple-xl ${desktopInspector ? 'w-[min(24rem,calc(100vw-2rem))]' : 'max-h-[42vh] w-full'}`}>
-            <div className="flex items-center justify-between gap-3 border-b border-default/60 px-4 py-3">
+    const inspectorShell = inspectorOpen && !showNativeReadout ? (
+        <section
+            data-testid="simulation-inspector-shell"
+            className={`flex min-h-0 flex-col rounded-[24px] border border-default/45 bg-surface-1/35 shadow-none backdrop-blur-sm ${
+                desktopInspector
+                    ? 'max-h-[min(34rem,calc(100dvh-14rem))] w-[min(24rem,calc(100vw-2rem))]'
+                    : 'max-h-[42vh] w-full'
+            }`}
+        >
+            <div className="flex items-center justify-between gap-3 border-b border-default/35 bg-surface-muted/20 px-3 py-2.5">
                 <div>
                     <div className="ui-kicker-xs text-secondary">Inspetor</div>
                     <div className="text-sm font-bold text-primary">Simulação e diagnóstico</div>
@@ -73,13 +81,13 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
                 <button
                     type="button"
                     onClick={onCloseInspector}
-                    className="rounded-2xl p-2 text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
+                    className="rounded-2xl p-1.5 text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
                     aria-label="Fechar painel lateral de diagnóstico"
                 >
                     <X size={16} />
                 </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-3 custom-scrollbar">
+            <div data-testid="simulation-inspector-body" className="min-h-0 flex-1 overflow-y-auto p-2.5 custom-scrollbar">
                 {inspectorPanel}
             </div>
         </section>
@@ -98,6 +106,11 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
                 <div data-testid="regex-import-slot" className="flex justify-end">
                     {regexImportPanel}
                 </div>
+                {showNativeReadout && (
+                    <div data-testid="native-simulation-readout" className="pointer-events-auto mx-auto w-full max-w-[760px]">
+                        {tapePanel}
+                    </div>
+                )}
                 <div data-testid="simulation-controls-slot" className="min-w-0">
                     {controlsBar}
                 </div>
