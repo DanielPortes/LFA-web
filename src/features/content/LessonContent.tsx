@@ -15,10 +15,11 @@ export const LessonContent: React.FC<LessonContentProps> = ({
     onExpand,
     onOpenExercise
 }) => (
-    <div className="render-lite-shell space-y-2">
+    <article className="lesson-book-shell render-lite-shell">
         {blocks.map((block, index) => (
-            <div
+            <section
                 key={`${block.type}-${index}-${block.title ?? 'content-block'}`}
+                className="lesson-book-section"
                 data-deferred-render="section"
             >
                 <ContentBlockRenderer
@@ -27,7 +28,7 @@ export const LessonContent: React.FC<LessonContentProps> = ({
                     onExpand={onExpand}
                     onOpenExercise={onOpenExercise}
                 />
-            </div>
+            </section>
         ))}
-    </div>
+    </article>
 );

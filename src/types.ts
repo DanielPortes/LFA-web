@@ -406,6 +406,7 @@ export interface ContentBlock {
     exerciseRef?: string;
     automatoRef?: AutomatoData;
     automatoRef2?: AutomatoData;
+    disableSimulation?: boolean;
     grammarTreeData?: GrammarTree;
 }
 

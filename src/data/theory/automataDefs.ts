@@ -265,36 +265,28 @@ export const ap_an_bn: AutomatoData = {
     ]
 };
 
-// --- 6. GRAMÁTICA DE GRAFOS (PAC-MAN) ---
+// --- 6. LINGUAGENS NÃO LINEARES (CONCLUSÕES DO LIVRO) ---
 
-export const pacman_grafo_antes: AutomatoData = {
+export const grafo_pacman_conclusao: AutomatoData = {
     tipo: 'AFD',
-    descricao: 'Subgrafo inicial: Pac-Man em A e maçã em B.',
+    descricao: 'Ilustração simplificada de uma palavra-grafo no exemplo de Gramáticas de Grafos.',
     estados: [
-        { id: 'A', label: 'A', x: 140, y: 200, isFinal: false, isInicial: true },
-        { id: 'B', label: 'B', x: 340, y: 200, isFinal: false, isInicial: false },
-        { id: 'P', label: 'P', x: 140, y: 80, isFinal: false, isInicial: false },
-        { id: 'M', label: 'M', x: 340, y: 80, isFinal: false, isInicial: false }
+        { id: 'A', label: 'A', x: 130, y: 230, isFinal: false, isInicial: true },
+        { id: 'B', label: 'B', x: 330, y: 180, isFinal: false, isInicial: false },
+        { id: 'C', label: 'C', x: 330, y: 300, isFinal: false, isInicial: false },
+        { id: 'P', label: 'P', x: 130, y: 90, isFinal: false, isInicial: false },
+        { id: 'M', label: 'M', x: 330, y: 70, isFinal: false, isInicial: false },
+        { id: 'F', label: 'F', x: 530, y: 180, isFinal: false, isInicial: false },
+        { id: 'fase', label: 'fase', x: 520, y: 320, isFinal: false, isInicial: false }
     ],
     transicoes: [
-        { id: 't1', de: 'A', para: 'B', simbolo: 'c', curvatura: 0 },
-        { id: 't2', de: 'B', para: 'A', simbolo: 'c', curvatura: 20 },
-        { id: 't3', de: 'P', para: 'A', simbolo: 'em', curvatura: 0 },
-        { id: 't4', de: 'M', para: 'B', simbolo: 'em', curvatura: 0 }
+        { id: 't1', de: 'A', para: 'B', simbolo: 'caminho', curvatura: 0 },
+        { id: 't2', de: 'B', para: 'C', simbolo: 'caminho', curvatura: 0 },
+        { id: 't3', de: 'C', para: 'A', simbolo: 'caminho', curvatura: 20 },
+        { id: 't4', de: 'P', para: 'A', simbolo: 'em', curvatura: 0 },
+        { id: 't5', de: 'M', para: 'B', simbolo: 'em', curvatura: 0 },
+        { id: 't6', de: 'F', para: 'B', simbolo: 'em', curvatura: 0 },
+        { id: 't7', de: 'fase', para: 'M', simbolo: 'comida', curvatura: 0 }
     ]
 };
 
-export const pacman_grafo_depois: AutomatoData = {
-    tipo: 'AFD',
-    descricao: 'Subgrafo reescrito: Pac-Man em B e maçã removida.',
-    estados: [
-        { id: 'A', label: 'A', x: 140, y: 200, isFinal: false, isInicial: true },
-        { id: 'B', label: 'B', x: 340, y: 200, isFinal: false, isInicial: false },
-        { id: 'P', label: 'P', x: 340, y: 80, isFinal: false, isInicial: false }
-    ],
-    transicoes: [
-        { id: 't1', de: 'A', para: 'B', simbolo: 'c', curvatura: 0 },
-        { id: 't2', de: 'B', para: 'A', simbolo: 'c', curvatura: 20 },
-        { id: 't3', de: 'P', para: 'B', simbolo: 'em', curvatura: 0 }
-    ]
-};

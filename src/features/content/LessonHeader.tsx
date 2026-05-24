@@ -53,7 +53,7 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
     const moduleTrailLabel = getModuleTrailLabel(moduleTitle);
 
     return (
-        <header className="mb-12 animate-fade-in glass-card p-6 md:p-8">
+        <header className="lesson-book-header mb-12 animate-fade-in p-6 md:p-8">
             <div className="mb-4 flex justify-end md:hidden">
                 <button
                     onClick={onOpenSidebar}
@@ -90,7 +90,7 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
                 </div>
             </div>
 
-            <div className="glass-card flex items-start gap-4 rounded-r-xl border-l-4 border-ios-blue/30 p-4 py-2 pl-6 ui-body-lg font-medium italic text-secondary">
+            <div className="lesson-book-quote flex items-start gap-4 rounded-r-xl border-l-4 border-ios-blue/30 p-4 py-2 pl-6 ui-body-lg font-medium italic text-secondary">
                 <Quote className="flex-shrink-0 text-muted" size={24} />
                 {lessonDescription}
             </div>
@@ -109,7 +109,7 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
             {hasPedagogicalHeader && (
                 <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.2fr),minmax(0,1fr)]">
                     {objectives.length > 0 && (
-                        <section className="rounded-2xl border border-default bg-surface-muted/70 p-5">
+                        <section className="lesson-header-panel rounded-2xl border border-default bg-surface-muted/70 p-5">
                             <p className="ui-kicker text-ios-blue">Nesta lição você vai</p>
                             <ul className="mt-3 space-y-2 text-sm text-primary">
                                 {objectives.map((objective) => (
@@ -124,7 +124,7 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
 
                     <div className="space-y-4">
                         {prerequisites.length > 0 && (
-                            <section className="rounded-2xl border border-default bg-surface-muted/70 p-5">
+                            <section className="lesson-header-panel rounded-2xl border border-default bg-surface-muted/70 p-5">
                                 <p className="ui-kicker text-secondary">Pré-requisitos</p>
                                 <ul className="mt-3 space-y-2 text-sm text-primary">
                                     {prerequisites.map((prerequisite) => (
@@ -138,7 +138,7 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
                         )}
 
                         {references.length > 0 && (
-                            <section className="rounded-2xl border border-default bg-surface-muted/70 p-5">
+                            <section className="lesson-header-panel rounded-2xl border border-default bg-surface-muted/70 p-5">
                                 <div className="flex items-center gap-2 text-ios-indigo">
                                     <BookOpen size={16} />
                                     <p className="ui-kicker">Base bibliográfica</p>

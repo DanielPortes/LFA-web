@@ -40,7 +40,7 @@ export const mod1: CourseModule = {
             content: [
                 {
                     type: 'text',
-                    content: 'No AFD, para cada estado e cada símbolo de entrada, existe exatamente uma próxima configuração de controle.'
+                    content: 'Um autômato finito determinístico é uma máquina abstrata com memória finita. Ele lê a palavra de entrada da esquerda para a direita, um símbolo por vez, e mantém apenas uma informação de controle: o estado atual. Essa limitação é justamente o que torna o modelo útil. Se a linguagem pode ser reconhecida lembrando apenas uma quantidade finita de informação, então há uma boa chance de ela ser regular.\n\nNo AFD, para cada estado e cada símbolo de entrada, existe exatamente uma próxima configuração de controle. Não há escolha, sorteio ou bifurcação: a computação é uma única trilha.'
                 },
                 {
                     type: 'definition',
@@ -53,6 +53,10 @@ export const mod1: CourseModule = {
                     content: 'Uma palavra w é aceita se δ̂(q0, w) ∈ F.'
                 },
                 {
+                    type: 'text',
+                    content: 'A função `δ` explica um único passo: estando em `q` e lendo `a`, para qual estado a máquina vai? A função estendida `δ̂` explica a palavra inteira: começando em `q0`, qual estado sobra depois que todos os símbolos foram consumidos? A decisão final só acontece depois do último símbolo. Estados finais não significam "pare agora"; eles significam "se a entrada terminar aqui, aceite".'
+                },
+                {
                     type: 'warning',
                     title: 'Condições de parada',
                     content: '1) Aceitação: fim da fita em estado final.\n2) Rejeição: fim da fita em estado não final.\n3) Em uma representação incompleta, uma transição ausente deve ser totalizada antes de certas provas e algoritmos.'
@@ -60,8 +64,13 @@ export const mod1: CourseModule = {
                 {
                     type: 'example',
                     title: 'Exemplo: paridade',
-                    content: 'Este autômato controla se o número de "a"s e "b"s é par ou ímpar.',
+                    content: 'Este autômato controla se o número de `a`s e `b`s é par ou ímpar. Cada estado é uma fotografia da memória necessária: `PP` significa quantidade par de `a` e par de `b`; `IP` significa ímpar de `a` e par de `b`; `PI` significa par de `a` e ímpar de `b`; `II` significa ímpar de ambos. Ler `a` troca apenas a paridade de `a`; ler `b` troca apenas a paridade de `b`.',
                     automatoRef: afd_paridade
+                },
+                {
+                    type: 'checkpoint',
+                    title: 'Pergunta antes do simulador',
+                    content: 'Teste mentalmente as palavras `ε`, `ab`, `aba` e `abba`. Em cada uma, acompanhe a paridade de `a` e de `b` antes de apertar Simular. Se a sua previsão divergir da máquina, o problema está na leitura da linguagem ou no significado dado ao estado.'
                 }
             ]
         },
@@ -94,6 +103,10 @@ export const mod1: CourseModule = {
                     content: 'Base: δ̂(q, ε) = q.\nPasso: δ̂(q, aw) = δ̂(δ(q, a), w).\n\nConsuma o primeiro símbolo, mude de estado e repita.'
                 },
                 {
+                    type: 'text',
+                    content: 'A definição parece formal, mas ela descreve exatamente o movimento que você faz no diagrama. Para calcular `δ̂(q0, abaa)`, não tente olhar a palavra inteira de uma vez. Leia `a`, atualize o estado; leia `b`, atualize de novo; continue até a palavra acabar. A função estendida existe para transformar essa repetição em uma frase matemática curta.'
+                },
+                {
                     type: 'algorithm',
                     title: 'Simulação de uma palavra',
                     content: [
@@ -101,6 +114,12 @@ export const mod1: CourseModule = {
                         'Para cada símbolo, aplique δ e avance o ponteiro.',
                         'No fim, aceite se o estado atual estiver em F.'
                     ]
+                },
+                {
+                    type: 'example',
+                    title: 'Rastreamento em um AFD de paridade',
+                    content: 'Na palavra `abba`, começamos em `PP`. Ao ler `a`, vamos para `IP`; ao ler `b`, vamos para `II`; no segundo `b`, voltamos para `IP`; no último `a`, retornamos para `PP`. Como `PP` é final, a palavra é aceita. Esse tipo de rastreamento é a ponte entre a definição formal e o uso do simulador.',
+                    automatoRef: afd_paridade
                 }
             ]
         },
@@ -137,7 +156,7 @@ export const mod1: CourseModule = {
             content: [
                 {
                     type: 'text',
-                    content: 'Cada estado representa a memória mínima necessária para decidir a aceitação.'
+                    content: 'Projetar um AFD não é desenhar círculos ao acaso. Cada estado representa a memória mínima necessária para decidir a aceitação quando a entrada terminar. A pergunta correta é: "o que eu preciso lembrar do prefixo já lido para decidir o futuro da palavra?".\n\nEssa pergunta muda o desenho. Para paridade, lembramos restos módulo 2. Para prefixo fixo, lembramos quanto do prefixo foi confirmado. Para sufixo ou substring, lembramos o maior pedaço final já lido que ainda pode virar o padrão desejado.'
                 },
                 {
                     type: 'list',
@@ -152,14 +171,20 @@ export const mod1: CourseModule = {
                 {
                     type: 'example',
                     title: 'Exemplo (Blauth): aa ou bb',
-                    content: 'L1 = { w | w possui aa ou bb como subpalavra }. Os estados q1 e q2 memorizam o símbolo anterior.',
+                    content: 'Considere `L1 = { w ∈ {a,b}* | w possui aa ou bb como subpalavra }`. Enquanto não encontramos duas letras iguais consecutivas, o autômato precisa lembrar qual foi o último símbolo. O estado `q1` representa "o último símbolo foi a"; `q2` representa "o último símbolo foi b"; `OK` representa "já encontrei aa ou bb". Depois de chegar em `OK`, qualquer continuação permanece aceita.',
                     automatoRef: afd_substring_aa_ou_bb
                 },
                 {
                     type: 'example',
                     title: 'Substring "abb"',
-                    content: 'Estados lembram o maior sufixo que pode iniciar "abb".',
+                    content: 'Para reconhecer palavras que contêm `abb`, os estados lembram o maior sufixo já visto que também é prefixo de `abb`. `q0` não guarda progresso; `q1` significa que o sufixo relevante é `a`; `q2` significa `ab`; `OK` significa que `abb` já apareceu. Se em `q2` lemos `a`, não voltamos para o nada: o novo sufixo útil é novamente `a`.',
                     automatoRef: afd_substring_abb
+                },
+                {
+                    type: 'example',
+                    title: 'Começa com "ab"',
+                    content: 'Este exemplo mostra outro padrão: prefixo obrigatório. Depois de errar o primeiro ou o segundo símbolo, a palavra nunca mais pode começar com `ab`, então o estado de erro resume todos os prefixos irrecuperáveis.',
+                    automatoRef: afd_prefixo_ab
                 },
                 {
                     type: 'algorithm',
@@ -175,6 +200,15 @@ export const mod1: CourseModule = {
                     type: 'checkpoint',
                     title: 'Cheque a memória antes de desenhar',
                     content: 'Se a linguagem exige detectar uma substring fixa, seu estado precisa memorizar o maior sufixo útil já visto. Se exige paridade ou resto, o estado precisa codificar exatamente esse contador modular.'
+                },
+                {
+                    type: 'proof-outline',
+                    title: 'Como justificar que o desenho está correto',
+                    content: [
+                        'Declare o significado de cada estado em português claro.',
+                        'Mostre que cada transição preserva esse significado depois de ler o próximo símbolo.',
+                        'Conclua que os estados finais correspondem exatamente à propriedade da linguagem.'
+                    ]
                 },
                 {
                     type: 'mini-exercise',

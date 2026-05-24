@@ -21,9 +21,9 @@ export const LessonSupportPanel: React.FC<LessonSupportPanelProps> = ({
     }
 
     return (
-        <section className="mt-10 space-y-4">
+        <section className="lesson-support-book mt-12 space-y-4">
             {relatedExercises.length > 0 && (
-                <div className="rounded-3xl border border-status-info/20 bg-status-info-soft/60 p-6">
+                <div className="lesson-support-block border-status-info/20 bg-status-info-soft/60">
                     <div className="flex items-center gap-3 text-status-info">
                         <Pencil size={18} />
                         <h2 className="ui-kicker">Prática associada</h2>
@@ -32,7 +32,7 @@ export const LessonSupportPanel: React.FC<LessonSupportPanelProps> = ({
                         {relatedExercises.map((exercise) => (
                             <article
                                 key={exercise.ref}
-                                className="surface-soft-panel rounded-2xl border border-status-info/20 p-4 dark:bg-black/10"
+                                className="surface-soft-panel rounded-xl border border-status-info/20 p-4 dark:bg-black/10"
                             >
                                 <div className="flex flex-wrap items-center gap-2">
                                     <span className="badge border-default bg-surface-muted text-secondary">
@@ -64,7 +64,7 @@ export const LessonSupportPanel: React.FC<LessonSupportPanelProps> = ({
             )}
 
             {summary.length > 0 && (
-                <div className="rounded-3xl border border-default bg-surface-muted/70 p-6">
+                <div className="lesson-support-block border-default bg-surface-muted/70">
                     <div className="flex items-center gap-3 text-ios-green">
                         <BookOpen size={18} />
                         <h2 className="ui-kicker">Resumo para revisão</h2>
@@ -81,7 +81,7 @@ export const LessonSupportPanel: React.FC<LessonSupportPanelProps> = ({
             )}
 
             {commonMistakes.length > 0 && (
-                <div className="rounded-3xl border border-status-warning bg-status-warning-soft/70 p-6">
+                <div className="lesson-support-block border-status-warning bg-status-warning-soft/70">
                     <div className="flex items-center gap-3 text-status-warning">
                         <AlertTriangle size={18} />
                         <h2 className="ui-kicker">Erros comuns</h2>
@@ -90,7 +90,7 @@ export const LessonSupportPanel: React.FC<LessonSupportPanelProps> = ({
                         {commonMistakes.map((mistake) => (
                             <article
                                 key={mistake.title}
-                                className="surface-soft-panel rounded-2xl border border-status-warning/30 p-4 dark:bg-black/10"
+                                className="surface-soft-panel rounded-xl border border-status-warning/30 p-4 dark:bg-black/10"
                             >
                                 <h3 className="text-sm font-bold text-primary">{mistake.title}</h3>
                                 <p className="mt-2 text-sm leading-relaxed text-secondary">{mistake.explanation}</p>

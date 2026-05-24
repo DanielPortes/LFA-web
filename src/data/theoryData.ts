@@ -6,7 +6,6 @@ import { mod3 } from './theory/modules/mod3_er';
 import { mod4 } from './theory/modules/mod4_minimizacao';
 import { mod5 } from './theory/modules/mod5_propriedades';
 import { mod6 } from './theory/modules/mod6_gramaticas_regulares';
-import { mod7 } from './theory/modules/mod7_fechamentos';
 import { mod8 } from './theory/modules/mod8_aplicacoes';
 import { mod9 } from './theory/modules/mod9_moore_mealy';
 import { mod10 } from './theory/modules/mod10_glc';
@@ -26,12 +25,11 @@ export const courseModules: CourseModule[] = [
     mod1,
     mod2,
     mod3,
-    mod4,
-    mod5,
     mod6,
-    mod7,
-    mod8,
+    mod5,
+    mod4,
     mod9,
+    mod8,
     mod10,
     mod11,
     mod12

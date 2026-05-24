@@ -132,4 +132,38 @@ describe('ContentBlockRenderer', () => {
         expect(screen.getByText('Z')).toBeInTheDocument();
         expect(screen.getByText('A')).toBeInTheDocument();
     });
+
+    it('renderiza exemplo textual sem reservar área vazia para autômato', () => {
+        render(
+            <ContentBlockRenderer
+                block={{
+                    type: 'example',
+                    title: 'Leitura de linguagem',
+                    content: 'Primeiro entenda palavras aceitas e rejeitadas.'
+                }}
+                onExpand={vi.fn()}
+            />
+        );
+
+        expect(screen.getByText('Leitura de linguagem')).toBeInTheDocument();
+        expect(screen.queryByTestId('automaton-preview-card')).not.toBeInTheDocument();
+    });
+
+    it('renderiza diagrama conceitual sem ação de simulação', () => {
+        render(
+            <ContentBlockRenderer
+                block={{
+                    type: 'example',
+                    title: 'Diagrama conceitual',
+                    content: 'Visual sem execução.',
+                    automatoRef: automaton,
+                    disableSimulation: true
+                }}
+                onSimulate={vi.fn()}
+            />
+        );
+
+        expect(screen.queryByRole('button', { name: 'SIMULAR' })).not.toBeInTheDocument();
+        expect(screen.getByTestId('automaton-preview-card')).toBeInTheDocument();
+    });
 });

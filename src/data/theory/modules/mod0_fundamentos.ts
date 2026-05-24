@@ -21,7 +21,7 @@ export const mod0: CourseModule = {
                 'Leitura básica de conjuntos e notação matemática elementar.'
             ],
             keywords: ['alfabeto', 'palavra', 'linguagem', 'Σ*', 'ε', '∅'],
-            estimatedMinutes: 18,
+            estimatedMinutes: 28,
             references: [blauthCap1],
             commonMistakes: [
                 {
@@ -41,12 +41,16 @@ export const mod0: CourseModule = {
             content: [
                 {
                     type: 'text',
-                    content: 'Bem-vindos a LFA! Estudamos a sintaxe da computação e como descrever linguagens de forma precisa.'
+                    content: 'Linguagens Formais e Autômatos começam com uma pergunta simples: como descrever, sem ambiguidade, quais sequências de símbolos pertencem a uma linguagem? Em computação, essa pergunta aparece quando um compilador precisa reconhecer identificadores, quando uma ferramenta de busca interpreta um padrão, quando um protocolo decide se uma mensagem está bem formada ou quando um analisador sintático confere a estrutura de um programa.\n\nNesta disciplina, a palavra "linguagem" não é usada no sentido cotidiano de português, inglês ou comunicação humana. O foco é a **sintaxe**: a forma das palavras, a ordem dos símbolos e as regras que dizem o que pode ou não aparecer. A semântica, isto é, o significado dessas palavras, pode existir depois, mas aqui primeiro precisamos dominar a forma.'
                 },
                 {
                     type: 'definition',
-                    title: 'Simbolo',
+                    title: 'Símbolo',
                     content: 'Entidade abstrata básica, não definida formalmente. É o “átomo” a partir do qual palavras e linguagens são formadas.'
+                },
+                {
+                    type: 'text',
+                    content: 'Pense em um símbolo como uma marca indivisível para o problema atual. Em um curso de compiladores, `a` pode ser uma letra, `id` pode ser um token inteiro e `+` pode ser um operador. A escolha do nível de detalhe depende do modelo que queremos estudar. Depois de escolher os símbolos, formamos palavras colocando esses símbolos em sequência finita; depois, uma linguagem é apenas um conjunto dessas palavras.'
                 },
                 {
                     type: 'list',
@@ -63,9 +67,18 @@ export const mod0: CourseModule = {
                     content: '1. **Alfabeto (Σ):** conjunto finito de símbolos (pode ser vazio).\n2. **Palavra/cadeia (w):** sequência finita de símbolos de Σ.\n3. **Linguagem formal (L):** conjunto de palavras sobre um alfabeto.'
                 },
                 {
+                    type: 'text',
+                    content: 'A notação `L = { w ∈ Σ* | condição sobre w }` deve ser lida em duas partes. Antes da barra vertical está o universo de busca: palavras finitas construídas com símbolos de `Σ`. Depois da barra vem o filtro: a propriedade que decide se a palavra entra ou não na linguagem. Essa leitura evita um erro comum: tentar desenhar um autômato antes de saber exatamente qual propriedade ele precisa lembrar.'
+                },
+                {
                     type: 'math-tip',
                     title: 'Universo (Σ*) e vazio (ε)',
                     content: '• **ε:** palavra vazia (|ε| = 0).\n• **Σ*:** conjunto de TODAS as palavras sobre Σ.\n• **∅:** conjunto vazio (linguagem sem palavras).\n\nCuidado: {ε} ≠ ∅. O primeiro tem uma palavra (vazia), o segundo não tem nenhuma.'
+                },
+                {
+                    type: 'example',
+                    title: 'Exemplo de leitura: palavras com aa ou bb',
+                    content: 'Se `Σ = {a, b}` e `L = { w ∈ Σ* | w possui aa ou bb como subpalavra }`, então `abaa` pertence a L porque termina com `aa`; `bba` pertence porque começa com `bb`; `abab` não pertence porque alterna símbolos e nunca contém duas letras iguais consecutivas. Observe que ainda não desenhamos uma máquina: primeiro entendemos a linguagem.'
                 },
                 {
                     type: 'definition',
@@ -79,7 +92,7 @@ export const mod0: CourseModule = {
                 },
                 {
                     type: 'text',
-                    content: 'Linguagens infinitas aparecem com frequência. Exemplo clássico: o conjunto de palíndromos sobre {a, b}.'
+                    content: 'Linguagens infinitas aparecem com frequência. O conjunto de todas as palavras sobre `{a, b}` é infinito, mesmo que o alfabeto tenha apenas dois símbolos. O conjunto dos palíndromos sobre `{a, b}` também é infinito: `ε`, `a`, `b`, `aa`, `bb`, `aba`, `abba` e assim por diante. A diferença é que `Σ*` aceita tudo; palíndromos aceitam apenas palavras que podem ser lidas igualmente da esquerda para a direita e da direita para a esquerda.'
                 },
                 {
                     type: 'definition',
@@ -99,6 +112,11 @@ export const mod0: CourseModule = {
                     type: 'note',
                     title: 'Leitura correta',
                     content: 'Ao escrever L = { w ∈ Σ* | ... }, explicite o alfabeto e o critério de aceitação.'
+                },
+                {
+                    type: 'summary',
+                    title: 'Como estudar esta trilha',
+                    content: 'Leia cada definição procurando o objeto matemático envolvido: símbolo, palavra, linguagem, gramática ou máquina. Depois, tente produzir três palavras aceitas e três rejeitadas antes de usar o simulador. Esse hábito transforma a Trilha em um livro interativo: a máquina confirma uma hipótese que você já formulou.'
                 }
             ]
         },

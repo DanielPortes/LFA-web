@@ -411,6 +411,7 @@
     /* Core Surface Tokens */
     .bg-surface-1 { background-color: var(--color-surface-1); }
     .bg-surface-2 { background-color: var(--color-surface-2); }
+    .bg-surface-2\/55 { background-color: color-mix(in srgb, var(--color-surface-2) 55%, transparent); }
     .bg-surface-3 { background-color: var(--color-surface-3); }
     .bg-surface-1\/50 { background-color: color-mix(in srgb, var(--color-surface-1) 50%, transparent); }
     .bg-surface-1\/60 { background-color: color-mix(in srgb, var(--color-surface-1) 60%, transparent); }
@@ -418,6 +419,7 @@
     .bg-surface-1\/70 { background-color: color-mix(in srgb, var(--color-surface-1) 70%, transparent); }
     .bg-surface-1\/80 { background-color: color-mix(in srgb, var(--color-surface-1) 80%, transparent); }
     .bg-surface-1\/85 { background-color: color-mix(in srgb, var(--color-surface-1) 85%, transparent); }
+    .bg-surface-1\/88 { background-color: color-mix(in srgb, var(--color-surface-1) 88%, transparent); }
     .bg-surface-1\/90 { background-color: color-mix(in srgb, var(--color-surface-1) 90%, transparent); }
     .bg-surface-1\/92 { background-color: color-mix(in srgb, var(--color-surface-1) 92%, transparent); }
     .bg-surface-1\/95 { background-color: color-mix(in srgb, var(--color-surface-1) 95%, transparent); }
@@ -1871,4 +1873,144 @@ body::after {
 
 .render-lite-shell [data-deferred-render="card"] {
     contain-intrinsic-size: auto 540px;
+}
+
+.content-reading-panel {
+    border: 1px solid color-mix(in srgb, var(--color-border) 62%, transparent);
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--color-surface-1) 78%, transparent), color-mix(in srgb, var(--color-canvas) 78%, transparent));
+    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+}
+
+.dark .content-reading-panel {
+    background:
+        linear-gradient(180deg, rgba(33, 33, 36, 0.54), rgba(16, 17, 20, 0.48));
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.18);
+}
+
+.lesson-book-header {
+    border-bottom: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
+}
+
+.lesson-book-quote,
+.lesson-header-panel {
+    border-color: color-mix(in srgb, var(--color-border) 46%, transparent);
+    background-color: color-mix(in srgb, var(--color-surface-muted) 30%, transparent);
+    box-shadow: none;
+}
+
+.lesson-book-shell {
+    max-width: 900px;
+    margin-inline: auto;
+    color: var(--color-text-primary);
+}
+
+.lesson-book-section + .lesson-book-section {
+    margin-top: 0.35rem;
+}
+
+.lesson-prose {
+    margin-block: 1.35rem;
+    white-space: pre-line;
+    text-align: left;
+    font-size: clamp(1.02rem, 1rem + 0.08vw, 1.12rem);
+    font-weight: 430;
+    line-height: 1.82;
+    color: var(--color-text-primary);
+}
+
+.lesson-prose strong,
+.lesson-list-item strong,
+.lesson-callout strong {
+    color: var(--color-text-primary);
+}
+
+.lesson-inline-code {
+    border: 1px solid color-mix(in srgb, var(--color-border) 58%, transparent);
+    border-radius: 0.42rem;
+    background-color: color-mix(in srgb, var(--color-surface-muted) 54%, transparent);
+    padding: 0.08rem 0.34rem;
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    font-weight: 650;
+    color: var(--color-text-primary);
+}
+
+.lesson-section-heading {
+    color: var(--color-text-primary);
+    font-size: 1.18rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    line-height: 1.35;
+}
+
+.lesson-list-block {
+    padding-block: 0.35rem;
+}
+
+.lesson-list-item {
+    border-left: 2px solid color-mix(in srgb, var(--color-ios-blue) 34%, transparent);
+    padding: 0.18rem 0 0.18rem 1rem;
+    font-size: clamp(1rem, 0.98rem + 0.1vw, 1.1rem);
+    font-weight: 500;
+}
+
+.lesson-callout,
+.lesson-algorithm-block,
+.lesson-example-block,
+.lesson-support-block {
+    border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+    border-radius: 16px;
+    padding: 1.25rem;
+    background-color: color-mix(in srgb, var(--color-surface-muted) 42%, transparent);
+}
+
+.lesson-callout-definition {
+    border-left: 5px solid color-mix(in srgb, var(--color-ios-blue) 72%, transparent);
+}
+
+.lesson-callout-theorem {
+    border-left: 5px solid color-mix(in srgb, var(--color-ios-purple) 62%, transparent);
+}
+
+.lesson-callout-note {
+    border-color: color-mix(in srgb, #d4a72c 34%, var(--color-border));
+    background-color: color-mix(in srgb, #f6d36f 13%, transparent);
+}
+
+.lesson-callout-warning {
+    border-color: color-mix(in srgb, var(--color-ios-red) 30%, var(--color-border));
+    background-color: color-mix(in srgb, var(--color-ios-red) 9%, transparent);
+}
+
+.lesson-callout-math {
+    border-color: color-mix(in srgb, var(--color-ios-indigo) 30%, var(--color-border));
+    background-color: color-mix(in srgb, var(--color-ios-indigo) 8%, transparent);
+}
+
+.lesson-algorithm-block,
+.lesson-example-block {
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--color-surface-muted) 36%, transparent), color-mix(in srgb, var(--color-canvas) 24%, transparent));
+}
+
+.lesson-example-block {
+    border-color: color-mix(in srgb, var(--color-ios-blue) 22%, var(--color-border));
+}
+
+.lesson-support-book {
+    max-width: 860px;
+    margin-inline: auto;
+}
+
+.lesson-support-block {
+    padding: 1.25rem;
+}
+
+@media (min-width: 768px) {
+    .lesson-callout,
+    .lesson-algorithm-block,
+    .lesson-support-block {
+        padding: 1.5rem;
+    }
 }

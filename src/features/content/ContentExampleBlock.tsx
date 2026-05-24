@@ -23,7 +23,7 @@ const PreviewCard = ({
 }) => (
     <div data-testid="automaton-preview-card" className="flex flex-col gap-3">
         {label && <div className={`ui-kicker text-center ${accentClassName}`}>{label}</div>}
-        <div className={`relative aspect-[16/10] min-h-[220px] overflow-hidden rounded-2xl bg-canvas shadow-inner transition-shadow group-hover:shadow-md md:min-h-[260px] lg:min-h-[320px] ${accentClassName === 'text-ios-green' ? 'border-2 border-ios-green/20' : 'border border-default'}`}>
+        <div className={`relative aspect-[16/10] min-h-[220px] overflow-hidden rounded-xl bg-canvas shadow-inner transition-shadow group-hover:shadow-md md:min-h-[260px] lg:min-h-[320px] ${accentClassName === 'text-ios-green' ? 'border-2 border-ios-green/20' : 'border border-default'}`}>
             {onExpand && (
                 <div className="absolute top-2 right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     <button
@@ -87,20 +87,21 @@ export const ContentExampleBlock: React.FC<ContentBlockComponentProps> = ({
 }) => {
     const primaryAutomaton = block.automatoRef;
     const secondaryAutomaton = block.automatoRef2;
+    const canSimulate = Boolean(primaryAutomaton && onSimulate && !block.disableSimulation);
 
     return (
-        <div data-testid="content-example-block" className="my-10 animate-fade-in group">
-            <div className="glass-card overflow-hidden border-2 border-transparent hover:border-ios-blue/20 transition-all duration-300">
-                <div className="p-6 md:p-8 bg-gradient-to-b from-white/50 to-transparent dark:from-white/5">
-                    <div className="flex justify-between items-start mb-6">
+        <figure data-testid="content-example-block" className="lesson-example-block my-10 animate-fade-in group">
+            <div className="overflow-hidden">
+                <div className="p-5 md:p-7">
+                    <div className="mb-6 flex items-start justify-between gap-4">
                         <h4 className="ui-kicker text-secondary flex items-center gap-2">
                             <LayoutList size={18} />
-                            Exemplo Prático
+                            Exemplo trabalhado
                         </h4>
 
-                        {primaryAutomaton && onSimulate && (
+                        {canSimulate && primaryAutomaton && (
                             <button
-                                onClick={() => onSimulate(primaryAutomaton)}
+                                onClick={() => onSimulate?.(primaryAutomaton)}
                                 className="flex items-center gap-2 px-4 py-2 rounded-full bg-ios-blue text-white text-xs font-bold hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/30 active:scale-95"
                             >
                                 <Play size={12} fill="currentColor" />
@@ -109,39 +110,41 @@ export const ContentExampleBlock: React.FC<ContentBlockComponentProps> = ({
                         )}
                     </div>
 
-                    {block.title && <h5 className="text-2xl font-bold mb-4 text-primary">{block.title}</h5>}
+                    {block.title && <h5 className="mb-4 text-2xl font-bold tracking-tight text-primary">{block.title}</h5>}
 
-                    <div className="text-secondary text-lg leading-relaxed mb-8 whitespace-pre-line">
+                    <figcaption className="mb-8 whitespace-pre-line text-base leading-8 text-secondary md:text-lg">
                         {typeof block.content === 'string' ? renderMarkdown(block.content) : block.content}
-                    </div>
+                    </figcaption>
 
-                    <div className={`grid gap-4 md:gap-4 lg:gap-6 ${secondaryAutomaton ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
-                        {primaryAutomaton && (
-                            <div className="flex flex-col gap-3">
-                                <PreviewCard
-                                    data={primaryAutomaton}
-                                    label={secondaryAutomaton ? 'Antes' : undefined}
-                                    accentClassName="text-secondary"
-                                    onExpand={onExpand}
-                                />
-                                {isAP(primaryAutomaton) && <PdaStackPreview data={primaryAutomaton} />}
-                            </div>
-                        )}
+                    {(primaryAutomaton || secondaryAutomaton) && (
+                        <div className={`grid gap-4 md:gap-4 lg:gap-6 ${secondaryAutomaton ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
+                            {primaryAutomaton && (
+                                <div className="flex flex-col gap-3">
+                                    <PreviewCard
+                                        data={primaryAutomaton}
+                                        label={secondaryAutomaton ? 'Antes' : undefined}
+                                        accentClassName="text-secondary"
+                                        onExpand={onExpand}
+                                    />
+                                    {isAP(primaryAutomaton) && <PdaStackPreview data={primaryAutomaton} />}
+                                </div>
+                            )}
 
-                        {secondaryAutomaton && (
-                            <>
-                                <div className="md:hidden flex justify-center text-muted"><ArrowDown /></div>
-                                <PreviewCard
-                                    data={secondaryAutomaton}
-                                    label="Depois"
-                                    accentClassName="text-ios-green"
-                                    onExpand={onExpand}
-                                />
-                            </>
-                        )}
-                    </div>
+                            {secondaryAutomaton && (
+                                <>
+                                    <div className="flex justify-center text-muted md:hidden"><ArrowDown /></div>
+                                    <PreviewCard
+                                        data={secondaryAutomaton}
+                                        label="Depois"
+                                        accentClassName="text-ios-green"
+                                        onExpand={onExpand}
+                                    />
+                                </>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
-        </div>
+        </figure>
     );
 };
