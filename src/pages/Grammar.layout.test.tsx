@@ -36,7 +36,7 @@ describe('GrammarPage layout', () => {
             expect(screen.queryByText(/rail lateral/i)).not.toBeInTheDocument();
             expect(screen.getByRole('button', { name: /Derivar/i })).toBeInTheDocument();
             expect(screen.getByLabelText('Palavra a ser derivada')).toBeInTheDocument();
-            expect(screen.getByText('Entrada vazia representa ε.')).toBeInTheDocument();
+            expect(screen.queryByText('Entrada vazia representa ε.')).not.toBeInTheDocument();
         });
     });
 });

@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
     AlertTriangle,
     BookOpen,
+    ChevronDown,
+    ChevronUp,
     CheckCircle2,
     FileText,
     Info,
@@ -9,6 +11,7 @@ import {
     Play,
     RotateCcw,
     Sparkles,
+    Wand2,
     X,
     XCircle,
 } from 'lucide-react';
@@ -38,6 +41,39 @@ interface GrammarWorkspaceProps {
     clearResult: () => void;
 }
 
+const GRAMMAR_EXAMPLES = [
+    {
+        title: 'aⁿbⁿ',
+        goal: 'Mesma quantidade de a antes de b.',
+        source: 'S -> a S b | eps',
+    },
+    {
+        title: 'palíndromos',
+        goal: 'Cadeias que leem igual nos dois sentidos.',
+        source: 'S -> a S a | b S b | a | b | eps',
+    },
+    {
+        title: 'parênteses balanceados',
+        goal: 'Aberturas e fechamentos bem aninhados.',
+        source: 'S -> ( S ) S | eps',
+    },
+    {
+        title: 'expressões simples',
+        goal: 'Somas e produtos com identificadores.',
+        source: 'E -> E + T | T\nT -> T * F | F\nF -> ( E ) | id',
+    },
+    {
+        title: 'listas com vírgula',
+        goal: 'Uma ou mais entradas separadas por vírgula.',
+        source: 'L -> id R\nR -> , id R | eps',
+    },
+    {
+        title: 'blocos aninhados',
+        goal: 'Estruturas recursivas com início e fim.',
+        source: 'B -> { S }\nS -> B S | id S | eps',
+    },
+] as const;
+
 const GrammarRail = ({
     grammarSource,
     grammarWarnings,
@@ -65,6 +101,8 @@ const GrammarRail = ({
     onClose?: () => void;
     mobile?: boolean;
 }) => {
+    const [showAdvancedLimits, setShowAdvancedLimits] = useState(false);
+    const [examplesOpen, setExamplesOpen] = useState(false);
     const duplicateRules = useMemo(() => {
         const seen = new Set<string>();
         const duplicates = new Set<string>();
@@ -81,6 +119,11 @@ const GrammarRail = ({
             });
         return [...duplicates];
     }, [grammarSource]);
+
+    const loadExample = (source: string) => {
+        setGrammarSource(source);
+        setExamplesOpen(false);
+    };
 
     return (
     <div className={`flex h-full min-h-0 flex-col rounded-[28px] border border-default bg-surface-1/95 shadow-apple-xl ${mobile ? '' : 'bg-surface-1/92'}`}>
@@ -108,29 +151,22 @@ const GrammarRail = ({
 
         <div className="flex-1 space-y-4 overflow-y-auto p-5 custom-scrollbar">
             <section className="space-y-4 rounded-[24px] border border-default/60 bg-surface-2/60 p-5">
-                <div className="flex flex-wrap items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={() => setGrammarSource('S -> a S b | eps')}
-                        className="rounded-full border border-default px-3 py-1.5 text-[11px] font-black text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
-                    >
-                        Preset aⁿbⁿ
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setGrammarSource('S -> a S a | b S b | a | b | eps')}
-                        className="rounded-full border border-default px-3 py-1.5 text-[11px] font-black text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
-                    >
-                        Preset palíndromos
-                    </button>
-                </div>
-
-                <div className="rounded-2xl border border-default bg-surface-2 px-4 py-3 text-[11px] leading-relaxed text-secondary">
-                    <div className="mb-1 flex items-center gap-2 ui-kicker-xs text-secondary">
-                        <Info size={12} />
-                        Formato esperado
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-default bg-surface-2 px-4 py-3 text-[11px] leading-relaxed text-secondary">
+                    <div className="min-w-0">
+                        <div className="mb-1 flex items-center gap-2 ui-kicker-xs text-secondary">
+                            <Info size={12} />
+                            Formato esperado
+                        </div>
+                        <code className="font-mono">S -&gt; a S b | eps</code>
                     </div>
-                    <code className="font-mono">S -&gt; a S b | eps</code>
+                    <button
+                        type="button"
+                        onClick={() => setExamplesOpen(true)}
+                        className="inline-flex shrink-0 items-center gap-2 rounded-full border border-default bg-surface-1 px-3 py-2 text-xs font-black text-secondary transition-colors hover:border-ios-purple/45 hover:text-ios-purple"
+                    >
+                        <Wand2 size={14} />
+                        Modelos
+                    </button>
                 </div>
 
                 <textarea
@@ -188,34 +224,59 @@ const GrammarRail = ({
                     <button type="button" onClick={() => runTransform('gnf')} className="btn-transform">Forma GNF</button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                    <label className="space-y-1 text-[10px] font-black uppercase tracking-wide text-secondary">
-                        <span className="block">Passos</span>
-                        <input
-                            type="number"
-                            value={grammarLimits.maxSteps}
-                            onChange={(event) => setGrammarLimits({ ...grammarLimits, maxSteps: Number(event.target.value) })}
-                            className="w-full rounded-2xl border border-default bg-surface-2 px-3 py-2 text-xs font-mono text-primary outline-none"
-                        />
-                    </label>
-                    <label className="space-y-1 text-[10px] font-black uppercase tracking-wide text-secondary">
-                        <span className="block">Fila</span>
-                        <input
-                            type="number"
-                            value={grammarLimits.maxQueue}
-                            onChange={(event) => setGrammarLimits({ ...grammarLimits, maxQueue: Number(event.target.value) })}
-                            className="w-full rounded-2xl border border-default bg-surface-2 px-3 py-2 text-xs font-mono text-primary outline-none"
-                        />
-                    </label>
-                    <label className="space-y-1 text-[10px] font-black uppercase tracking-wide text-secondary">
-                        <span className="block">Símbolos</span>
-                        <input
-                            type="number"
-                            value={grammarLimits.maxSymbols}
-                            onChange={(event) => setGrammarLimits({ ...grammarLimits, maxSymbols: Number(event.target.value) })}
-                            className="w-full rounded-2xl border border-default bg-surface-2 px-3 py-2 text-xs font-mono text-primary outline-none"
-                        />
-                    </label>
+                <div className="rounded-[22px] border border-default/60 bg-surface-1/70">
+                    <button
+                        type="button"
+                        onClick={() => setShowAdvancedLimits((value) => !value)}
+                        aria-expanded={showAdvancedLimits}
+                        aria-label={showAdvancedLimits ? 'Ocultar limites avançados da busca' : 'Mostrar limites avançados da busca'}
+                        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-hover/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ios-purple/35"
+                    >
+                        <span>
+                            <span className="block text-xs font-black text-primary">Limites avançados</span>
+                            <span className="mt-0.5 block text-[11px] leading-snug text-secondary">
+                                Use só quando a derivação crescer demais.
+                            </span>
+                        </span>
+                        <span className="rounded-full border border-default bg-surface-2 p-1.5 text-secondary">
+                            {showAdvancedLimits ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </span>
+                    </button>
+
+                    {showAdvancedLimits && (
+                        <div className="grid grid-cols-3 gap-3 border-t border-default/60 p-4">
+                            <label className="space-y-1 text-[10px] font-black uppercase tracking-wide text-secondary">
+                                <span className="block">Passos</span>
+                                <input
+                                    type="number"
+                                    value={grammarLimits.maxSteps}
+                                    onChange={(event) => setGrammarLimits({ ...grammarLimits, maxSteps: Number(event.target.value) })}
+                                    aria-label="Passos máximos da busca"
+                                    className="w-full rounded-2xl border border-default bg-surface-2 px-3 py-2 text-xs font-mono text-primary outline-none focus:ring-2 focus:ring-ios-purple/30"
+                                />
+                            </label>
+                            <label className="space-y-1 text-[10px] font-black uppercase tracking-wide text-secondary">
+                                <span className="block">Fila</span>
+                                <input
+                                    type="number"
+                                    value={grammarLimits.maxQueue}
+                                    onChange={(event) => setGrammarLimits({ ...grammarLimits, maxQueue: Number(event.target.value) })}
+                                    aria-label="Tamanho máximo da fila"
+                                    className="w-full rounded-2xl border border-default bg-surface-2 px-3 py-2 text-xs font-mono text-primary outline-none focus:ring-2 focus:ring-ios-purple/30"
+                                />
+                            </label>
+                            <label className="space-y-1 text-[10px] font-black uppercase tracking-wide text-secondary">
+                                <span className="block">Símbolos</span>
+                                <input
+                                    type="number"
+                                    value={grammarLimits.maxSymbols}
+                                    onChange={(event) => setGrammarLimits({ ...grammarLimits, maxSymbols: Number(event.target.value) })}
+                                    aria-label="Máximo de símbolos por forma sentencial"
+                                    className="w-full rounded-2xl border border-default bg-surface-2 px-3 py-2 text-xs font-mono text-primary outline-none focus:ring-2 focus:ring-ios-purple/30"
+                                />
+                            </label>
+                        </div>
+                    )}
                 </div>
 
                 {grammarTransform && (
@@ -253,6 +314,53 @@ const GrammarRail = ({
                 )}
             </section>
         </div>
+
+        {examplesOpen && (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" role="presentation" onMouseDown={() => setExamplesOpen(false)}>
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="grammar-examples-title"
+                    className="w-full max-w-2xl rounded-[28px] border border-default bg-surface-1 p-5 shadow-apple-xl"
+                    onMouseDown={(event) => event.stopPropagation()}
+                >
+                    <div className="mb-4 flex items-start justify-between gap-4">
+                        <div>
+                            <div className="ui-kicker-xs text-secondary">Modelos</div>
+                            <h3 id="grammar-examples-title" className="mt-1 text-lg font-black text-primary">Começar por exemplo</h3>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setExamplesOpen(false)}
+                            className="rounded-2xl p-2 text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
+                            aria-label="Fechar modelos de gramática"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        {GRAMMAR_EXAMPLES.map((example) => (
+                            <button
+                                key={example.title}
+                                type="button"
+                                onClick={() => loadExample(example.source)}
+                                className="group rounded-2xl border border-default/70 bg-surface-2/70 p-4 text-left transition-all hover:border-ios-purple/45 hover:bg-ios-purple/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ios-purple/35"
+                                aria-label={`Carregar ${example.title}`}
+                            >
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="text-sm font-black text-primary">{example.title}</span>
+                                    <span className="rounded-full border border-default px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-secondary transition-colors group-hover:border-ios-purple/45 group-hover:text-ios-purple">
+                                        usar
+                                    </span>
+                                </div>
+                                <p className="mt-2 text-xs leading-relaxed text-secondary">{example.goal}</p>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        )}
     </div>
     );
 };
@@ -365,7 +473,7 @@ export const GrammarWorkspace: React.FC<GrammarWorkspaceProps> = ({
                         </aside>
                     )}
 
-                    <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-36 pt-24 custom-scrollbar lg:p-6 lg:pb-36 lg:pt-24">
+                    <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-28 pt-24 custom-scrollbar lg:p-6 lg:pb-28 lg:pt-24">
                         {grammarResult ? (
                             <div data-testid="grammar-result-stage" className="mx-auto max-w-6xl">
                                 <section className="rounded-[28px] border border-default bg-surface-1/92 p-6 shadow-apple-xl md:p-8">
@@ -426,13 +534,13 @@ export const GrammarWorkspace: React.FC<GrammarWorkspaceProps> = ({
                                 </section>
                             </div>
                         ) : (
-                            <div data-testid="grammar-empty-stage" className="flex h-full min-h-[320px] items-center justify-center px-4 py-10">
-                                <div className="max-w-lg rounded-[28px] border border-default bg-surface-1/92 px-8 py-10 text-center shadow-apple-lg">
-                                    <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-[24px] bg-ios-purple/12 text-ios-purple">
-                                        <FileText size={34} />
+                            <div data-testid="grammar-empty-stage" className="grid h-full min-h-[360px] place-items-center px-4 py-8">
+                                <div className="max-w-md rounded-[24px] border border-default bg-surface-1/90 px-7 py-8 text-center shadow-apple-lg">
+                                    <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-[20px] bg-ios-purple/12 text-ios-purple">
+                                        <FileText size={28} />
                                     </div>
-                                    <h2 className="text-2xl font-black text-primary">Pronto para derivar</h2>
-                                    <p className="mt-3 text-sm leading-relaxed text-secondary">
+                                    <h2 className="text-xl font-black text-primary">Pronto para derivar</h2>
+                                    <p className="mt-2 text-sm leading-relaxed text-secondary">
                                         Edite as regras, informe a palavra e execute a derivação.
                                     </p>
                                 </div>
@@ -442,10 +550,10 @@ export const GrammarWorkspace: React.FC<GrammarWorkspaceProps> = ({
                 </div>
 
                 <div className="pointer-events-none absolute inset-x-4 bottom-4 z-30">
-                    <div className="pointer-events-auto mx-auto w-full max-w-[980px]">
-                        <div className="glass-card flex flex-col gap-3 rounded-[28px] border border-default/80 bg-surface-1/95 p-3 shadow-apple-xl lg:flex-row lg:items-center lg:p-4">
-                            <div className="flex flex-1 items-center gap-3 rounded-[24px] border border-default bg-surface-2/70 px-4 py-2 shadow-inner">
-                                <FileText size={18} className="text-secondary" />
+                    <div className="pointer-events-auto mx-auto w-full max-w-[820px]">
+                        <div className="glass-card flex flex-col gap-2 rounded-[24px] border border-default/80 bg-surface-1/95 p-2 shadow-apple-xl lg:flex-row lg:items-center">
+                            <div className="flex min-h-11 flex-1 items-center gap-2 rounded-[20px] border border-default bg-surface-2/70 px-3 py-2 shadow-inner">
+                                <FileText size={16} className="text-secondary" />
                                 <div className="min-w-0 flex-1">
                                     <input
                                         value={grammarInput}
@@ -457,11 +565,10 @@ export const GrammarWorkspace: React.FC<GrammarWorkspaceProps> = ({
                                         className="w-full min-w-0 bg-transparent font-mono text-sm font-bold text-primary outline-none placeholder:text-muted"
                                         aria-label="Palavra a ser derivada"
                                     />
-                                    <div className="mt-0.5 text-[10px] font-semibold text-secondary">Entrada vazia representa ε.</div>
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between gap-3 lg:w-auto">
+                            <div className="flex items-center justify-between gap-2 lg:w-auto">
                                 <div className="flex items-center rounded-full border border-default bg-surface-muted p-1">
                                     <button
                                         type="button"
@@ -483,7 +590,7 @@ export const GrammarWorkspace: React.FC<GrammarWorkspaceProps> = ({
                                     <button
                                         type="button"
                                         onClick={runDerivation}
-                                        className="inline-flex items-center gap-2 rounded-[20px] bg-ios-green px-5 py-3 text-xs font-black uppercase tracking-wide text-white shadow-lg shadow-green-500/20 transition-colors hover:bg-green-600"
+                                        className="inline-flex h-11 items-center gap-2 rounded-[18px] bg-ios-green px-4 text-xs font-black uppercase tracking-wide text-white shadow-lg shadow-green-500/20 transition-colors hover:bg-green-600"
                                     >
                                         <Play size={16} fill="currentColor" />
                                         Derivar
@@ -494,10 +601,10 @@ export const GrammarWorkspace: React.FC<GrammarWorkspaceProps> = ({
                                             setGrammarInput('');
                                             clearResult();
                                         }}
-                                        className="rounded-[20px] border border-default bg-surface-2 p-3 text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
+                                        className="flex h-11 w-11 items-center justify-center rounded-[18px] border border-default bg-surface-2 text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
                                         aria-label="Limpar palavra e resultado"
                                     >
-                                        <RotateCcw size={18} />
+                                        <RotateCcw size={17} />
                                     </button>
                                 </div>
                             </div>
