@@ -1,8 +1,12 @@
 import React from 'react';
 import {
     CheckCircle2,
+    Eye,
+    EyeOff,
     Loader2,
     Play,
+    Timer,
+    Zap,
     XCircle,
 } from 'lucide-react';
 import type { AutomatoData, Exercicio, TestCase } from '../../types';
@@ -60,15 +64,6 @@ export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps>
     className = '',
 }) => {
     const passedCount = Object.values(testResults).filter((result) => result === 'pass').length;
-    const failedCount = Object.values(testResults).filter((result) => result === 'fail').length;
-    const hasAnyTestResult = Object.keys(testResults).length > 0;
-    const verificationSummary = hasTests
-        ? hasAnyTestResult
-            ? failedCount > 0
-                ? `${failedCount} falha(s) na última rodada.`
-                : `${passedCount} teste(s) aprovados na última rodada.`
-            : 'Pronto para validar sua solução.'
-        : 'Sem verificação automática.';
 
     const formatStackList = (stacks?: string[][]) => {
         if (!stacks || stacks.length === 0) return 'vazia';
@@ -88,56 +83,49 @@ export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps>
             aria-label="Painel de verificação do exercício"
             className={`flex min-h-[32vh] max-h-[40vh] w-full min-w-0 flex-col overflow-hidden border-t border-default/80 bg-surface-1/95 backdrop-blur-2xl min-[1180px]:min-h-0 min-[1180px]:max-h-none min-[1180px]:w-[360px] min-[1180px]:border-r min-[1180px]:border-t-0 ${className}`}
         >
-            <div className="border-b border-default/70 px-4 py-4">
-                <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                        <div className="ui-kicker-xs text-secondary">Verificação da solução</div>
-                        <h4 className="mt-1 text-sm font-bold text-primary">Bateria de testes</h4>
-                        <p className="mt-1 text-xs leading-relaxed text-secondary">
-                            {hasTests
-                                ? `${tests.length} entrada(s) configurada(s). ${verificationSummary}`
-                                : 'Este exercício é conceitual. Compare sua solução com o gabarito ao terminar.'}
+            <div className="border-b border-default/70 px-4 py-3">
+                <div className="flex items-start justify-end gap-3">
+                    {!hasTests && (
+                        <p className="mr-auto text-xs leading-relaxed text-secondary">
+                            Este exercício é conceitual. Compare sua solução com o gabarito ao terminar.
                         </p>
-                    </div>
+                    )}
 
                     {hasTests && (
-                        <span className="surface-chip rounded-full border border-default px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-secondary dark:bg-black/10">
+                        <span
+                            aria-label={`${passedCount} de ${tests.length} testes aprovados`}
+                            className="surface-chip inline-flex min-w-[4.25rem] flex-shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-default px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-secondary dark:bg-black/10"
+                        >
                             {passedCount}/{tests.length} OK
                         </span>
                     )}
                 </div>
 
-                <div className="mt-4 flex flex-wrap items-center gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                     {hasTests && (
                         <button
                             type="button"
                             onClick={onToggleShowExpected}
-                            className="rounded-full border border-default px-3 py-1.5 text-xs font-bold text-secondary transition-colors hover:text-primary"
+                            aria-label={showExpected ? 'Ocultar resultados esperados' : 'Mostrar resultados esperados'}
+                            title={showExpected ? 'Ocultar esperado' : 'Mostrar esperado'}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-default text-secondary transition-colors hover:text-primary"
                         >
-                            {showExpected ? 'Ocultar esperado' : 'Mostrar esperado'}
+                            {showExpected ? <EyeOff size={15} /> : <Eye size={15} />}
                         </button>
                     )}
                     <button
                         type="button"
                         onClick={onToggleFastVerify}
-                        className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${
+                        className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
                             fastVerify
                                 ? 'border-ios-green/25 bg-ios-green/10 text-ios-green'
                                 : 'border-default text-secondary hover:text-primary'
                         }`}
-                        title={fastVerify ? 'Execução rápida' : 'Execução com animação'}
+                        aria-label={fastVerify ? 'Usar modo animado' : 'Usar modo rápido'}
+                        title={fastVerify ? 'Modo rápido' : 'Modo animado'}
                     >
-                        {fastVerify ? 'Modo rápido' : 'Modo animado'}
+                        {fastVerify ? <Zap size={15} /> : <Timer size={15} />}
                     </button>
-                    <span className="rounded-full border border-default bg-surface-2/75 px-3 py-1.5 text-xs text-secondary">
-                        {solverMode === 'automaton'
-                            ? 'Canvas interativo'
-                            : solverMode === 'regex'
-                                ? 'Editor de regex'
-                                : solverMode === 'grammar'
-                                    ? 'Editor de gramática'
-                                    : 'Resposta em texto'}
-                    </span>
                 </div>
             </div>
 

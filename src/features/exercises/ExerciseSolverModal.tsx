@@ -200,10 +200,10 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                                     </span>
                                 </div>
 
-                                <h3 id={titleId} className="mt-1.5 text-lg font-bold text-primary sm:text-xl">
+                                <h3 id={titleId} className="mt-1.5 text-base font-bold text-secondary sm:text-lg">
                                     {titleText}
                                 </h3>
-                                <p id={descriptionId} className="mt-0.5 max-w-4xl text-sm leading-snug text-secondary sm:text-[15px]">
+                                <p id={descriptionId} className="mt-1 max-w-5xl text-base font-semibold leading-snug text-primary sm:text-lg">
                                     {question}
                                 </p>
                             </div>
@@ -288,7 +288,7 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
 
                 <div
                     data-testid="exercise-solver-workspace"
-                    className="relative h-full min-h-0 overflow-hidden rounded-none border-t border-default bg-canvas"
+                    className="relative h-full min-h-0 overflow-hidden rounded-none bg-canvas/70"
                 >
                     <div
                         data-testid="exercise-solver-layout"

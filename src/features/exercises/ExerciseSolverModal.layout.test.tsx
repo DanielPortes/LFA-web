@@ -155,6 +155,25 @@ describe('ExerciseSolverModal layout', () => {
         expect(workspace).not.toHaveClass('shadow-apple-xl');
     });
 
+    it('prioriza o enunciado no cabeçalho e reduz bordas concorrentes do workspace', () => {
+        mockAnimationFrames();
+        mockViewport({ width: 1440, height: 900 });
+
+        render(
+            <UiSettingsProvider>
+                <ExerciseSolverModal {...baseProps} />
+            </UiSettingsProvider>
+        );
+
+        const prompt = screen.getByText('Construa um AFD para cadeias terminadas em a.');
+        const workspace = screen.getByTestId('exercise-solver-workspace');
+
+        expect(prompt).toHaveClass('text-primary');
+        expect(prompt).toHaveClass('font-semibold');
+        expect(workspace).not.toHaveClass('border-t');
+        expect(workspace).toHaveClass('bg-canvas/70');
+    });
+
     it('mostra uma ação explícita para voltar à aula quando o exercício vem do conteúdo', () => {
         mockAnimationFrames();
         mockViewport({ width: 1280, height: 800 });

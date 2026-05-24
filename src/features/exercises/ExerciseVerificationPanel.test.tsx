@@ -82,7 +82,15 @@ describe('ExerciseVerificationPanel', () => {
             />
         );
 
-        expect(screen.getByText('Bateria de testes')).toBeInTheDocument();
+        expect(screen.queryByText('Verificação da solução')).not.toBeInTheDocument();
+        expect(screen.queryByText('Bateria de testes')).not.toBeInTheDocument();
+        expect(screen.getByText('1/2 OK')).toHaveClass('whitespace-nowrap');
+        expect(screen.getByLabelText('1 de 2 testes aprovados')).toBeInTheDocument();
+        expect(screen.queryByText(/entrada\(s\) configurada\(s\)/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Pronto para validar sua solução/i)).not.toBeInTheDocument();
+        expect(screen.queryByText('Mostrar esperado')).not.toBeInTheDocument();
+        expect(screen.queryByText('Modo animado')).not.toBeInTheDocument();
+        expect(screen.queryByText('Canvas interativo')).not.toBeInTheDocument();
         expect(screen.getByText('Primeiro erro')).toBeInTheDocument();
         expect(screen.getByText('Equivalência DFA')).toBeInTheDocument();
         expect(screen.getByText('Traço de execução')).toBeInTheDocument();
@@ -100,8 +108,8 @@ describe('ExerciseVerificationPanel', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Solução guiada' }));
         fireEvent.click(screen.getByRole('button', { name: 'Contexto e teoria' }));
         fireEvent.click(screen.getByRole('button', { name: 'Módulo 1 • Autômato Finito Determinístico' }));
-        fireEvent.click(screen.getByRole('button', { name: /Mostrar esperado/i }));
-        fireEvent.click(screen.getByRole('button', { name: /Modo animado/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Mostrar resultados esperados/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Usar modo rápido/i }));
         fireEvent.click(screen.getByRole('button', { name: /Verificar solução/i }));
 
         expect(screen.getByText('Observe apenas o último símbolo lido.')).toBeInTheDocument();

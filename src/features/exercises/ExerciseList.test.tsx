@@ -65,6 +65,8 @@ describe('ExerciseList', () => {
             />
         );
 
+        expect(screen.getByRole('heading', { name: 'AFDs' })).toHaveClass('text-2xl');
+        expect(screen.queryByText('Lista de exercícios práticos')).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: 'Abrir sumário de exercícios' }));
         fireEvent.click(screen.getByRole('button', { name: 'Abrir conversor de modelos' }));
         fireEvent.click(screen.getByRole('button', { name: /Tentar resolver/i }));

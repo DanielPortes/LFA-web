@@ -131,4 +131,46 @@ describe('ExercisesSidebar', () => {
         expect(screen.getByText('filtra: Regex')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Regex/ })).toHaveClass('search-target-row');
     });
+
+    it('mostra um botão para limpar a busca somente quando há texto preenchido', () => {
+        const onSearchChange = vi.fn();
+        const props = {
+            sidebarId: 'exercicios-sidebar',
+            isSidebarOpen: false,
+            searchInputId: 'search-ex',
+            onSearchChange,
+            onSearchSubmit: vi.fn(),
+            onMoveSearchResult: vi.fn(),
+            firstSearchResult: null,
+            activeSearchResult: null,
+            searchResultPosition: null,
+            progressPercent: 20,
+            completedExercisesCount: 2,
+            totalExercisesCount: 10,
+            onResetExercises: vi.fn(),
+            items: [{ id: 'afd', label: 'AFDs', index: 1, total: 2, completed: 0 }],
+            activeCategory: 'afd',
+            onSelectCategory: vi.fn(),
+        };
+
+        const { rerender } = render(
+            <ExercisesSidebar
+                {...props}
+                searchQuery=""
+            />
+        );
+
+        expect(screen.queryByRole('button', { name: 'Limpar busca de exercício' })).not.toBeInTheDocument();
+
+        rerender(
+            <ExercisesSidebar
+                {...props}
+                searchQuery="afd"
+            />
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Limpar busca de exercício' }));
+
+        expect(onSearchChange).toHaveBeenCalledWith('');
+    });
 });

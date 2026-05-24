@@ -62,12 +62,11 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
     returnToLessonLabel = null,
     onReturnToLesson,
 }) => (
-    <div className="render-lite-shell flex-1 min-w-0 space-y-6 pb-10">
-        <div className="glass-card p-6 flex flex-col gap-4">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-                <div>
-                    <h2 className="ui-title-2 text-primary mb-1">{activeCategoryLabel}</h2>
-                    <p className="ui-body-sm text-secondary">Lista de exercícios práticos</p>
+    <div className="render-lite-shell flex-1 min-w-0 space-y-5 pb-10">
+        <div className="glass-card px-4 py-3 sm:px-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                    <h2 className="truncate text-2xl font-black tracking-tight text-primary">{activeCategoryLabel}</h2>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     <button
@@ -78,10 +77,10 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                     >
                         <ListFilter size={18} />
                     </button>
-                    <span className="badge bg-surface-muted text-secondary border-default">
+                    <span className="rounded-full border border-default bg-surface-muted px-2.5 py-1 text-[10px] font-black text-secondary">
                         {completedInActiveCategory}/{exercises.length} concluídos
                     </span>
-                    <span className="badge bg-surface-muted text-secondary border-default">
+                    <span className="rounded-full border border-default bg-surface-muted px-2.5 py-1 text-[10px] font-black text-secondary">
                         {filteredExercises.length}/{exercises.length} questões
                     </span>
                     <button

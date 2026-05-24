@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, ChevronRight, ChevronUp, ListFilter, RotateCcw } from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronUp, ListFilter, RotateCcw, X } from 'lucide-react';
 import type { ExerciseSearchResultPreview } from './useExerciseSelection';
 
 interface ExercisesSidebarItem {
@@ -118,31 +118,44 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
 
                 <div className="mt-4">
                     <label className="sr-only" htmlFor={searchInputId}>Buscar exercício</label>
-                    <input
-                        id={searchInputId}
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => onSearchChange(e.target.value)}
-                        onKeyDown={(event) => {
-                            if (event.key === 'Enter') {
-                                event.preventDefault();
-                                onSearchSubmit();
-                                return;
-                            }
-                            if (event.key === 'ArrowDown') {
-                                event.preventDefault();
-                                onMoveSearchResult(1);
-                                return;
-                            }
-                            if (event.key === 'ArrowUp') {
-                                event.preventDefault();
-                                onMoveSearchResult(-1);
-                            }
-                        }}
-                        placeholder="Buscar exercício..."
-                        aria-label="Buscar exercício"
-                        className="w-full rounded-xl border border-default bg-surface-2 px-3 py-2 text-sm font-medium text-primary shadow-inner outline-none ring-ios-blue/40 focus:ring-2"
-                    />
+                    <div className="relative">
+                        <input
+                            id={searchInputId}
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => onSearchChange(e.target.value)}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                    onSearchSubmit();
+                                    return;
+                                }
+                                if (event.key === 'ArrowDown') {
+                                    event.preventDefault();
+                                    onMoveSearchResult(1);
+                                    return;
+                                }
+                                if (event.key === 'ArrowUp') {
+                                    event.preventDefault();
+                                    onMoveSearchResult(-1);
+                                }
+                            }}
+                            placeholder="Buscar exercício..."
+                            aria-label="Buscar exercício"
+                            className="w-full rounded-xl border border-default bg-surface-2 py-2 pl-3 pr-9 text-sm font-medium text-primary shadow-inner outline-none ring-ios-blue/40 focus:ring-2"
+                        />
+                        {searchQuery.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => onSearchChange('')}
+                                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ios-blue/35"
+                                title="Limpar busca"
+                                aria-label="Limpar busca de exercício"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
                     {trimmedSearch && (
                         <div
                             key={searchTargetKey}

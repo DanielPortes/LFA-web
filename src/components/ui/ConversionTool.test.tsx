@@ -7,13 +7,15 @@ describe('ConversionTool', () => {
     it('renders when open', () => {
         const onClose = vi.fn();
         render(<ConversionTool isOpen={true} onClose={onClose} />);
-        expect(screen.getByText('Conversor de Modelos')).toBeInTheDocument();
+        expect(screen.getByText('Conversor')).toBeInTheDocument();
+        expect(screen.getByText('Transforme a representação sem sair do exercício.')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Gerar resultado/i })).toBeInTheDocument();
     });
 
     it('does not render when closed', () => {
         const onClose = vi.fn();
         render(<ConversionTool isOpen={false} onClose={onClose} />);
-        expect(screen.queryByText('Conversor de Modelos')).not.toBeInTheDocument();
+        expect(screen.queryByText('Conversor')).not.toBeInTheDocument();
     });
 
     it('switches tabs', () => {
@@ -42,7 +44,7 @@ describe('ConversionTool', () => {
             </div>
         );
 
-        const title = screen.getByText('Conversor de Modelos');
+        const title = screen.getByText('Conversor');
         const transformedParent = screen.getByTestId('transform-parent');
 
         expect(transformedParent.contains(title)).toBe(false);
