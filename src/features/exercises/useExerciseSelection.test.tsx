@@ -141,6 +141,70 @@ describe('useExerciseSelection', () => {
         expect(result.current.filteredCategories.map((category) => category.id)).toContain('afd');
     });
 
+    it('expõe o destino do Enter e abre o primeiro exercício encontrado mesmo em outra categoria', () => {
+        const setLastCategory = vi.fn();
+        const onSelectionChange = vi.fn();
+        const { result } = renderHook(() => useExerciseSelection({
+            exerciseDatabase,
+            initialCategoryId: 'afd',
+            setLastCategory,
+            onSelectionChange
+        }));
+
+        act(() => {
+            result.current.setSearchQuery('sufixo obrigatório');
+        });
+
+        expect(result.current.firstSearchResult).toEqual({
+            categoryId: 'er',
+            categoryLabel: 'Regex',
+            exerciseId: 2,
+            question: 'Descreva a linguagem por expressão regular.',
+            resultCount: 1
+        });
+
+        act(() => {
+            result.current.navigateToFirstSearchResult();
+        });
+
+        expect(result.current.activeCategory).toBe('er');
+        expect(result.current.solvingExercise).toBe(2);
+        expect(result.current.currentExercise?.id).toBe(2);
+        expect(result.current.solverMode).toBe('regex');
+        expect(result.current.searchQuery).toBe('sufixo obrigatório');
+        expect(setLastCategory).toHaveBeenCalledWith('er');
+        expect(onSelectionChange).toHaveBeenCalledWith('er', 2);
+    });
+
+    it('alterna o destino da busca com as setas antes de abrir o exercício', () => {
+        const { result } = renderHook(() => useExerciseSelection({
+            exerciseDatabase,
+            initialCategoryId: 'afd',
+            setLastCategory: vi.fn()
+        }));
+
+        act(() => {
+            result.current.setSearchQuery('construa afd');
+        });
+
+        expect(result.current.activeSearchResult?.exerciseId).toBe(1);
+        expect(result.current.searchResultPosition).toEqual({ current: 1, total: 2 });
+
+        act(() => {
+            result.current.moveSearchResultSelection(1);
+        });
+
+        expect(result.current.activeSearchResult?.exerciseId).toBe(5);
+        expect(result.current.searchResultPosition).toEqual({ current: 2, total: 2 });
+
+        act(() => {
+            result.current.navigateToFirstSearchResult();
+        });
+
+        expect(result.current.solvingExercise).toBe(5);
+        expect(result.current.searchQuery).toBe('construa afd');
+    });
+
     it('estabiliza a rota ao consumir uma seleção inicial vinda da URL', async () => {
         const setLastCategory = vi.fn();
 

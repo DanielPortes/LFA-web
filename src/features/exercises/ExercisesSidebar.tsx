@@ -1,5 +1,6 @@
 import React from 'react';
-import { ListFilter, RotateCcw, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronUp, ListFilter, RotateCcw } from 'lucide-react';
+import type { ExerciseSearchResultPreview } from './useExerciseSelection';
 
 interface ExercisesSidebarItem {
     id: string;
@@ -15,6 +16,11 @@ interface ExercisesSidebarProps {
     searchInputId: string;
     searchQuery: string;
     onSearchChange: (value: string) => void;
+    onSearchSubmit: () => void;
+    onMoveSearchResult: (delta: number) => void;
+    firstSearchResult: ExerciseSearchResultPreview | null;
+    activeSearchResult: ExerciseSearchResultPreview | null;
+    searchResultPosition: { current: number; total: number } | null;
     progressPercent: number;
     completedExercisesCount: number;
     totalExercisesCount: number;
@@ -30,6 +36,11 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
     searchInputId,
     searchQuery,
     onSearchChange,
+    onSearchSubmit,
+    onMoveSearchResult,
+    firstSearchResult,
+    activeSearchResult,
+    searchResultPosition,
     progressPercent,
     completedExercisesCount,
     totalExercisesCount,
@@ -37,7 +48,18 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
     items,
     activeCategory,
     onSelectCategory
-}) => (
+}) => {
+    const trimmedSearch = searchQuery.trim();
+    const visibleSearchResult = activeSearchResult ?? firstSearchResult;
+    const canMoveSearchResult = (searchResultPosition?.total ?? 0) > 1;
+    const resultCountLabel = searchResultPosition
+        ? `${searchResultPosition.current}/${searchResultPosition.total}`
+        : '0';
+    const searchTargetKey = visibleSearchResult
+        ? `${visibleSearchResult.categoryId}-${visibleSearchResult.exerciseId}-${searchResultPosition?.current ?? 0}`
+        : `empty-${trimmedSearch}`;
+
+    return (
     <aside
         id={sidebarId}
         className={`
@@ -96,16 +118,76 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
                         type="text"
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                                event.preventDefault();
+                                onSearchSubmit();
+                                return;
+                            }
+                            if (event.key === 'ArrowDown') {
+                                event.preventDefault();
+                                onMoveSearchResult(1);
+                                return;
+                            }
+                            if (event.key === 'ArrowUp') {
+                                event.preventDefault();
+                                onMoveSearchResult(-1);
+                            }
+                        }}
                         placeholder="Buscar exercício..."
                         aria-label="Buscar exercício"
                         className="w-full rounded-xl border border-default bg-surface-2 px-3 py-2 text-sm font-medium text-primary shadow-inner outline-none ring-ios-blue/40 focus:ring-2"
                     />
+                    {trimmedSearch && (
+                        <div
+                            key={searchTargetKey}
+                            className={`search-target-shell mt-2 flex min-w-0 items-center gap-1.5 rounded-xl border px-2 py-1.5 text-xs shadow-inner ${
+                                visibleSearchResult
+                                    ? 'border-ios-blue/20 bg-ios-blue/10'
+                                    : 'border-default bg-surface-2'
+                            }`}
+                            aria-live="polite"
+                        >
+                            <span className="flex h-6 flex-shrink-0 items-center rounded-lg border border-ios-blue/25 bg-surface-1 px-2 font-black uppercase text-ios-blue">
+                                Enter
+                            </span>
+                            <span className="search-target-copy min-w-0 flex-1 truncate font-medium text-secondary">
+                                {visibleSearchResult
+                                    ? `abre: Exercício ${visibleSearchResult.exerciseId} · ${visibleSearchResult.categoryLabel}`
+                                    : 'Sem destino para Enter'}
+                            </span>
+                            <span className="search-target-count flex h-6 flex-shrink-0 items-center rounded-lg border border-default bg-surface-1 px-2 font-mono font-bold text-secondary">
+                                {resultCountLabel}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => onMoveSearchResult(-1)}
+                                disabled={!canMoveSearchResult}
+                                className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-surface-hover hover:text-primary disabled:cursor-not-allowed disabled:opacity-35"
+                                title="Resultado anterior"
+                                aria-label="Resultado anterior da busca"
+                            >
+                                <ChevronUp size={14} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onMoveSearchResult(1)}
+                                disabled={!canMoveSearchResult}
+                                className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-surface-hover hover:text-primary disabled:cursor-not-allowed disabled:opacity-35"
+                                title="Próximo resultado"
+                                aria-label="Próximo resultado da busca"
+                            >
+                                <ChevronDown size={14} />
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
             <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 pb-6 custom-scrollbar md:overflow-visible">
                 {items.map((item) => {
                     const isActive = activeCategory === item.id;
+                    const isEnterTarget = visibleSearchResult?.categoryId === item.id;
 
                     return (
                         <button
@@ -114,6 +196,8 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
                             className={`group relative mb-1 flex w-full items-center gap-3 overflow-hidden rounded-xl pl-3 pr-3 py-3 text-left text-sm font-medium transition-all duration-200
                                 ${isActive
                                     ? 'border border-status-info bg-status-info-soft text-status-info shadow-sm'
+                                    : isEnterTarget
+                                        ? 'search-target-row border border-transparent text-primary'
                                     : 'border border-transparent text-secondary hover:bg-surface-hover hover:text-primary'
                                 }`}
                         >
@@ -122,6 +206,11 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
                                 {item.index + 1}
                             </span>
                             <span className="flex-1 truncate">{item.label}</span>
+                            {isEnterTarget && (
+                                <span className="search-target-badge flex-shrink-0 rounded-full border border-ios-blue/25 bg-ios-blue/10 px-2 py-0.5 text-[0.65rem] font-black uppercase text-ios-blue">
+                                    Enter
+                                </span>
+                            )}
                             <span className={`rounded-full border px-2 py-0.5 text-xs font-bold ${
                                 isActive
                                     ? 'border-ios-blue/30 bg-ios-blue/10 text-ios-blue'
@@ -142,4 +231,5 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
             </div>
         </div>
     </aside>
-);
+    );
+};

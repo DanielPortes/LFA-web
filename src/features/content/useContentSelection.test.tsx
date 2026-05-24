@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CourseModule } from '../../types';
@@ -116,7 +118,7 @@ describe('useContentSelection', () => {
         expect(result.current.filteredModules[0].lessons[0].id).toBe('lesson-3');
     });
 
-    it('abre o primeiro resultado filtrado quando a busca é confirmada', () => {
+    it('expõe o destino do Enter e mantém a busca após abrir o primeiro resultado', () => {
         const { result } = renderHook(() => useContentSelection({
             modules,
             markLessonVisited: vi.fn()
@@ -126,12 +128,48 @@ describe('useContentSelection', () => {
             result.current.setSearchQuery('pilha');
         });
 
+        expect(result.current.firstSearchResult).toEqual({
+            moduleId: 'mod-2',
+            lessonId: 'lesson-3',
+            moduleTitle: 'Módulo 2',
+            lessonTitle: 'Pilhas',
+            resultCount: 1
+        });
+
         act(() => {
             result.current.navigateToFirstSearchResult();
         });
 
         expect(result.current.activeModuleId).toBe('mod-2');
         expect(result.current.activeLessonId).toBe('lesson-3');
-        expect(result.current.searchQuery).toBe('');
+        expect(result.current.searchQuery).toBe('pilha');
+    });
+
+    it('alterna o destino da busca com as setas antes de confirmar', () => {
+        const { result } = renderHook(() => useContentSelection({
+            modules,
+            markLessonVisited: vi.fn()
+        }));
+
+        act(() => {
+            result.current.setSearchQuery('lição');
+        });
+
+        expect(result.current.activeSearchResult?.lessonId).toBe('lesson-1');
+        expect(result.current.searchResultPosition).toEqual({ current: 1, total: 3 });
+
+        act(() => {
+            result.current.moveSearchResultSelection(1);
+        });
+
+        expect(result.current.activeSearchResult?.lessonId).toBe('lesson-2');
+        expect(result.current.searchResultPosition).toEqual({ current: 2, total: 3 });
+
+        act(() => {
+            result.current.navigateToFirstSearchResult();
+        });
+
+        expect(result.current.activeLessonId).toBe('lesson-2');
+        expect(result.current.searchQuery).toBe('lição');
     });
 });

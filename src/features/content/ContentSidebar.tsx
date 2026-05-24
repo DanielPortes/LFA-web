@@ -1,6 +1,7 @@
 import React from 'react';
-import { Circle, CircleCheck, GraduationCap, RotateCcw } from 'lucide-react';
+import { ChevronDown, ChevronUp, Circle, CircleCheck, GraduationCap, RotateCcw } from 'lucide-react';
 import type { CourseModule, Lesson } from '../../types';
+import type { ContentSearchResultPreview } from './useContentSelection';
 
 interface LastVisitedLesson {
     moduleId: string;
@@ -18,6 +19,10 @@ interface ContentSidebarProps {
     searchQuery: string;
     onSearchChange: (value: string) => void;
     onSearchSubmit: () => void;
+    onMoveSearchResult: (delta: number) => void;
+    firstSearchResult: ContentSearchResultPreview | null;
+    activeSearchResult: ContentSearchResultPreview | null;
+    searchResultPosition: { current: number; total: number } | null;
     filteredModules: CourseModule[];
     isLessonCompleted: (lessonId: string) => boolean;
     onNavigate: (moduleId: string, lessonId: string) => void;
@@ -34,10 +39,25 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
     searchQuery,
     onSearchChange,
     onSearchSubmit,
+    onMoveSearchResult,
+    firstSearchResult,
+    activeSearchResult,
+    searchResultPosition,
     filteredModules,
     isLessonCompleted,
     onNavigate
-}) => (
+}) => {
+    const trimmedSearch = searchQuery.trim();
+    const visibleSearchResult = activeSearchResult ?? firstSearchResult;
+    const canMoveSearchResult = (searchResultPosition?.total ?? 0) > 1;
+    const resultCountLabel = searchResultPosition
+        ? `${searchResultPosition.current}/${searchResultPosition.total}`
+        : '0';
+    const searchTargetKey = visibleSearchResult
+        ? `${visibleSearchResult.moduleId}-${visibleSearchResult.lessonId}-${searchResultPosition?.current ?? 0}`
+        : `empty-${trimmedSearch}`;
+
+    return (
     <aside
         id={sidebarId}
         className={`
@@ -101,14 +121,68 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
                         onKeyDown={(event) => {
-                            if (event.key !== 'Enter') return;
-                            event.preventDefault();
-                            onSearchSubmit();
+                            if (event.key === 'Enter') {
+                                event.preventDefault();
+                                onSearchSubmit();
+                                return;
+                            }
+                            if (event.key === 'ArrowDown') {
+                                event.preventDefault();
+                                onMoveSearchResult(1);
+                                return;
+                            }
+                            if (event.key === 'ArrowUp') {
+                                event.preventDefault();
+                                onMoveSearchResult(-1);
+                            }
                         }}
                         placeholder="Buscar conceito, teorema, algoritmo ou símbolo formal..."
                         aria-label="Buscar conceito na trilha"
                         className="w-full rounded-xl border border-default bg-surface-2 px-3 py-2 text-sm font-medium text-primary shadow-inner outline-none ring-ios-blue/40 focus:ring-2"
                     />
+                    {trimmedSearch && (
+                        <div
+                            key={searchTargetKey}
+                            className={`search-target-shell mt-2 flex min-w-0 items-center gap-1.5 rounded-xl border px-2 py-1.5 text-xs shadow-inner ${
+                                visibleSearchResult
+                                    ? 'border-ios-blue/20 bg-ios-blue/10'
+                                    : 'border-default bg-surface-2'
+                            }`}
+                            aria-live="polite"
+                        >
+                            <span className="flex h-6 flex-shrink-0 items-center rounded-lg border border-ios-blue/25 bg-surface-1 px-2 font-black uppercase text-ios-blue">
+                                Enter
+                            </span>
+                            <span className="search-target-copy min-w-0 flex-1 truncate font-medium text-secondary">
+                                {visibleSearchResult
+                                    ? `abre: ${visibleSearchResult.lessonTitle}`
+                                    : 'Sem destino para Enter'}
+                            </span>
+                            <span className="search-target-count flex h-6 flex-shrink-0 items-center rounded-lg border border-default bg-surface-1 px-2 font-mono font-bold text-secondary">
+                                {resultCountLabel}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => onMoveSearchResult(-1)}
+                                disabled={!canMoveSearchResult}
+                                className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-surface-hover hover:text-primary disabled:cursor-not-allowed disabled:opacity-35"
+                                title="Resultado anterior"
+                                aria-label="Resultado anterior da busca"
+                            >
+                                <ChevronUp size={14} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onMoveSearchResult(1)}
+                                disabled={!canMoveSearchResult}
+                                className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-surface-hover hover:text-primary disabled:cursor-not-allowed disabled:opacity-35"
+                                title="Próximo resultado"
+                                aria-label="Próximo resultado da busca"
+                            >
+                                <ChevronDown size={14} />
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -130,6 +204,7 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                             {module.lessons.map((lesson) => {
                                 const isActive = lesson.id === activeLessonId;
                                 const completed = isLessonCompleted(lesson.id);
+                                const isEnterTarget = visibleSearchResult?.lessonId === lesson.id;
 
                                 return (
                                     <button
@@ -138,11 +213,18 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                                         className={`group relative flex w-full items-start gap-2 overflow-hidden rounded-xl pl-10 pr-4 py-3 text-left text-sm font-medium transition-all duration-200
                                             ${isActive
                                                 ? 'bg-status-info-soft font-bold text-status-info shadow-sm'
+                                                : isEnterTarget
+                                                    ? 'search-target-row text-primary'
                                                 : 'text-secondary hover:bg-surface-hover hover:text-primary'
                                             }`}
                                     >
                                         {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full bg-ios-blue"></div>}
                                         <span className="flex-1 py-0.5 leading-snug">{lesson.title}</span>
+                                        {isEnterTarget && (
+                                            <span className="search-target-badge mt-0.5 flex-shrink-0 rounded-full border border-ios-blue/25 bg-ios-blue/10 px-2 py-0.5 text-[0.65rem] font-black uppercase text-ios-blue">
+                                                Enter
+                                            </span>
+                                        )}
                                         {completed ? (
                                             <CircleCheck size={14} strokeWidth={3} className="mt-1 flex-shrink-0 text-ios-green" />
                                         ) : (
@@ -163,4 +245,5 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
             </div>
         </div>
     </aside>
-);
+    );
+};

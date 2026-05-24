@@ -15,6 +15,14 @@ interface UseExerciseSelectionOptions {
 
 type ExerciseSearchIndex = Record<string, Map<number, string>>;
 
+export interface ExerciseSearchResultPreview {
+    categoryId: string;
+    categoryLabel: string;
+    exerciseId: number;
+    question: string;
+    resultCount: number;
+}
+
 const normalizeExerciseSearch = (value: string) => value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -103,6 +111,7 @@ export const useExerciseSelection = ({
     const [userText, setUserText] = useState('');
     const [showExpected, setShowExpected] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedSearchResultIndex, setSelectedSearchResultIndex] = useState(0);
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const [showConverter, setShowConverter] = useState(false);
     const [converterData, setConverterData] = useState<ConverterData>({});
@@ -119,6 +128,7 @@ export const useExerciseSelection = ({
         return index;
     }, [exerciseDatabase]);
     const searchTokens = useMemo(() => getExerciseSearchTokens(searchQuery), [searchQuery]);
+    const searchTokensKey = searchTokens.join('\u0001');
 
     const lastSyncedSelectionRef = useRef<{
         categoryId: string;
@@ -175,6 +185,41 @@ export const useExerciseSelection = ({
         });
     }, [exerciseSearchIndex, searchTokens]);
 
+    const searchResults = useMemo<ExerciseSearchResultPreview[]>(() => {
+        if (searchTokens.length === 0) return [];
+        const matches: ExerciseSearchResultPreview[] = [];
+
+        for (const category of exerciseCategories) {
+            const categoryExercises = exerciseDatabase[category.id] ?? [];
+            const categoryIndex = exerciseSearchIndex[category.id] ?? new Map<number, string>();
+
+            for (const exercise of categoryExercises) {
+                const searchText = categoryIndex.get(exercise.id) ?? buildExerciseSearchText(exercise);
+                if (!exerciseMatchesSearch(searchText, searchTokens)) continue;
+
+                matches.push({
+                    categoryId: category.id,
+                    categoryLabel: category.label,
+                    exerciseId: exercise.id,
+                    question: exercise.pergunta,
+                    resultCount: 0
+                });
+            }
+        }
+
+        return matches.map((match) => ({ ...match, resultCount: matches.length }));
+    }, [exerciseDatabase, exerciseSearchIndex, searchTokens]);
+    const firstSearchResult = searchResults[0] ?? null;
+    const activeSearchResult = searchResults[
+        Math.min(selectedSearchResultIndex, Math.max(searchResults.length - 1, 0))
+    ] ?? null;
+    const searchResultPosition = activeSearchResult
+        ? {
+            current: Math.min(selectedSearchResultIndex, searchResults.length - 1) + 1,
+            total: searchResults.length
+        }
+        : null;
+
     const currentExercise = solvingExercise !== null
         ? exercises.find((exercise) => exercise.id === solvingExercise) ?? null
         : null;
@@ -186,11 +231,19 @@ export const useExerciseSelection = ({
         setShowConverter(true);
     }, []);
 
-    const startSolving = useCallback((exerciseId: number, options?: ExerciseSolverStartOptions) => {
-        const exercise = exercises.find((item) => item.id === exerciseId);
-        const mode = exercise?.mode ?? activeCategoryConfig.mode ?? 'automaton';
-        const tipo = exercise?.tipo ?? activeCategoryConfig.tipo ?? 'AFD';
+    const startSolvingInCategory = useCallback((
+        categoryId: string,
+        exerciseId: number,
+        options?: ExerciseSolverStartOptions
+    ) => {
+        const categoryExercises = exerciseDatabase[categoryId] ?? [];
+        const categoryConfig = exerciseCategories.find((category) => category.id === categoryId) ?? activeCategoryConfig;
+        const exercise = categoryExercises.find((item) => item.id === exerciseId);
+        const mode = exercise?.mode ?? categoryConfig.mode ?? 'automaton';
+        const tipo = exercise?.tipo ?? categoryConfig.tipo ?? 'AFD';
 
+        setActiveCategory(categoryId);
+        setLastCategory(categoryId);
         setSolverMode(mode);
         setSolvingExercise(exerciseId);
         setShowExpected(false);
@@ -211,7 +264,25 @@ export const useExerciseSelection = ({
         }
 
         setUserAutomaton(null);
-    }, [activeCategoryConfig.mode, activeCategoryConfig.tipo, cloneAutomaton, exercises, resetEditorSession]);
+    }, [activeCategoryConfig, cloneAutomaton, exerciseDatabase, resetEditorSession, setLastCategory]);
+
+    const startSolving = useCallback((exerciseId: number, options?: ExerciseSolverStartOptions) => {
+        startSolvingInCategory(activeCategory, exerciseId, options);
+    }, [activeCategory, startSolvingInCategory]);
+
+    const navigateToFirstSearchResult = useCallback(() => {
+        if (!activeSearchResult) return;
+
+        startSolvingInCategory(activeSearchResult.categoryId, activeSearchResult.exerciseId);
+        setSidebarOpen(false);
+    }, [activeSearchResult, startSolvingInCategory]);
+    const moveSearchResultSelection = useCallback((delta: number) => {
+        if (searchResults.length === 0) return;
+
+        setSelectedSearchResultIndex((current) => (
+            (current + delta + searchResults.length) % searchResults.length
+        ));
+    }, [searchResults.length]);
 
     const loadAnswerAutomaton = useCallback((data: AutomatoData) => {
         setSavedAttemptAutomaton((currentSavedAttempt) => {
@@ -257,6 +328,7 @@ export const useExerciseSelection = ({
     const handleCategorySelect = useCallback((categoryId: string) => {
         setActiveCategory(categoryId);
         setLastCategory(categoryId);
+        setSearchQuery('');
         setRevealedHintCounts({});
         setRevealedAnswers({});
         setSidebarOpen(false);
@@ -347,8 +419,8 @@ export const useExerciseSelection = ({
     }, [activeCategory, setLastCategory]);
 
     useEffect(() => {
-        setSearchQuery('');
-    }, [activeCategory]);
+        setSelectedSearchResultIndex(0);
+    }, [searchTokensKey]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return undefined;
@@ -376,6 +448,7 @@ export const useExerciseSelection = ({
     return {
         activeCategory,
         activeCategoryConfig,
+        activeSearchResult,
         revealedHintCounts,
         revealedAnswers,
         solvingExercise,
@@ -393,6 +466,8 @@ export const useExerciseSelection = ({
         converterData,
         editorSessionKey,
         exercises,
+        firstSearchResult,
+        searchResultPosition,
         filteredExercises,
         filteredCategories,
         currentExercise,
@@ -409,6 +484,8 @@ export const useExerciseSelection = ({
         setShowConverter,
         openConverter,
         startSolving,
+        navigateToFirstSearchResult,
+        moveSearchResultSelection,
         loadAnswerAutomaton,
         restoreSavedAttempt,
         stopSolving,

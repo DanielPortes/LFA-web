@@ -18,6 +18,14 @@ export interface LastVisitedLesson {
     lesson: Lesson;
 }
 
+export interface ContentSearchResultPreview {
+    moduleId: string;
+    lessonId: string;
+    moduleTitle: string;
+    lessonTitle: string;
+    resultCount: number;
+}
+
 interface UseContentSelectionParams {
     modules: CourseModule[];
     initialModuleId?: string;
@@ -53,8 +61,54 @@ export const useContentSelection = ({
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const [selectedAutomaton, setSelectedAutomaton] = useState<AutomatoData | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedSearchResultIndex, setSelectedSearchResultIndex] = useState(0);
     const deferredSearchQuery = useDeferredValue(searchQuery);
     const contentIndex = useMemo(() => buildContentIndex(modules), [modules]);
+    const searchTokens = useMemo(() => normalizeForSearch(searchQuery)
+        .split(' ')
+        .filter(Boolean), [searchQuery]);
+    const searchTokensKey = searchTokens.join('\u0001');
+    const deferredSearchTokens = useMemo(() => normalizeForSearch(deferredSearchQuery)
+        .split(' ')
+        .filter(Boolean), [deferredSearchQuery]);
+    const searchMatches = useMemo(() => {
+        if (searchTokens.length === 0) return [];
+
+        return contentIndex.filter((entry) =>
+            searchTokens.every((token) => entry.searchableText.includes(token))
+        );
+    }, [contentIndex, searchTokens]);
+    const firstSearchResult = useMemo<ContentSearchResultPreview | null>(() => {
+        const firstMatch = searchMatches[0];
+        if (!firstMatch) return null;
+
+        return {
+            moduleId: firstMatch.moduleId,
+            lessonId: firstMatch.lessonId,
+            moduleTitle: firstMatch.moduleTitle,
+            lessonTitle: firstMatch.lessonTitle,
+            resultCount: searchMatches.length
+        };
+    }, [searchMatches]);
+    const activeSearchResult = useMemo<ContentSearchResultPreview | null>(() => {
+        const matchIndex = Math.min(selectedSearchResultIndex, Math.max(searchMatches.length - 1, 0));
+        const activeMatch = searchMatches[matchIndex];
+        if (!activeMatch) return null;
+
+        return {
+            moduleId: activeMatch.moduleId,
+            lessonId: activeMatch.lessonId,
+            moduleTitle: activeMatch.moduleTitle,
+            lessonTitle: activeMatch.lessonTitle,
+            resultCount: searchMatches.length
+        };
+    }, [searchMatches, selectedSearchResultIndex]);
+    const searchResultPosition = activeSearchResult
+        ? {
+            current: Math.min(selectedSearchResultIndex, searchMatches.length - 1) + 1,
+            total: searchMatches.length
+        }
+        : null;
 
     const totalLessons = useMemo(() =>
         modules.reduce((sum, module) => sum + module.lessons.length, 0),
@@ -74,12 +128,9 @@ export const useContentSelection = ({
 
     const filteredModules = useMemo(() => {
         if (!deferredSearchQuery.trim()) return modules;
-        const queryTokens = normalizeForSearch(deferredSearchQuery)
-            .split(' ')
-            .filter(Boolean);
         const matchedLessons = new Set(
             contentIndex
-                .filter((entry) => queryTokens.every((token) => entry.searchableText.includes(token)))
+                .filter((entry) => deferredSearchTokens.every((token) => entry.searchableText.includes(token)))
                 .map((entry) => entry.lessonId)
         );
 
@@ -89,7 +140,7 @@ export const useContentSelection = ({
                 lessons: module.lessons.filter((lesson) => matchedLessons.has(lesson.id))
             }))
             .filter((module) => module.lessons.length > 0) as CourseModule[];
-    }, [contentIndex, deferredSearchQuery, modules]);
+    }, [contentIndex, deferredSearchQuery, deferredSearchTokens, modules]);
 
     const navigationState = useMemo(() => {
         const modIndex = modules.findIndex((module) => module.id === activeModuleId);
@@ -130,19 +181,17 @@ export const useContentSelection = ({
     }, []);
 
     const navigateToFirstSearchResult = useCallback(() => {
-        const queryTokens = normalizeForSearch(searchQuery)
-            .split(' ')
-            .filter(Boolean);
-        if (queryTokens.length === 0) return;
+        if (!activeSearchResult) return;
 
-        const firstMatch = contentIndex.find((entry) =>
-            queryTokens.every((token) => entry.searchableText.includes(token))
-        );
-        if (!firstMatch) return;
+        handleNavigate(activeSearchResult.moduleId, activeSearchResult.lessonId);
+    }, [activeSearchResult, handleNavigate]);
+    const moveSearchResultSelection = useCallback((delta: number) => {
+        if (searchMatches.length === 0) return;
 
-        handleNavigate(firstMatch.moduleId, firstMatch.lessonId);
-        setSearchQuery('');
-    }, [contentIndex, handleNavigate, searchQuery]);
+        setSelectedSearchResultIndex((current) => (
+            (current + delta + searchMatches.length) % searchMatches.length
+        ));
+    }, [searchMatches.length]);
 
     const openSidebar = useCallback(() => setSidebarOpen(true), []);
     const closeSidebar = useCallback(() => setSidebarOpen(false), []);
@@ -157,6 +206,10 @@ export const useContentSelection = ({
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [activeLessonId, scrollContainerId]);
+
+    useEffect(() => {
+        setSelectedSearchResultIndex(0);
+    }, [searchTokensKey]);
 
     useEffect(() => {
         const nextModule = getModuleById(initialModuleId);
@@ -199,17 +252,21 @@ export const useContentSelection = ({
         activeModuleId,
         activeLesson,
         activeLessonId,
+        activeSearchResult,
         clearSelectedAutomaton,
         closeSidebar,
+        firstSearchResult,
         filteredModules,
         handleNavigate,
         isSidebarOpen,
         lastVisitedLesson,
         moduleIndex,
+        moveSearchResultSelection,
         navigateToFirstSearchResult,
         navigationState,
         openSidebar,
         searchQuery,
+        searchResultPosition,
         selectedAutomaton,
         setSearchQuery,
         setSelectedAutomaton,

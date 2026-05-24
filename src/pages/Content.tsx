@@ -53,17 +53,21 @@ const LoadedContentSection = ({
         activeModule,
         activeLesson,
         activeLessonId,
+        activeSearchResult,
         clearSelectedAutomaton,
         closeSidebar,
+        firstSearchResult,
         filteredModules,
         handleNavigate,
         isSidebarOpen,
         lastVisitedLesson,
         moduleIndex,
+        moveSearchResultSelection,
         navigateToFirstSearchResult,
         navigationState,
         openSidebar,
         searchQuery,
+        searchResultPosition,
         selectedAutomaton,
         setSearchQuery,
         setSelectedAutomaton,
@@ -106,6 +110,10 @@ const LoadedContentSection = ({
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 onSearchSubmit={navigateToFirstSearchResult}
+                onMoveSearchResult={moveSearchResultSelection}
+                firstSearchResult={firstSearchResult}
+                activeSearchResult={activeSearchResult}
+                searchResultPosition={searchResultPosition}
                 filteredModules={filteredModules}
                 isLessonCompleted={isLessonCompleted}
                 onNavigate={handleNavigate}
