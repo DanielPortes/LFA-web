@@ -110,4 +110,68 @@ describe('ExerciseSolverModal layout', () => {
         expect(screen.getByTestId('solver-editor')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Abrir painel de verificação' })).toBeInTheDocument();
     });
+
+    it('reserva uma coluna propria para o painel de verificação em desktop', () => {
+        mockAnimationFrames();
+        mockViewport({ width: 1440, height: 900 });
+
+        render(
+            <UiSettingsProvider>
+                <ExerciseSolverModal {...baseProps} />
+            </UiSettingsProvider>
+        );
+
+        const layout = screen.getByTestId('exercise-solver-layout');
+        const rail = screen.getByTestId('exercise-verification-rail');
+        const stage = screen.getByTestId('exercise-solver-stage');
+
+        expect(layout).toHaveAttribute('data-verification-panel', 'open');
+        expect(Array.from(layout.children)).toEqual([rail, stage]);
+        expect(stage).toHaveClass('min-[1180px]:min-w-0');
+    });
+
+    it('usa chrome externo compacto sem moldura interna duplicada', () => {
+        mockAnimationFrames();
+        mockViewport({ width: 1440, height: 900 });
+
+        render(
+            <UiSettingsProvider>
+                <ExerciseSolverModal {...baseProps} />
+            </UiSettingsProvider>
+        );
+
+        const chrome = screen.getByTestId('exercise-solver-chrome');
+        const workspace = screen.getByTestId('exercise-solver-workspace');
+        const dialog = screen.getByRole('dialog');
+
+        expect(dialog).toHaveClass('exercise-solver-dialog');
+        expect(dialog).toHaveClass('rounded-[20px]');
+        expect(dialog).not.toHaveClass('rounded-[32px]');
+        expect(chrome).toHaveClass('p-0');
+        expect(chrome).not.toHaveClass('p-3');
+        expect(chrome).not.toHaveClass('lg:p-5');
+        expect(workspace).toHaveClass('rounded-none');
+        expect(workspace).not.toHaveClass('rounded-[28px]');
+        expect(workspace).not.toHaveClass('shadow-apple-xl');
+    });
+
+    it('mostra uma ação explícita para voltar à aula quando o exercício vem do conteúdo', () => {
+        mockAnimationFrames();
+        mockViewport({ width: 1280, height: 800 });
+        const onReturnToLesson = vi.fn();
+
+        render(
+            <UiSettingsProvider>
+                <ExerciseSolverModal
+                    {...baseProps}
+                    returnToLessonLabel="Projeto de AFDs"
+                    onReturnToLesson={onReturnToLesson}
+                />
+            </UiSettingsProvider>
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Voltar à aula Projeto de AFDs' }));
+
+        expect(onReturnToLesson).toHaveBeenCalledTimes(1);
+    });
 });

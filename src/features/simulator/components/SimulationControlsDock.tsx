@@ -164,8 +164,8 @@ export const SimulationControlsDock: React.FC<SimulationControlsDockProps> = ({
                         ? 'bg-ios-blue text-white shadow-xl shadow-blue-500/40 border-ios-blue'
                         : 'bg-surface-muted text-secondary hover:text-primary hover:bg-surface-hover border-transparent'
                 }`}
-                title={inspectorOpen ? 'Fechar inspetor da simulação' : 'Abrir inspetor da simulação'}
-                aria-label={inspectorOpen ? 'Fechar inspetor da simulação' : 'Abrir inspetor da simulação'}
+                title={inspectorOpen ? 'Fechar painel de diagnóstico' : 'Abrir painel de diagnóstico'}
+                aria-label={inspectorOpen ? 'Fechar painel de diagnóstico da simulação' : 'Abrir painel de diagnóstico da simulação'}
             >
                 <ListOrdered size={22} strokeWidth={2.5} />
             </button>

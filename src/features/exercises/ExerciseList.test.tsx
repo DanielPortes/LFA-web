@@ -41,6 +41,7 @@ describe('ExerciseList', () => {
     it('renderiza a lista e encaminha ações do cartão', () => {
         const onToggleHint = vi.fn();
         const onToggleAnswer = vi.fn();
+        const onRevealNextHint = vi.fn();
         const onStartSolving = vi.fn();
         const onOpenSidebar = vi.fn();
         const onOpenConverter = vi.fn();
@@ -52,10 +53,11 @@ describe('ExerciseList', () => {
                 exercises={exercises}
                 filteredExercises={exercises}
                 completedInActiveCategory={0}
-                revealedHints={{}}
+                revealedHintCounts={{}}
                 revealedAnswers={{}}
                 isExerciseCompleted={() => false}
                 onToggleHint={onToggleHint}
+                onRevealNextHint={onRevealNextHint}
                 onToggleAnswer={onToggleAnswer}
                 onStartSolving={onStartSolving}
                 onOpenSidebar={onOpenSidebar}
@@ -65,9 +67,9 @@ describe('ExerciseList', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Abrir sumário de exercícios' }));
         fireEvent.click(screen.getByRole('button', { name: 'Abrir conversor de modelos' }));
-        fireEvent.click(screen.getByRole('button', { name: /Tentar Resolver/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Tentar resolver/i }));
         fireEvent.click(screen.getByRole('button', { name: /Pistas \(2\)/i }));
-        fireEvent.click(screen.getByRole('button', { name: /Ver Resposta/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Apoio e gabarito/i }));
 
         expect(screen.getByText('construction')).toBeInTheDocument();
         expect(screen.getByText('Estratégia')).toBeInTheDocument();
@@ -77,10 +79,44 @@ describe('ExerciseList', () => {
         expect(onOpenConverter).toHaveBeenCalledWith({});
         expect(onStartSolving).toHaveBeenCalledWith(1);
         expect(onToggleHint).toHaveBeenCalledWith(1);
+        expect(onRevealNextHint).not.toHaveBeenCalled();
         expect(onToggleAnswer).toHaveBeenCalledWith(1);
     });
 
-    it('usa o gabarito visual para abrir o solver com o autômato exibido', () => {
+    it('libera pistas progressivamente em vez de mostrar todas de uma vez', () => {
+        const onToggleHint = vi.fn();
+        const onRevealNextHint = vi.fn();
+
+        render(
+            <ExerciseList
+                activeCategory="afd"
+                activeCategoryLabel="AFDs"
+                exercises={exercises}
+                filteredExercises={exercises}
+                completedInActiveCategory={0}
+                revealedHintCounts={{ 1: 1 }}
+                revealedAnswers={{}}
+                isExerciseCompleted={() => false}
+                onToggleHint={onToggleHint}
+                onRevealNextHint={onRevealNextHint}
+                onToggleAnswer={vi.fn()}
+                onStartSolving={vi.fn()}
+                onOpenSidebar={vi.fn()}
+                onOpenConverter={vi.fn()}
+            />
+        );
+
+        expect(screen.getByText('Pista 1')).toBeInTheDocument();
+        expect(screen.getByText('Pense no último símbolo lido.')).toBeInTheDocument();
+        expect(screen.queryByText('Dois estados bastam para esse padrão.')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Liberar próxima pista' }));
+
+        expect(onRevealNextHint).toHaveBeenCalledWith(1);
+        expect(onToggleHint).not.toHaveBeenCalled();
+    });
+
+    it('abre apoio e gabarito recolhidos antes de carregar o autômato no solver', () => {
         const onStartSolving = vi.fn();
 
         render(
@@ -90,10 +126,11 @@ describe('ExerciseList', () => {
                 exercises={exercises}
                 filteredExercises={exercises}
                 completedInActiveCategory={0}
-                revealedHints={{}}
+                revealedHintCounts={{}}
                 revealedAnswers={{ 1: true }}
                 isExerciseCompleted={() => false}
                 onToggleHint={vi.fn()}
+                onRevealNextHint={vi.fn()}
                 onToggleAnswer={vi.fn()}
                 onStartSolving={onStartSolving}
                 onOpenSidebar={vi.fn()}
@@ -101,10 +138,42 @@ describe('ExerciseList', () => {
             />
         );
 
-        fireEvent.click(screen.getByRole('button', { name: /Verificar solução/i }));
+        expect(screen.getByRole('button', { name: 'Gabarito final' })).toBeInTheDocument();
+        expect(screen.queryByText('Gabarito visual')).not.toBeInTheDocument();
 
-        expect(screen.getByText('Gabarito Visual')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Gabarito final' }));
+        fireEvent.click(screen.getByRole('button', { name: /Carregar no canvas/i }));
+
         expect(onStartSolving).toHaveBeenCalledWith(1, { initialAutomaton: answerAutomaton });
+    });
+
+    it('mantém o caminho de volta para a aula quando veio da trilha teórica', () => {
+        const onReturnToLesson = vi.fn();
+
+        render(
+            <ExerciseList
+                activeCategory="afd"
+                activeCategoryLabel="AFDs"
+                exercises={exercises}
+                filteredExercises={exercises}
+                completedInActiveCategory={0}
+                revealedHintCounts={{}}
+                revealedAnswers={{}}
+                isExerciseCompleted={() => false}
+                onToggleHint={vi.fn()}
+                onRevealNextHint={vi.fn()}
+                onToggleAnswer={vi.fn()}
+                onStartSolving={vi.fn()}
+                onOpenSidebar={vi.fn()}
+                onOpenConverter={vi.fn()}
+                returnToLessonLabel="Projeto de AFDs"
+                onReturnToLesson={onReturnToLesson}
+            />
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Voltar à aula Projeto de AFDs' }));
+
+        expect(onReturnToLesson).toHaveBeenCalledTimes(1);
     });
 
     it('mostra estado vazio quando o filtro não retorna itens', () => {
@@ -115,10 +184,11 @@ describe('ExerciseList', () => {
                 exercises={exercises}
                 filteredExercises={[]}
                 completedInActiveCategory={0}
-                revealedHints={{}}
+                revealedHintCounts={{}}
                 revealedAnswers={{}}
                 isExerciseCompleted={() => false}
                 onToggleHint={vi.fn()}
+                onRevealNextHint={vi.fn()}
                 onToggleAnswer={vi.fn()}
                 onStartSolving={vi.fn()}
                 onOpenSidebar={vi.fn()}

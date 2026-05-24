@@ -144,7 +144,7 @@ export const ContentPedagogicalBlock: React.FC<ContentBlockComponentProps> = ({
                         onClick={() => onOpenExercise(relatedExercise.ref)}
                         className="rounded-full bg-ios-blue px-4 py-2 text-xs font-bold text-white transition-colors hover:opacity-90"
                     >
-                        Abrir no treino
+                        Tentar resolver
                     </button>
                 </div>
             )}

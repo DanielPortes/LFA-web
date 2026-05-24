@@ -68,12 +68,13 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
                         <div className="flex items-center gap-2">
                             <span className="font-bold text-ios-green">{progressPercent}%</span>
                             <button
+                                type="button"
                                 onClick={onResetExercises}
-                                className="p-1 text-secondary transition-colors hover:text-ios-red"
+                                className="flex h-9 w-9 items-center justify-center rounded-xl text-secondary transition-colors hover:bg-surface-hover hover:text-ios-red"
                                 title="Resetar progresso de exercícios"
                                 aria-label="Resetar progresso de exercícios"
                             >
-                                <RotateCcw size={12} />
+                                <RotateCcw size={15} />
                             </button>
                         </div>
                     </div>
@@ -135,7 +136,7 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
 
                 {items.length === 0 && (
                     <div className="p-4 text-center text-xs italic text-secondary">
-                        Nenhuma categoria encontrada
+                        Nenhuma categoria encontrada para esta busca.
                     </div>
                 )}
             </div>

@@ -17,6 +17,7 @@ interface ContentSidebarProps {
     onContinue: (moduleId: string, lessonId: string) => void;
     searchQuery: string;
     onSearchChange: (value: string) => void;
+    onSearchSubmit: () => void;
     filteredModules: CourseModule[];
     isLessonCompleted: (lessonId: string) => boolean;
     onNavigate: (moduleId: string, lessonId: string) => void;
@@ -32,6 +33,7 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
     onContinue,
     searchQuery,
     onSearchChange,
+    onSearchSubmit,
     filteredModules,
     isLessonCompleted,
     onNavigate
@@ -66,12 +68,13 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                         <div className="flex items-center gap-2">
                             <span className="font-bold text-ios-green">{progressPercent}%</span>
                             <button
+                                type="button"
                                 onClick={onResetProgress}
-                                className="p-1 text-secondary transition-colors hover:text-ios-red"
+                                className="flex h-9 w-9 items-center justify-center rounded-xl text-secondary transition-colors hover:bg-surface-hover hover:text-ios-red"
                                 title="Resetar progresso"
                                 aria-label="Resetar progresso"
                             >
-                                <RotateCcw size={12} />
+                                <RotateCcw size={15} />
                             </button>
                         </div>
                     </div>
@@ -97,6 +100,11 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                         type="text"
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key !== 'Enter') return;
+                            event.preventDefault();
+                            onSearchSubmit();
+                        }}
                         placeholder="Buscar conceito, teorema, algoritmo ou símbolo formal..."
                         aria-label="Buscar conceito na trilha"
                         className="w-full rounded-xl border border-default bg-surface-2 px-3 py-2 text-sm font-medium text-primary shadow-inner outline-none ring-ios-blue/40 focus:ring-2"

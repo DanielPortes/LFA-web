@@ -17,7 +17,29 @@ export interface SimulationTraceStep {
     fromStates: string[];
     directTargets: string[];
     toStates: string[];
+    fromStacks?: string[][];
+    toStacks?: string[][];
 }
+
+const uniqueItems = <T,>(items: T[], keyOf: (item: T) => string): T[] => {
+    const seen = new Set<string>();
+    const unique: T[] = [];
+    items.forEach((item) => {
+        const key = keyOf(item);
+        if (!seen.has(key)) {
+            seen.add(key);
+            unique.push(item);
+        }
+    });
+    return unique;
+};
+
+const uniqueStateIds = (ids: string[]) => uniqueItems(ids, (id) => id);
+
+const stackForTrace = (stack: string[]) => [...stack].reverse();
+
+const uniqueStacksForTrace = (stacks: string[][]) =>
+    uniqueItems(stacks.map(stackForTrace), (stack) => stack.join('\u0000'));
 
 export const createEmptyAutomaton = (tipo: AutomatoTipo): AutomatoData => {
     const baseState = { id: 'q0', label: 'q0', x: 200, y: 200, isInicial: true, isFinal: false };
@@ -92,9 +114,57 @@ export const simulateWithTrace = (
         };
     }
 
-    let currentStates = getEpsilonClosure(initialStates, automaton.transicoes);
     const tokens = tokenizeInput(input, tokenOptions);
     const trace: SimulationTraceStep[] = [];
+
+    if (isAP(automaton)) {
+        const baseStack = automaton.simboloInicialPilha ? [automaton.simboloInicialPilha] : [];
+        let currentConfigs = getPdaEpsilonClosure(
+            initialStates.map((id) => ({ stateId: id, stack: [...baseStack] })),
+            automaton.transicoes
+        );
+
+        for (const symbol of tokens) {
+            const result = performPdaStep(currentConfigs, symbol, automaton.transicoes);
+            trace.push({
+                symbol,
+                fromStates: uniqueStateIds(currentConfigs.map((config) => config.stateId)),
+                directTargets: result.directTargets,
+                toStates: uniqueStateIds(result.configs.map((config) => config.stateId)),
+                fromStacks: uniqueStacksForTrace(currentConfigs.map((config) => config.stack)),
+                toStacks: uniqueStacksForTrace(result.configs.map((config) => config.stack)),
+            });
+
+            if (result.configs.length === 0) {
+                return {
+                    result: { status: 'rejected', reason: `Sem transição válida para "${symbol}"`, finalStates: [] },
+                    trace
+                };
+            }
+
+            currentConfigs = result.configs;
+        }
+
+        const hasFinal = currentConfigs.some(cfg => automaton.estados.find(e => e.id === cfg.stateId)?.isFinal);
+        const hasEmpty = currentConfigs.some(cfg => cfg.stack.length === 0);
+        const acceptance = automaton.pdaAcceptance ?? 'final';
+        const accepted = acceptance === 'final'
+            ? hasFinal
+            : acceptance === 'empty'
+                ? hasEmpty
+                : hasFinal || hasEmpty;
+
+        return {
+            result: {
+                status: accepted ? 'accepted' : 'rejected',
+                reason: accepted ? undefined : 'Nenhuma configuração final ou pilha vazia',
+                finalStates: uniqueStateIds(currentConfigs.map(cfg => cfg.stateId))
+            },
+            trace
+        };
+    }
+
+    let currentStates = getEpsilonClosure(initialStates, automaton.transicoes);
 
     for (const symbol of tokens) {
         const directTargets = new Set<string>();

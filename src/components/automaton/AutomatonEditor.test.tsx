@@ -54,6 +54,8 @@ describe('AutomatonEditor', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Importar gramática' }));
 
         expect(screen.getByRole('heading', { name: 'Importar Gramática' })).toBeInTheDocument();
+        expect(screen.getByLabelText('Fonte da gramática')).toHaveValue('S -> aA | b');
+        expect(screen.getByText(/Converter substitui o autômato atual/)).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Converter' })).toBeInTheDocument();
     });
 

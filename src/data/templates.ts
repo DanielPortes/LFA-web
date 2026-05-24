@@ -13,13 +13,13 @@ export const automatonTemplates: AutomatonTemplate[] = [
     {
         id: 'empty',
         name: 'Vazio',
-        description: 'Canvas em branco para criar seu automato',
+        description: 'Canvas em branco para criar seu autômato',
         category: 'basic',
         data: {
             tipo: 'AFD',
             estados: [],
             transicoes: [],
-            descricao: 'Novo Automato'
+            descricao: 'Novo autômato'
         }
     },
     {
@@ -57,7 +57,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
 
     {
         id: 'basic-loop',
-        name: 'Loop Unico',
+        name: 'Loop único',
         description: 'Um estado com loop em a,b (aceita tudo)',
         category: 'basic',
         data: {
@@ -93,7 +93,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
     {
         id: 'basic-chain-3',
         name: 'Cadeia 3 Estados',
-        description: 'Template linear com tres estados',
+        description: 'Template linear com três estados',
         category: 'basic',
         data: {
             tipo: 'AFD',
@@ -759,12 +759,12 @@ export const automatonTemplates: AutomatonTemplate[] = [
 ];
 
 export const templateCategories = [
-    { id: 'basic', name: 'Basicos', icon: 'Circle' },
-    { id: 'binary', name: 'Binarios', icon: 'Binary' },
+    { id: 'basic', name: 'Básicos', icon: 'Circle' },
+    { id: 'binary', name: 'Binários', icon: 'Binary' },
     { id: 'string', name: 'Strings', icon: 'Type' },
     { id: 'transducer', name: 'Transdutores', icon: 'Cpu' },
     { id: 'turing', name: 'Turing', icon: 'HardDrive' },
-    { id: 'advanced', name: 'Avancados', icon: 'Zap' }
+    { id: 'advanced', name: 'Avançados', icon: 'Zap' }
 ];
 
 

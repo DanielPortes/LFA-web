@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { ArrowLeft, Sparkles } from 'lucide-react';
 import { regexToNfa } from '../../../utils/conversions';
 import type { AutomatoData } from '../../../types';
 import { useToast } from '../../../components/ui';
@@ -21,13 +21,17 @@ interface AutomatonSimulationWorkspaceProps {
     onChange: (data: AutomatoData) => void;
     resetToken?: number;
     variant?: 'page' | 'modal';
+    returnToExerciseLabel?: string | null;
+    onReturnToExercise?: () => void;
 }
 
 export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspaceProps> = ({
     data,
     onChange,
     resetToken,
-    variant = 'page'
+    variant = 'page',
+    returnToExerciseLabel,
+    onReturnToExercise
 }) => {
     const [isDesktopViewport, setIsDesktopViewport] = useState(() => {
         if (typeof window === 'undefined') return true;
@@ -67,9 +71,9 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
         setRegexImport('');
         setRegexImportError(null);
         setShowRegexImport(false);
-        setInspectorOpen(false);
+        setInspectorOpen(data.tipo === 'AP');
         requestAnimationFrame(() => requestCanvasCenter());
-    }, [requestCanvasCenter, resetToken]);
+    }, [data.tipo, requestCanvasCenter, resetToken]);
 
     const handleViewStateChange = useCallback((zoom: number, pan: { x: number; y: number }) => {
         setViewState((prev) => {
@@ -121,6 +125,12 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
     useEffect(() => {
         resetSimulation(false);
     }, [inputTokens, resetSimulation]);
+
+    useEffect(() => {
+        if (isPda) {
+            setInspectorOpen(true);
+        }
+    }, [isPda]);
 
     const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         setInputString(event.target.value);
@@ -227,13 +237,25 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
             : null;
 
     const topBar = (
-        <SimulatorStatusBar
-            automatonType={data.tipo}
-            stateCount={data.estados.length}
-            transitionCount={data.transicoes.length}
-            simulationStatus={simulationStatus}
-            hasSimulationProgress={hasSimulationProgress}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+            {onReturnToExercise && (
+                <button
+                    type="button"
+                    onClick={onReturnToExercise}
+                    className="glass-panel inline-flex items-center gap-2 rounded-2xl border border-default px-3 py-2 text-[11px] font-black text-secondary shadow-apple-md transition-colors hover:bg-surface-hover hover:text-primary"
+                >
+                    <ArrowLeft size={14} />
+                    <span>{returnToExerciseLabel ? `Voltar · ${returnToExerciseLabel}` : 'Voltar ao exercício'}</span>
+                </button>
+            )}
+            <SimulatorStatusBar
+                automatonType={data.tipo}
+                stateCount={data.estados.length}
+                transitionCount={data.transicoes.length}
+                simulationStatus={simulationStatus}
+                hasSimulationProgress={hasSimulationProgress}
+            />
+        </div>
     );
 
     const regexImportPanel = showRegexImport ? (
@@ -371,7 +393,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
                 isPda={isPda}
                 showWarningsPanel={Boolean(disableReason || isPda)}
                 showDetailsPanel={history.length > 1 || hasSimulationProgress}
-                showTapePanel={inputTokens.length > 0 || isTuring}
+                showTapePanel={inputTokens.length > 0 || isTuring || isPda}
             >
                 {({ rightDock, bottomDock }) => (
                     <AutomatonWorkspace

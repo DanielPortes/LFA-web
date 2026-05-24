@@ -133,23 +133,30 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
                     </select>
                 </div>
             ) : (
-                <div className="flex items-center gap-2 px-2 h-10 bg-surface-muted/30 rounded-xl border border-default/40 ml-1">
+                <div className="flex items-center gap-2 px-2 py-1 bg-surface-muted/30 rounded-xl border border-default/40 ml-1">
                     <span className="text-[10px] text-muted font-black uppercase tracking-tighter w-10 text-center">
-                        {speed}ms
+                        {formatSpeed(speed)}
                     </span>
                     <label htmlFor={speedControlId} className="sr-only">Velocidade da simulação</label>
-                    <input
-                        id={speedControlId}
-                        type="range"
-                        min="100"
-                        max="2000"
-                        step="100"
-                        value={speed}
-                        onChange={(e) => onSpeedChange(Number(e.target.value))}
-                        className="w-20 accent-ios-blue h-1.5"
-                        title="Velocidade da simulação"
-                        aria-label="Velocidade da simulação"
-                    />
+                    <div>
+                        <input
+                            id={speedControlId}
+                            type="range"
+                            min="100"
+                            max="2000"
+                            step="100"
+                            value={speed}
+                            onChange={(e) => onSpeedChange(Number(e.target.value))}
+                            className="w-24 accent-ios-blue h-1.5"
+                            title="Velocidade da simulação"
+                            aria-label="Velocidade da simulação"
+                            aria-valuetext={`${formatSpeed(speed)} por passo; valores menores aceleram`}
+                        />
+                        <div className="mt-0.5 flex justify-between text-[9px] font-bold uppercase text-muted">
+                            <span>Rápido</span>
+                            <span>Lento</span>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

@@ -34,7 +34,7 @@ export const AutomatonWorkspace: React.FC<AutomatonWorkspaceProps> = ({
                 {editor}
             </div>
 
-            <div className="pointer-events-none absolute left-4 top-4 z-30 flex max-w-[420px] flex-col gap-2">
+            <div className="pointer-events-auto absolute left-4 top-4 z-30 flex max-w-[420px] flex-col gap-2">
                 {topBar}
             </div>
 

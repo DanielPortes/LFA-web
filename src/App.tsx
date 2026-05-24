@@ -30,12 +30,27 @@ const GrammarPage = lazy(async () => {
     return { default: module.GrammarPage };
 });
 
+interface ExerciseReturnTarget {
+    moduleId: string;
+    lessonId: string;
+    label: string;
+}
+
+interface SimulatorExerciseReturnTarget {
+    categoryId: string;
+    exerciseId: number;
+    label: string;
+}
+
 function MainApp() {
     const { route, updateRoute } = useRouteState();
     const [pendingSimulatorData, setPendingSimulatorData] = useState<AutomatoData | undefined>(() => {
         const fromUrl = getAutomatonFromUrl();
         return fromUrl ? cloneAutomaton(fromUrl) : undefined;
     });
+    const [lastContentLesson, setLastContentLesson] = useState<ExerciseReturnTarget | null>(null);
+    const [exerciseReturnTarget, setExerciseReturnTarget] = useState<ExerciseReturnTarget | null>(null);
+    const [simulatorExerciseReturnTarget, setSimulatorExerciseReturnTarget] = useState<SimulatorExerciseReturnTarget | null>(null);
     const { showTutorial, setShowTutorial, completeTutorial } = useTutorial();
     const [showSettings, setShowSettings] = useState(false);
     const [ambientTransitionKey, setAmbientTransitionKey] = useState(0);
@@ -60,6 +75,11 @@ function MainApp() {
     }, []);
 
     const navigateToTab = useCallback((tab: Tab) => {
+        setExerciseReturnTarget(null);
+        if (tab !== 'simulador') {
+            setSimulatorExerciseReturnTarget(null);
+        }
+
         if (tab === 'home') {
             updateRoute({ tab, moduleId: null, lessonId: null, categoryId: null, exerciseId: null });
             return;
@@ -79,25 +99,35 @@ function MainApp() {
         if (tab === route.tab) return;
         if (tab !== 'simulador') {
             setPendingSimulatorData(undefined);
+            setSimulatorExerciseReturnTarget(null);
         }
         triggerAmbientTransition();
         navigateToTab(tab);
     }, [navigateToTab, route.tab, triggerAmbientTransition]);
 
-    const handleSimulationRequest = useCallback((data: AutomatoData) => {
+    const handleSimulationRequest = useCallback((data: AutomatoData, origin?: SimulatorExerciseReturnTarget) => {
         setPendingSimulatorData(cloneAutomaton(data));
+        setSimulatorExerciseReturnTarget(origin ?? null);
         if (route.tab !== 'simulador') {
             triggerAmbientTransition();
         }
         navigateToTab('simulador');
     }, [navigateToTab, route.tab, triggerAmbientTransition]);
 
-    const handleContentSelectionChange = useCallback((moduleId: string | undefined, lessonId: string | undefined) => {
+    const handleContentSelectionChange = useCallback((moduleId: string | undefined, lessonId: string | undefined, lessonTitle?: string) => {
         updateRoute({
             tab: 'conteudo',
             moduleId: moduleId ?? null,
             lessonId: lessonId ?? null
         });
+
+        if (moduleId && lessonId) {
+            setLastContentLesson({
+                moduleId,
+                lessonId,
+                label: lessonTitle ?? 'aula anterior'
+            });
+        }
     }, [updateRoute]);
 
     const handleExerciseSelectionChange = useCallback((categoryId: string, exerciseId: number | null) => {
@@ -113,6 +143,18 @@ function MainApp() {
             triggerAmbientTransition();
         }
 
+        const currentContentTarget = route.moduleId && route.lessonId
+            ? {
+                moduleId: route.moduleId,
+                lessonId: route.lessonId,
+                label: lastContentLesson?.moduleId === route.moduleId && lastContentLesson.lessonId === route.lessonId
+                    ? lastContentLesson.label
+                    : 'aula anterior'
+            }
+            : lastContentLesson;
+
+        setExerciseReturnTarget(currentContentTarget ?? null);
+
         updateRoute({
             tab: 'exercicios',
             categoryId,
@@ -120,13 +162,14 @@ function MainApp() {
             moduleId: null,
             lessonId: null
         });
-    }, [route.tab, triggerAmbientTransition, updateRoute]);
+    }, [lastContentLesson, route.lessonId, route.moduleId, route.tab, triggerAmbientTransition, updateRoute]);
 
     const handleOpenTheoryFromExercises = useCallback((moduleId: string, lessonId: string) => {
         if (route.tab !== 'conteudo') {
             triggerAmbientTransition();
         }
 
+        setExerciseReturnTarget(null);
         updateRoute({
             tab: 'conteudo',
             moduleId,
@@ -135,6 +178,37 @@ function MainApp() {
             exerciseId: null
         });
     }, [route.tab, triggerAmbientTransition, updateRoute]);
+
+    const handleReturnToLessonFromExercise = useCallback(() => {
+        if (!exerciseReturnTarget) return;
+
+        if (route.tab !== 'conteudo') {
+            triggerAmbientTransition();
+        }
+
+        updateRoute({
+            tab: 'conteudo',
+            moduleId: exerciseReturnTarget.moduleId,
+            lessonId: exerciseReturnTarget.lessonId,
+            categoryId: null,
+            exerciseId: null
+        });
+        setExerciseReturnTarget(null);
+    }, [exerciseReturnTarget, route.tab, triggerAmbientTransition, updateRoute]);
+
+    const handleReturnToExerciseFromSimulator = useCallback(() => {
+        if (!simulatorExerciseReturnTarget) return;
+
+        triggerAmbientTransition();
+        updateRoute({
+            tab: 'exercicios',
+            categoryId: simulatorExerciseReturnTarget.categoryId,
+            exerciseId: simulatorExerciseReturnTarget.exerciseId,
+            moduleId: null,
+            lessonId: null
+        });
+        setSimulatorExerciseReturnTarget(null);
+    }, [simulatorExerciseReturnTarget, triggerAmbientTransition, updateRoute]);
 
     const routeFallback = isWorkspaceTab ? (
         <div className="flex h-full min-h-[70vh] items-center justify-center px-6 pt-24">
@@ -198,6 +272,8 @@ function MainApp() {
                         <ExerciciosSection
                             onSimulate={handleSimulationRequest}
                             onOpenTheory={handleOpenTheoryFromExercises}
+                            returnToLessonLabel={exerciseReturnTarget?.label ?? null}
+                            onReturnToLesson={exerciseReturnTarget ? handleReturnToLessonFromExercise : undefined}
                             initialCategoryId={route.categoryId}
                             initialExerciseId={route.exerciseId}
                             onSelectionChange={handleExerciseSelectionChange}
@@ -208,6 +284,8 @@ function MainApp() {
                         <SimulatorPage
                             initialData={pendingSimulatorData}
                             onInitialDataConsumed={() => setPendingSimulatorData(undefined)}
+                            returnToExerciseLabel={simulatorExerciseReturnTarget?.label ?? null}
+                            onReturnToExercise={simulatorExerciseReturnTarget ? handleReturnToExerciseFromSimulator : undefined}
                         />
                     )}
 

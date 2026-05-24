@@ -54,7 +54,7 @@ export const LessonSupportPanel: React.FC<LessonSupportPanelProps> = ({
                                         onClick={() => onOpenExercise(exercise.categoryId, exercise.exerciseId)}
                                         className="mt-4 rounded-full bg-ios-blue px-4 py-2 text-xs font-bold text-white transition-colors hover:opacity-90"
                                     >
-                                        Abrir exercício guiado
+                                        Tentar resolver
                                     </button>
                                 )}
                             </article>

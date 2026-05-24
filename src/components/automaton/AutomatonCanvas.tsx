@@ -1,7 +1,7 @@
 import React, { useRef, useState, useMemo, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import type { Estado, Transicao, AutomatoData, Tool } from '../../types';
 import { getMousePos, calculateControlOffsetFromPoint } from '../../utils/geometry';
-import { calculateOptimalCurvatures, calculateSmartLabelPositions } from '../../utils/layout';
+import { calculateOptimalCurvatures, calculateSmartLabelPositions, resolveDraggedStateCollisions } from '../../utils/layout';
 import { parseTuringTransition } from '../../utils/turingLogic';
 import {
     CanvasContextMenu,
@@ -193,6 +193,25 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         });
     }, [data, onChange]);
 
+    const commitDraggedStatePositions = useCallback(() => {
+        const draggedIds = Object.keys(dragPositionsRef.current);
+        if (draggedIds.length === 0) return;
+
+        const draggedIdSet = new Set(draggedIds);
+        const newEstados = data.estados.map(s => {
+            const override = dragPositionsRef.current[s.id];
+            if (override) {
+                return { ...s, x: override.x, y: override.y };
+            }
+            return s;
+        });
+
+        const resolvedEstados = resolveDraggedStateCollisions(newEstados, draggedIdSet, MIN_STATE_SPACING);
+        onChange({ ...data, estados: resolvedEstados });
+        dragPositionsRef.current = {};
+        setDragPreviewPositions({});
+    }, [data, onChange]);
+
     const { isCtrlPressed, isSpacePressed } = useCanvasKeyboard({
         data,
         readOnly,
@@ -248,20 +267,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
     useEffect(() => {
         const handleGlobalMouseUp = () => {
             if (isDraggingRef.current && dragTypeRef.current === 'state') {
-                // Commit drag positions to data
-                const newEstados = data.estados.map(s => {
-                    const override = dragPositionsRef.current[s.id];
-                    if (override) {
-                        return { ...s, x: override.x, y: override.y };
-                    }
-                    return s;
-                });
-
-                if (Object.keys(dragPositionsRef.current).length > 0) {
-                    onChange({ ...data, estados: newEstados });
-                }
-                dragPositionsRef.current = {};
-                setDragPreviewPositions({});
+                commitDraggedStatePositions();
             }
             if (isDraggingRef.current && dragTypeRef.current === 'controlPoint') {
                 commitControlPointDraft();
@@ -271,7 +277,6 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
             dragTypeRef.current = 'pan';
             setDragMode('pan');
             dragTargetRef.current = null;
-            setCreatingTransition(null);
             setIsSelecting(false);
             scheduleRender();
         };
@@ -282,7 +287,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
             window.removeEventListener('mouseup', handleGlobalMouseUp);
             window.removeEventListener('blur', handleGlobalMouseUp);
         };
-    }, [data, onChange, commitControlPointDraft, scheduleRender]);
+    }, [commitControlPointDraft, commitDraggedStatePositions, scheduleRender]);
 
     const snapToGridValue = useCallback((value: number) => (
         snapToGrid ? Math.round(value / GRID_SIZE) * GRID_SIZE : value
@@ -545,20 +550,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
     const handleMouseUp = () => {
         if (isDraggingRef.current) {
             if (dragTypeRef.current === 'state') {
-                // Commit drag positions to data
-                const newEstados = data.estados.map(s => {
-                    const override = dragPositionsRef.current[s.id];
-                    if (override) {
-                        return { ...s, x: override.x, y: override.y };
-                    }
-                    return s;
-                });
-
-                // Only update if there were actual changes
-                if (Object.keys(dragPositionsRef.current).length > 0) {
-                    onChange({ ...data, estados: newEstados });
-                }
-                dragPositionsRef.current = {};
+                commitDraggedStatePositions();
             }
             if (dragTypeRef.current === 'controlPoint') {
                 commitControlPointDraft();

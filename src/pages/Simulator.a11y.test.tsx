@@ -30,13 +30,14 @@ describe('SimulatorPage accessibility', () => {
             await Promise.resolve();
         });
 
-        fireEvent.click(screen.getByRole('button', { name: 'Abrir inspetor da simulação' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Abrir painel de diagnóstico da simulação' }));
 
         await waitFor(() => {
             expect(screen.getByText('Simulação e diagnóstico')).toBeInTheDocument();
         });
 
-        expect(screen.getAllByRole('button', { name: 'Fechar inspetor da simulação' })).toHaveLength(2);
+        expect(screen.getByRole('button', { name: 'Fechar painel de diagnóstico da simulação' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Fechar painel lateral de diagnóstico' })).toBeInTheDocument();
         expect(screen.getByRole('region', { name: 'Canvas do autômato AFD' })).toBeInTheDocument();
         expect(await runAxe(container)).toHaveNoViolations();
     });

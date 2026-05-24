@@ -370,8 +370,18 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
     const openGrammarImport = useCallback(() => {
         setGrammarImportError(null);
         setGrammarImportWarnings([]);
+        if (!grammarImportSource.trim()) {
+            setGrammarImportSource(grammarImportKind === 'regular' ? 'S -> aA | b' : 'S -> a S b | eps');
+        }
         setShowGrammarImport(true);
-    }, [setGrammarImportError, setGrammarImportWarnings, setShowGrammarImport]);
+    }, [
+        grammarImportKind,
+        grammarImportSource,
+        setGrammarImportError,
+        setGrammarImportSource,
+        setGrammarImportWarnings,
+        setShowGrammarImport
+    ]);
 
     useWindowKeyboard({
         enabled: !readOnly,

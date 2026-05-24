@@ -72,8 +72,8 @@ const GrammarRail = ({
                     <BookOpen size={18} />
                 </div>
                 <div>
-                    <div className="ui-kicker-xs text-secondary">Rail da gramática</div>
-                    <div className="text-sm font-bold text-primary">Definição e transformações</div>
+                    <div className="ui-kicker-xs text-secondary">Gramática</div>
+                    <div className="text-sm font-bold text-primary">Regras e normalizações</div>
                 </div>
             </div>
             {onClose && (
@@ -277,7 +277,7 @@ export const GrammarWorkspace: React.FC<GrammarWorkspaceProps> = ({
                     {headerContent}
                     <div className="glass-panel pointer-events-auto inline-flex w-fit items-center gap-2 rounded-full border border-default bg-surface-1/95 px-3 py-2 shadow-apple-md">
                         <span className="badge badge-accent">GLC</span>
-                        <span className="text-[11px] font-black text-secondary">Derivação e transformações</span>
+                        <span className="text-[11px] font-black text-secondary">Laboratório de gramáticas</span>
                     </div>
                 </div>
 
@@ -313,7 +313,7 @@ export const GrammarWorkspace: React.FC<GrammarWorkspaceProps> = ({
 
                 <div className="flex h-full min-h-0">
                     {isDesktopViewport && (
-                        <aside className="hidden h-full min-h-0 w-[360px] shrink-0 p-4 pt-24 xl:w-[380px] lg:block">
+                        <aside className="hidden h-full min-h-0 w-[360px] shrink-0 px-4 pb-32 pt-24 xl:w-[380px] lg:block">
                             <GrammarRail
                                 grammarSource={grammarSource}
                                 grammarWarnings={grammarWarnings}
@@ -395,7 +395,7 @@ export const GrammarWorkspace: React.FC<GrammarWorkspaceProps> = ({
                                     </div>
                                     <h2 className="text-2xl font-black text-primary">Pronto para derivar</h2>
                                     <p className="mt-3 text-sm leading-relaxed text-secondary">
-                                        Abra a gramática no rail lateral, defina a palavra no dock inferior e execute a derivação para preencher este stage.
+                                        Edite as regras, informe a palavra e execute a derivação.
                                     </p>
                                 </div>
                             </div>
@@ -408,16 +408,19 @@ export const GrammarWorkspace: React.FC<GrammarWorkspaceProps> = ({
                         <div className="glass-card flex flex-col gap-3 rounded-[28px] border border-default/80 bg-surface-1/95 p-3 shadow-apple-xl lg:flex-row lg:items-center lg:p-4">
                             <div className="flex flex-1 items-center gap-3 rounded-[24px] border border-default bg-surface-2/70 px-4 py-2 shadow-inner">
                                 <FileText size={18} className="text-secondary" />
-                                <input
-                                    value={grammarInput}
-                                    onChange={(event) => setGrammarInput(event.target.value)}
-                                    onKeyDown={(event) => {
-                                        if (event.key === 'Enter') runDerivation();
-                                    }}
-                                    placeholder="Digite a palavra para testar"
-                                    className="min-w-0 flex-1 bg-transparent font-mono text-sm font-bold text-primary outline-none placeholder:text-muted"
-                                    aria-label="Palavra a ser derivada"
-                                />
+                                <div className="min-w-0 flex-1">
+                                    <input
+                                        value={grammarInput}
+                                        onChange={(event) => setGrammarInput(event.target.value)}
+                                        onKeyDown={(event) => {
+                                            if (event.key === 'Enter') runDerivation();
+                                        }}
+                                        placeholder="Digite a palavra para testar"
+                                        className="w-full min-w-0 bg-transparent font-mono text-sm font-bold text-primary outline-none placeholder:text-muted"
+                                        aria-label="Palavra a ser derivada"
+                                    />
+                                    <div className="mt-0.5 text-[10px] font-semibold text-secondary">Entrada vazia representa ε.</div>
+                                </div>
                             </div>
 
                             <div className="flex items-center justify-between gap-3 lg:w-auto">

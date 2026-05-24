@@ -6,7 +6,7 @@ import {
     Play
 } from 'lucide-react';
 import { AutomatonPreview } from '../../components/automaton/AutomatonPreview';
-import type { AutomatoData } from '../../types';
+import { isAP, type APData, type AutomatoData } from '../../types';
 import type { ContentBlockComponentProps } from './contentBlockShared';
 import { renderMarkdown } from './contentBlockShared';
 
@@ -40,6 +40,45 @@ const PreviewCard = ({
         </div>
     </div>
 );
+
+const getStackPreviewSymbols = (data: APData): string[] => {
+    const startSymbol = data.simboloInicialPilha?.trim() || data.alfabetoPilha?.[0]?.trim() || 'Z';
+    const extraSymbols = (data.alfabetoPilha ?? [])
+        .map((symbol) => symbol.trim())
+        .filter((symbol) => symbol.length > 0 && symbol !== startSymbol);
+
+    return [startSymbol, ...extraSymbols.slice(0, 4)];
+};
+
+const PdaStackPreview: React.FC<{ data: APData }> = ({ data }) => {
+    const stackSymbols = getStackPreviewSymbols(data);
+
+    return (
+        <div className="rounded-2xl border border-default bg-surface-1/80 px-4 py-3 shadow-inner">
+            <div className="flex items-center justify-between gap-3">
+                <p className="ui-kicker-xs text-secondary">Pilha durante a leitura</p>
+                <span className="surface-chip rounded-full border border-default px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-secondary dark:bg-black/10">
+                    topo
+                </span>
+            </div>
+            <div className="mt-3 flex items-end gap-3">
+                <div className="flex min-w-20 flex-col-reverse gap-1 rounded-2xl border border-default bg-canvas p-2">
+                    {stackSymbols.map((symbol, index) => (
+                        <span
+                            key={`${symbol}-${index}`}
+                            className="rounded-xl border border-default bg-surface-2 px-3 py-1 text-center font-mono text-sm font-black text-primary"
+                        >
+                            {symbol}
+                        </span>
+                    ))}
+                </div>
+                <div className="pb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+                    base
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export const ContentExampleBlock: React.FC<ContentBlockComponentProps> = ({
     block,
@@ -78,12 +117,15 @@ export const ContentExampleBlock: React.FC<ContentBlockComponentProps> = ({
 
                     <div className={`grid gap-4 md:gap-4 lg:gap-6 ${secondaryAutomaton ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
                         {primaryAutomaton && (
-                            <PreviewCard
-                                data={primaryAutomaton}
-                                label={secondaryAutomaton ? 'Antes' : undefined}
-                                accentClassName="text-secondary"
-                                onExpand={onExpand}
-                            />
+                            <div className="flex flex-col gap-3">
+                                <PreviewCard
+                                    data={primaryAutomaton}
+                                    label={secondaryAutomaton ? 'Antes' : undefined}
+                                    accentClassName="text-secondary"
+                                    onExpand={onExpand}
+                                />
+                                {isAP(primaryAutomaton) && <PdaStackPreview data={primaryAutomaton} />}
+                            </div>
                         )}
 
                         {secondaryAutomaton && (

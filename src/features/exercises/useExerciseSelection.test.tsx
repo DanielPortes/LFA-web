@@ -15,6 +15,17 @@ const exerciseDatabase: ExerciseDatabase = {
             nivel: 'facil',
             mode: 'automaton',
             tipo: 'AFD'
+        },
+        {
+            id: 5,
+            pergunta: 'Construa um AFD para L = { w | w contém a substring "abb" }.',
+            nivel: 'medio',
+            mode: 'automaton',
+            tipo: 'AFD',
+            metadata: {
+                learningGoal: 'Reconhecer substrings com memória de sufixo.',
+                pattern: 'construction'
+            }
         }
     ],
     er: [
@@ -113,6 +124,21 @@ describe('useExerciseSelection', () => {
         expect(result.current.filteredExercises).toHaveLength(1);
         expect(result.current.filteredExercises[0]?.id).toBe(2);
         expect(result.current.activeCategory).toBe('er');
+    });
+
+    it('mantém categorias com exercícios correspondentes quando a busca encontra apenas o enunciado', () => {
+        const { result } = renderHook(() => useExerciseSelection({
+            exerciseDatabase,
+            initialCategoryId: 'afd',
+            setLastCategory: vi.fn()
+        }));
+
+        act(() => {
+            result.current.setSearchQuery('substring abb');
+        });
+
+        expect(result.current.filteredExercises.map((exercise) => exercise.id)).toEqual([5]);
+        expect(result.current.filteredCategories.map((category) => category.id)).toContain('afd');
     });
 
     it('estabiliza a rota ao consumir uma seleção inicial vinda da URL', async () => {

@@ -63,11 +63,16 @@ export const EditorGrammarImportModal: React.FC<EditorGrammarImportModalProps> =
                 </div>
             )}
 
+            <div className="rounded-2xl border border-default bg-surface-2/70 px-4 py-3 text-xs leading-relaxed text-secondary">
+                Converter substitui o autômato atual pelo modelo gerado. Use uma produção por linha e separe alternativas com <code className="font-mono">|</code>.
+            </div>
+
             <textarea
                 value={grammarImportSource}
                 onChange={(event) => onGrammarImportSourceChange(event.target.value)}
                 className="w-full h-48 bg-surface-muted border border-default rounded-xl p-3 font-mono text-sm"
                 placeholder={grammarImportKind === 'regular' ? 'S -> aA | b' : 'S -> aSb | ε'}
+                aria-label="Fonte da gramática"
             />
 
             {grammarImportError && (

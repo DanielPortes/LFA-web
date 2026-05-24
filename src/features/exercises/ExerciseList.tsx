@@ -4,15 +4,15 @@ import {
     Lightbulb,
     Eye,
     EyeOff,
-    CheckCircle2,
     ListFilter,
     Pencil,
     Trophy,
-    ArrowRightLeft
+    ArrowRightLeft,
+    BookOpen
 } from 'lucide-react';
-import { AutomatonPreview } from '../../components/automaton/AutomatonPreview';
 import type { Exercicio } from '../../types';
 import type { ConverterData, ExerciseSolverStartOptions } from './types';
+import { ExerciseSupportPanel } from './ExerciseSupportPanel';
 
 interface ExerciseListProps {
     activeCategory: string;
@@ -20,14 +20,17 @@ interface ExerciseListProps {
     exercises: Exercicio[];
     filteredExercises: Exercicio[];
     completedInActiveCategory: number;
-    revealedHints: Record<number, boolean>;
+    revealedHintCounts: Record<number, number>;
     revealedAnswers: Record<number, boolean>;
     isExerciseCompleted: (categoryId: string, exerciseId: number) => boolean;
     onToggleHint: (exerciseId: number) => void;
+    onRevealNextHint: (exerciseId: number) => void;
     onToggleAnswer: (exerciseId: number) => void;
     onStartSolving: (exerciseId: number, options?: ExerciseSolverStartOptions) => void;
     onOpenSidebar: () => void;
     onOpenConverter: (data: ConverterData) => void;
+    returnToLessonLabel?: string | null;
+    onReturnToLesson?: () => void;
 }
 
 export const ExerciseList: React.FC<ExerciseListProps> = ({
@@ -36,14 +39,17 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
     exercises,
     filteredExercises,
     completedInActiveCategory,
-    revealedHints,
+    revealedHintCounts,
     revealedAnswers,
     isExerciseCompleted,
     onToggleHint,
+    onRevealNextHint,
     onToggleAnswer,
     onStartSolving,
     onOpenSidebar,
     onOpenConverter,
+    returnToLessonLabel = null,
+    onReturnToLesson,
 }) => (
     <div className="render-lite-shell flex-1 min-w-0 space-y-6 pb-10">
         <div className="glass-card p-6 flex flex-col gap-4">
@@ -75,6 +81,17 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                     >
                         <ArrowRightLeft size={18} />
                     </button>
+                    {returnToLessonLabel && onReturnToLesson && (
+                        <button
+                            type="button"
+                            onClick={onReturnToLesson}
+                            className="btn-icon rounded-xl border border-default bg-surface-2 px-3 py-2 text-sm font-bold text-secondary transition-all hover:border-ios-blue/40 hover:text-ios-blue"
+                            aria-label={`Voltar à aula ${returnToLessonLabel}`}
+                        >
+                            <BookOpen size={16} />
+                            Voltar à aula
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
@@ -82,6 +99,17 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
         {filteredExercises.map((exercise, index) => {
             const completed = isExerciseCompleted(activeCategory, exercise.id);
             const hintCount = exercise.dicas?.length ?? (exercise.dica ? 1 : 0);
+            const hints = exercise.dicas && exercise.dicas.length > 0
+                ? [...exercise.dicas].sort((a, b) => a.level - b.level)
+                : exercise.dica
+                    ? [{
+                        id: `exercise-${exercise.id}-legacy-hint`,
+                        level: 1,
+                        text: exercise.dica
+                    }]
+                    : [];
+            const revealedHintCount = Math.min(revealedHintCounts[exercise.id] ?? 0, hintCount);
+            const nextHintAvailable = revealedHintCount < hintCount;
 
             return (
                 <div
@@ -131,7 +159,7 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                                 ) : (
                                     <>
                                         <Pencil size={14} />
-                                        Tentar Resolver
+                                        Tentar resolver
                                     </>
                                 )}
                             </button>
@@ -140,14 +168,14 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                                 <button
                                     onClick={() => onToggleHint(exercise.id)}
                                     className={`btn-icon px-4 rounded-xl text-sm font-bold gap-2 border shadow-apple-sm ${
-                                        revealedHints[exercise.id]
+                                        revealedHintCount > 0
                                             ? 'bg-status-warning-soft text-status-warning border-status-warning'
                                             : 'bg-surface-soft text-primary border-default hover:bg-surface-strong dark:text-secondary'
                                     }`}
                                 >
-                                    <Lightbulb size={14} className={revealedHints[exercise.id] ? 'fill-current' : ''} />
-                                    {revealedHints[exercise.id]
-                                        ? 'Esconder'
+                                    <Lightbulb size={14} className={revealedHintCount > 0 ? 'fill-current' : ''} />
+                                    {revealedHintCount > 0
+                                        ? 'Esconder pistas'
                                         : hintCount > 1 ? `Pistas (${hintCount})` : 'Dica'}
                                 </button>
                             )}
@@ -161,22 +189,18 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                                 }`}
                             >
                                 {revealedAnswers[exercise.id] ? <EyeOff size={14} /> : <Eye size={14} />}
-                                {revealedAnswers[exercise.id] ? 'Esconder' : 'Ver Resposta'}
+                                {revealedAnswers[exercise.id] ? 'Esconder apoio' : 'Apoio e gabarito'}
                             </button>
                         </div>
                     </div>
 
-                    {revealedHints[exercise.id] && hintCount > 0 && (
+                    {revealedHintCount > 0 && (
                         <div className="mx-4 sm:mx-8 mb-6 sm:ml-20 p-4 bg-status-warning-soft border border-status-warning rounded-2xl text-status-warning text-sm animate-scale-in">
                             <span className="font-bold mr-2 block mb-3 uppercase tracking-wide text-xs">
-                                {hintCount > 1 ? 'Pistas iniciais' : 'Pista'}
+                                {hintCount > 1 ? `${revealedHintCount}/${hintCount} pistas abertas` : 'Pista'}
                             </span>
                             <div className="space-y-3">
-                                {(exercise.dicas && exercise.dicas.length > 0 ? exercise.dicas : exercise.dica ? [{
-                                    id: `exercise-${exercise.id}-legacy-hint`,
-                                    level: 1,
-                                    text: exercise.dica
-                                }] : []).map((hint) => (
+                                {hints.slice(0, revealedHintCount).map((hint) => (
                                     <div key={hint.id} className="surface-soft-panel rounded-2xl border border-status-warning/20 p-3 text-primary dark:bg-black/10">
                                         <p className="text-xs font-bold uppercase tracking-[0.18em] text-status-warning">
                                             Pista {hint.level}
@@ -184,6 +208,15 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                                         <p className="mt-2 text-sm leading-relaxed">{hint.text}</p>
                                     </div>
                                 ))}
+                                {nextHintAvailable && (
+                                    <button
+                                        type="button"
+                                        onClick={() => onRevealNextHint(exercise.id)}
+                                        className="rounded-full bg-ios-blue px-3 py-1.5 text-xs font-bold text-white transition-colors hover:opacity-90"
+                                    >
+                                        Liberar próxima pista
+                                    </button>
+                                )}
                             </div>
                         </div>
                     )}
@@ -191,51 +224,12 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                     {revealedAnswers[exercise.id] && (
                         <div className="border-t border-default bg-surface-2/80 p-5 sm:p-8 animate-fade-in dark:bg-black/20">
                             <div className="sm:ml-14">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <CheckCircle2 size={16} strokeWidth={3} className="text-ios-green" />
-                                    <span className="ui-kicker text-secondary">Solução</span>
-                                </div>
-
-                                {exercise.respostaTexto && (
-                                    <p className="surface-soft-panel whitespace-pre-line rounded-2xl border border-default p-6 font-mono text-sm leading-relaxed text-primary shadow-sm dark:bg-white/5">
-                                        {exercise.respostaTexto}
-                                    </p>
-                                )}
-
-                                {exercise.respostaAutomato && (
-                                    <div className="mt-8 pt-6 border-t border-default">
-                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-2 h-2 rounded-full bg-ios-green"></div>
-                                                <span className="ui-kicker text-secondary">Gabarito Visual</span>
-                                            </div>
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <button
-                                                    onClick={() => onOpenConverter({ automaton: exercise.respostaAutomato })}
-                                                    className="group flex items-center gap-2 px-4 py-2 rounded-full bg-status-accent-soft text-status-accent hover:bg-ios-purple hover:text-white text-xs font-bold transition-all duration-300"
-                                                >
-                                                    <ArrowRightLeft size={12} />
-                                                    Converter
-                                                </button>
-                                                <button
-                                                    onClick={() => onStartSolving(exercise.id, {
-                                                        initialAutomaton: exercise.respostaAutomato,
-                                                    })}
-                                                    className="group flex items-center gap-2 px-4 py-2 rounded-full bg-status-info-soft text-status-info hover:bg-ios-blue hover:text-white text-xs font-bold transition-all duration-300"
-                                                >
-                                                    <Pencil size={12} />
-                                                    Verificar solução
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div className="relative aspect-[16/10] min-h-[224px] w-full overflow-hidden rounded-3xl border border-default bg-canvas shadow-inner md:min-h-[260px] lg:min-h-[320px]">
-                                            <AutomatonPreview
-                                                data={exercise.respostaAutomato}
-                                                ariaLabel={`Gabarito visual do exercício ${exercise.id}`}
-                                            />
-                                        </div>
-                                    </div>
-                                )}
+                                <ExerciseSupportPanel
+                                    exercise={exercise}
+                                    onLoadAnswerAutomaton={(data) => onStartSolving(exercise.id, {
+                                        initialAutomaton: data,
+                                    })}
+                                />
                             </div>
                         </div>
                     )}

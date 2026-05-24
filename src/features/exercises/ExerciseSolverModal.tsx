@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import {
     ArrowRightLeft,
+    BookOpen,
     Brain,
     FileText,
     LayoutPanelLeft,
@@ -64,6 +65,8 @@ interface ExerciseSolverModalProps {
     equivalenceStatus: 'pass' | 'fail' | null;
     lastTrace: SimulationTraceStep[] | null;
     formatStateList: (ids: string[]) => string;
+    returnToLessonLabel?: string | null;
+    onReturnToLesson?: () => void;
 }
 
 const solverModeLabel: Record<SolverMode, string> = {
@@ -79,7 +82,7 @@ const exerciseLevelLabel = {
     dificil: 'Desafio'
 } as const;
 
-const floatingActionClassName = 'rounded-[16px] p-2.5 text-secondary transition-colors hover:bg-surface-hover hover:text-primary';
+const floatingActionClassName = 'rounded-[14px] p-2 text-secondary transition-colors hover:bg-surface-hover hover:text-primary';
 const stageFieldClassName = 'w-full rounded-[24px] border border-default bg-surface-1/92 px-4 py-3 text-primary shadow-inner outline-none ring-ios-blue/40 focus:ring-2';
 
 export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
@@ -125,7 +128,9 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
     lastFailure,
     equivalenceStatus,
     lastTrace,
-    formatStateList
+    formatStateList,
+    returnToLessonLabel = null,
+    onReturnToLesson
 }) => {
     const titleId = useId();
     const descriptionId = useId();
@@ -174,14 +179,14 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
             describedById={descriptionId}
             hideHeader={true}
             bodyClassName="overflow-hidden p-0"
-            overlayClassName="p-2 sm:p-4 lg:p-6"
-            className="h-[min(92dvh,1024px)] min-h-[88dvh] w-[min(96vw,1440px)] max-w-none overflow-hidden rounded-[32px]"
+            overlayClassName="p-0 sm:p-2 lg:p-3"
+            className="exercise-solver-dialog h-[min(96dvh,1060px)] min-h-[90dvh] w-[min(99vw,1500px)] max-w-none overflow-hidden rounded-[20px]"
         >
-            <div className="flex h-full min-h-0 flex-col bg-app/30 p-3 sm:p-4 lg:p-5">
-                <div className="flex items-start justify-between gap-4 px-1 pb-3 sm:pb-4">
+            <div data-testid="exercise-solver-chrome" className="flex h-full min-h-0 flex-col bg-app/25 p-0">
+                <div className="flex items-start justify-between gap-4 px-4 py-2.5 sm:px-5 lg:px-6">
                     <div className="min-w-0 max-w-4xl">
                         <div className="flex items-start gap-3">
-                            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-default/70 bg-ios-green/10 text-ios-green">
+                            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-default/70 bg-ios-green/10 text-ios-green">
                                 <Pencil size={16} />
                             </div>
                             <div className="min-w-0">
@@ -195,10 +200,10 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                                     </span>
                                 </div>
 
-                                <h3 id={titleId} className="mt-2 text-xl font-bold text-primary sm:text-2xl">
+                                <h3 id={titleId} className="mt-1.5 text-lg font-bold text-primary sm:text-xl">
                                     {titleText}
                                 </h3>
-                                <p id={descriptionId} className="mt-1 max-w-4xl text-sm leading-relaxed text-secondary sm:text-[15px]">
+                                <p id={descriptionId} className="mt-0.5 max-w-4xl text-sm leading-snug text-secondary sm:text-[15px]">
                                     {question}
                                 </p>
                             </div>
@@ -206,11 +211,23 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                     </div>
 
                     <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                        {returnToLessonLabel && onReturnToLesson && (
+                            <button
+                                type="button"
+                                onClick={onReturnToLesson}
+                                className="glass-panel flex items-center gap-2 rounded-[16px] border border-default bg-surface-1/92 px-3.5 py-2 text-xs font-bold text-primary shadow-apple-sm transition-colors hover:bg-surface-1"
+                                aria-label={`Voltar à aula ${returnToLessonLabel}`}
+                            >
+                                <BookOpen size={16} />
+                                Voltar à aula
+                            </button>
+                        )}
+
                         {hasRunnableAutomaton && (
                             <button
                                 type="button"
                                 onClick={() => onSimulate(userAutomaton)}
-                                className="flex items-center gap-2 rounded-[18px] bg-ios-blue px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-ios-blue/20 transition-colors hover:opacity-90"
+                                className="flex items-center gap-2 rounded-[16px] bg-ios-blue px-3.5 py-2 text-xs font-bold text-white shadow-lg shadow-ios-blue/20 transition-colors hover:opacity-90"
                                 aria-label="Abrir autômato atual no simulador"
                             >
                                 <Play size={16} fill="currentColor" />
@@ -218,7 +235,7 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                             </button>
                         )}
 
-                        <div className="glass-panel flex items-center gap-1 rounded-[20px] border-default/80 bg-surface-1/92 p-1.5 shadow-apple-lg">
+                        <div className="glass-panel flex items-center gap-1 rounded-[18px] border-default/80 bg-surface-1/92 p-1 shadow-apple-md">
                             <button
                                 onClick={onOpenConverter}
                                 className={floatingActionClassName}
@@ -271,19 +288,44 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
 
                 <div
                     data-testid="exercise-solver-workspace"
-                    className="relative h-full min-h-0 overflow-hidden rounded-[28px] border border-default bg-canvas shadow-apple-xl"
+                    className="relative h-full min-h-0 overflow-hidden rounded-none border-t border-default bg-canvas"
                 >
                     <div
-                        className={`grid h-full min-h-0 grid-rows-[minmax(0,1fr),auto] ${
-                            verificationPanelOpen
-                                ? 'min-[1180px]:grid-cols-[minmax(0,1fr),360px]'
-                                : 'min-[1180px]:grid-cols-[minmax(0,1fr)]'
-                        } min-[1180px]:grid-rows-1`}
+                        data-testid="exercise-solver-layout"
+                        data-verification-panel={verificationPanelOpen ? 'open' : 'closed'}
+                        className="flex h-full min-h-0 flex-col min-[1180px]:flex-row"
                     >
+                        {verificationPanelOpen && (
+                            <ExerciseVerificationPanel
+                                className="order-2 shrink-0 min-[1180px]:order-1"
+                                exercise={exercise}
+                                onLoadAnswerAutomaton={solverMode === 'automaton'
+                                    ? handleLoadAnswerAutomaton
+                                    : undefined}
+                                onOpenTheory={onOpenTheory}
+                                solverMode={solverMode}
+                                hasTests={hasTests}
+                                tests={tests}
+                                showExpected={showExpected}
+                                onToggleShowExpected={onToggleShowExpected}
+                                fastVerify={fastVerify}
+                                onToggleFastVerify={onToggleFastVerify}
+                                testResults={testResults}
+                                verifyDisabledReason={verifyDisabledReason}
+                                isVerifying={isVerifying}
+                                onVerify={onVerify}
+                                lastFailure={lastFailure}
+                                equivalenceStatus={equivalenceStatus}
+                                lastTrace={lastTrace}
+                                formatStateList={formatStateList}
+                            />
+                        )}
+
                         <section
+                            data-testid="exercise-solver-stage"
                             role="region"
                             aria-label="Área de resolução do exercício"
-                            className="relative min-h-[52vh] min-w-0 overflow-hidden min-[1180px]:min-h-0"
+                            className="order-1 relative min-h-[52vh] min-w-0 flex-1 overflow-hidden min-[1180px]:order-2 min-[1180px]:min-h-0 min-[1180px]:min-w-0"
                         >
                             {solverMode === 'automaton' && userAutomaton && (
                                 <div className="absolute inset-0 min-h-0">
@@ -425,30 +467,6 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                             )}
                         </section>
 
-                        {verificationPanelOpen && (
-                            <ExerciseVerificationPanel
-                                exercise={exercise}
-                                onLoadAnswerAutomaton={solverMode === 'automaton'
-                                    ? handleLoadAnswerAutomaton
-                                    : undefined}
-                                onOpenTheory={onOpenTheory}
-                                solverMode={solverMode}
-                                hasTests={hasTests}
-                                tests={tests}
-                                showExpected={showExpected}
-                                onToggleShowExpected={onToggleShowExpected}
-                                fastVerify={fastVerify}
-                                onToggleFastVerify={onToggleFastVerify}
-                                testResults={testResults}
-                                verifyDisabledReason={verifyDisabledReason}
-                                isVerifying={isVerifying}
-                                onVerify={onVerify}
-                                lastFailure={lastFailure}
-                                equivalenceStatus={equivalenceStatus}
-                                lastTrace={lastTrace}
-                                formatStateList={formatStateList}
-                            />
-                        )}
                     </div>
                 </div>
             </div>

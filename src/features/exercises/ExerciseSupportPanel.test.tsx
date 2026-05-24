@@ -30,6 +30,21 @@ const exercise: Exercicio = {
 };
 
 describe('ExerciseSupportPanel', () => {
+    it('apresenta ajuda como menu compacto de estudo, sem explicar a própria interface', () => {
+        render(<ExerciseSupportPanel exercise={exercise} />);
+
+        const panel = screen.getByTestId('exercise-support-panel');
+
+        expect(panel).toBeInTheDocument();
+        expect(panel).toHaveClass('bg-transparent');
+        expect(panel).not.toHaveClass('rounded-[22px]');
+        expect(panel).not.toHaveClass('shadow-sm');
+        expect(screen.getByText('Apoio de estudo')).toBeInTheDocument();
+        expect(screen.queryByText('Ajuda opcional')).not.toBeInTheDocument();
+        expect(screen.queryByText(/Estratégia, teoria e gabarito/)).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Erros comuns' })).toBeInTheDocument();
+    });
+
     it('não destaca erro comum arbitrário quando a falha não combina com nenhum diagnóstico', () => {
         render(
             <ExerciseSupportPanel

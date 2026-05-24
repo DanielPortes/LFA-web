@@ -18,7 +18,7 @@ interface ContentProps {
     onOpenExercise?: (categoryId: string, exerciseId: number) => void;
     initialModuleId?: string;
     initialLessonId?: string;
-    onSelectionChange?: (moduleId: string, lessonId: string) => void;
+    onSelectionChange?: (moduleId: string, lessonId: string, lessonTitle?: string) => void;
 }
 
 const ContentDataState = ({ message }: { message: string }) => (
@@ -60,6 +60,7 @@ const LoadedContentSection = ({
         isSidebarOpen,
         lastVisitedLesson,
         moduleIndex,
+        navigateToFirstSearchResult,
         navigationState,
         openSidebar,
         searchQuery,
@@ -104,6 +105,7 @@ const LoadedContentSection = ({
                 onContinue={handleNavigate}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
+                onSearchSubmit={navigateToFirstSearchResult}
                 filteredModules={filteredModules}
                 isLessonCompleted={isLessonCompleted}
                 onNavigate={handleNavigate}

@@ -72,7 +72,7 @@ describe('useContentSelection', () => {
         expect(result.current.navigationState.next).toBeNull();
         expect(result.current.lastVisitedLesson?.lesson.id).toBe('lesson-2');
         expect(markLessonVisited).toHaveBeenCalledWith('lesson-3');
-        expect(onSelectionChange).toHaveBeenCalledWith('mod-2', 'lesson-3');
+        expect(onSelectionChange).toHaveBeenCalledWith('mod-2', 'lesson-3', 'Pilhas');
     });
 
     it('filtra módulos pela busca e fecha a sidebar ao navegar', () => {
@@ -114,5 +114,24 @@ describe('useContentSelection', () => {
         expect(result.current.filteredModules).toHaveLength(1);
         expect(result.current.filteredModules[0].id).toBe('mod-2');
         expect(result.current.filteredModules[0].lessons[0].id).toBe('lesson-3');
+    });
+
+    it('abre o primeiro resultado filtrado quando a busca é confirmada', () => {
+        const { result } = renderHook(() => useContentSelection({
+            modules,
+            markLessonVisited: vi.fn()
+        }));
+
+        act(() => {
+            result.current.setSearchQuery('pilha');
+        });
+
+        act(() => {
+            result.current.navigateToFirstSearchResult();
+        });
+
+        expect(result.current.activeModuleId).toBe('mod-2');
+        expect(result.current.activeLessonId).toBe('lesson-3');
+        expect(result.current.searchQuery).toBe('');
     });
 });

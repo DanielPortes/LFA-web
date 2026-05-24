@@ -69,7 +69,14 @@ describe('ExerciseVerificationPanel', () => {
                 }}
                 equivalenceStatus="fail"
                 lastTrace={[
-                    { symbol: 'a', fromStates: ['q0'], directTargets: ['q1'], toStates: ['q1'] },
+                    {
+                        symbol: 'a',
+                        fromStates: ['q0'],
+                        directTargets: ['q1'],
+                        toStates: ['q1'],
+                        fromStacks: [['Z']],
+                        toStacks: [['A', 'Z']],
+                    },
                 ]}
                 formatStateList={(ids) => ids.join(', ')}
             />
@@ -79,7 +86,10 @@ describe('ExerciseVerificationPanel', () => {
         expect(screen.getByText('Primeiro erro')).toBeInTheDocument();
         expect(screen.getByText('Equivalência DFA')).toBeInTheDocument();
         expect(screen.getByText('Traço de execução')).toBeInTheDocument();
-        expect(screen.getByText('Ajuda opcional')).toBeInTheDocument();
+        expect(screen.getByText('Pilha')).toBeInTheDocument();
+        expect(screen.getByText('Z')).toBeInTheDocument();
+        expect(screen.getByText('A Z')).toBeInTheDocument();
+        expect(screen.getByText('Apoio de estudo')).toBeInTheDocument();
         expect(screen.queryByText(pedagogicalExercise.pergunta)).not.toBeInTheDocument();
         expect(screen.queryByText('Observe apenas o último símbolo lido.')).not.toBeInTheDocument();
         expect(screen.queryByText('Modelar uma condição de sufixo em um AFD.')).not.toBeInTheDocument();

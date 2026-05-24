@@ -89,10 +89,13 @@ export const TemplatesGallery: React.FC<TemplatesGalleryProps> = ({ isOpen, onCl
                                         <span>{template.data.transicoes.length} trans.</span>
                                     </div>
 
-                                    <div className="flex items-center gap-1 text-ios-blue text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex items-center gap-1 rounded-full border border-ios-blue/20 bg-ios-blue/10 px-2 py-1 text-xs font-bold text-ios-blue transition-colors group-hover:bg-ios-blue group-hover:text-white">
                                         <Play size={12} fill="currentColor" />
-                                        Usar
+                                        Usar template
                                     </div>
+                                </div>
+                                <div className="mt-3 text-[10px] font-semibold text-secondary">
+                                    Substitui o canvas atual.
                                 </div>
                             </button>
                         ))}

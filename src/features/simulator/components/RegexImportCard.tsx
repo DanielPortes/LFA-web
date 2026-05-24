@@ -42,6 +42,9 @@ export const RegexImportCard: React.FC<RegexImportCardProps> = ({
                 )}
             </div>
         </div>
+        <p className="mb-3 text-[11px] leading-relaxed text-secondary">
+            Importar substitui o autômato atual por um AFN de Thompson. Use <code className="font-mono">+</code> para união, concatenação implícita e <code className="font-mono">*</code> para fecho.
+        </p>
         <div className="flex gap-2">
             <input
                 value={value}

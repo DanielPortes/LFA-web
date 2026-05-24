@@ -35,6 +35,7 @@ interface ExerciseVerificationPanelProps {
     equivalenceStatus: ExerciseEquivalenceStatus;
     lastTrace: SimulationTraceStep[] | null;
     formatStateList: (ids: string[]) => string;
+    className?: string;
 }
 
 export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps> = ({
@@ -56,6 +57,7 @@ export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps>
     equivalenceStatus,
     lastTrace,
     formatStateList,
+    className = '',
 }) => {
     const passedCount = Object.values(testResults).filter((result) => result === 'pass').length;
     const failedCount = Object.values(testResults).filter((result) => result === 'fail').length;
@@ -68,11 +70,23 @@ export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps>
             : 'Pronto para validar sua solução.'
         : 'Sem verificação automática.';
 
+    const formatStackList = (stacks?: string[][]) => {
+        if (!stacks || stacks.length === 0) return 'vazia';
+        return stacks
+            .map((stack) => stack.length > 0 ? stack.join(' ') : 'vazia')
+            .map((label, index) => (
+                <React.Fragment key={`${label}-${index}`}>
+                    {index > 0 && <span className="mx-1 text-muted">|</span>}
+                    <code className="rounded bg-surface-1 px-1.5 py-0.5 font-mono text-primary">{label}</code>
+                </React.Fragment>
+            ));
+    };
+
     return (
         <aside
             data-testid="exercise-verification-rail"
             aria-label="Painel de verificação do exercício"
-            className="flex min-h-[32vh] max-h-[40vh] w-full min-w-0 flex-col overflow-hidden border-t border-default/80 bg-surface-1/95 backdrop-blur-2xl min-[1180px]:min-h-0 min-[1180px]:max-h-none min-[1180px]:w-[360px] min-[1180px]:border-l min-[1180px]:border-t-0"
+            className={`flex min-h-[32vh] max-h-[40vh] w-full min-w-0 flex-col overflow-hidden border-t border-default/80 bg-surface-1/95 backdrop-blur-2xl min-[1180px]:min-h-0 min-[1180px]:max-h-none min-[1180px]:w-[360px] min-[1180px]:border-r min-[1180px]:border-t-0 ${className}`}
         >
             <div className="border-b border-default/70 px-4 py-4">
                 <div className="flex items-start justify-between gap-3">
@@ -225,6 +239,13 @@ export const ExerciseVerificationPanel: React.FC<ExerciseVerificationPanelProps>
                                         <div>Alvo direto: {formatStateList(step.directTargets)}</div>
                                     )}
                                     <div>Para: {formatStateList(step.toStates)}</div>
+                                    {(step.fromStacks || step.toStacks) && (
+                                        <div className="mt-2 rounded-xl border border-default/50 bg-surface-2/70 px-2.5 py-2">
+                                            <div className="font-bold text-primary">Pilha</div>
+                                            <div>Antes: {formatStackList(step.fromStacks)}</div>
+                                            <div>Depois: {formatStackList(step.toStacks)}</div>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>

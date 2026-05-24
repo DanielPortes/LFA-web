@@ -37,7 +37,12 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
 }) => {
     const inspectorPanel = (
         <SimulationInspectorPanel
-            preferredItemId={(disableReason || isPda) ? 'warnings' : 'tape'}
+            preferredItemId={disableReason ? 'warnings' : 'tape'}
+            emptyState={(
+                <div className="rounded-[22px] border border-dashed border-default bg-surface-2/60 p-4 text-sm leading-relaxed text-secondary">
+                    Digite uma entrada e avance a simulação para ver fita, estados ativos e histórico de passos.
+                </div>
+            )}
             items={[
                 {
                     id: 'tape',
@@ -69,7 +74,7 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
                     type="button"
                     onClick={onCloseInspector}
                     className="rounded-2xl p-2 text-secondary transition-colors hover:bg-surface-hover hover:text-primary"
-                    aria-label="Fechar inspetor da simulação"
+                    aria-label="Fechar painel lateral de diagnóstico"
                 >
                     <X size={16} />
                 </button>

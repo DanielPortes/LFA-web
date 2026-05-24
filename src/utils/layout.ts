@@ -215,6 +215,101 @@ export const resolveCollisions = (
     }));
 };
 
+const EXACT_OVERLAP_DIRECTIONS: Point[] = [
+    { x: 0, y: -1 },
+    { x: 0, y: 1 },
+    { x: -1, y: 0 },
+    { x: 1, y: 0 },
+    { x: -Math.SQRT1_2, y: -Math.SQRT1_2 },
+    { x: Math.SQRT1_2, y: -Math.SQRT1_2 },
+    { x: -Math.SQRT1_2, y: Math.SQRT1_2 },
+    { x: Math.SQRT1_2, y: Math.SQRT1_2 },
+];
+
+const chooseExactOverlapDirection = (
+    candidate: Estado,
+    allStates: Estado[],
+    minSpacing: number
+): Point => {
+    let bestDirection = EXACT_OVERLAP_DIRECTIONS[0];
+    let bestScore = -Infinity;
+
+    for (const direction of EXACT_OVERLAP_DIRECTIONS) {
+        const projected = {
+            x: candidate.x + direction.x * minSpacing,
+            y: candidate.y + direction.y * minSpacing,
+        };
+        const nearestDistance = allStates.reduce((nearest, state) => {
+            if (state.id === candidate.id) return nearest;
+            return Math.min(nearest, distance(projected, state));
+        }, Infinity);
+
+        if (nearestDistance > bestScore) {
+            bestScore = nearestDistance;
+            bestDirection = direction;
+        }
+    }
+
+    return bestDirection;
+};
+
+/**
+ * Resolve collisions caused by the latest drag without disturbing stable states.
+ * This keeps mouse interaction cheap: only dragged nodes are relaxed on commit.
+ */
+export const resolveDraggedStateCollisions = (
+    states: Estado[],
+    draggedIds: ReadonlySet<string>,
+    minSpacing = MIN_STATE_SPACING
+): Estado[] => {
+    if (states.length < 2 || draggedIds.size === 0) return states;
+
+    const result = states.map((state) => ({ ...state }));
+    const draggedIndexes = result
+        .map((state, index) => (draggedIds.has(state.id) ? index : -1))
+        .filter((index) => index >= 0);
+
+    if (draggedIndexes.length === 0) return states;
+
+    const maxIterations = Math.max(12, Math.min(80, draggedIndexes.length * result.length * 4));
+
+    for (let iteration = 0; iteration < maxIterations; iteration++) {
+        let moved = false;
+
+        for (const draggedIndex of draggedIndexes) {
+            const dragged = result[draggedIndex];
+
+            for (let otherIndex = 0; otherIndex < result.length; otherIndex++) {
+                if (otherIndex === draggedIndex) continue;
+
+                const other = result[otherIndex];
+                const dx = dragged.x - other.x;
+                const dy = dragged.y - other.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist >= minSpacing) continue;
+
+                const direction = dist < 0.001
+                    ? chooseExactOverlapDirection(dragged, result, minSpacing)
+                    : { x: dx / dist, y: dy / dist };
+                const push = minSpacing - dist + 2;
+
+                dragged.x += direction.x * push;
+                dragged.y += direction.y * push;
+                moved = true;
+            }
+        }
+
+        if (!moved) break;
+    }
+
+    return result.map((state) => ({
+        ...state,
+        x: Math.round(state.x),
+        y: Math.round(state.y),
+    }));
+};
+
 // ============================================================================
 // TRANSITION PATH ANALYSIS
 // ============================================================================

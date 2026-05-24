@@ -17,6 +17,14 @@ const LazyConversionTool = lazy(async () => {
     return { default: module.ConversionTool };
 });
 
+interface ExerciseSimulationOrigin {
+    categoryId: string;
+    exerciseId: number;
+    label: string;
+}
+
+type ExerciseSimulateHandler = (data: AutomatoData, origin?: ExerciseSimulationOrigin) => void;
+
 const ExerciseDataState = ({ message }: { message: string }) => (
     <div className="flex min-h-[40vh] items-center justify-center px-4">
         <div className="glass-card max-w-md p-6 text-center">
@@ -30,13 +38,17 @@ const LoadedExercisesSection = ({
     exerciseDatabase,
     onSimulate,
     onOpenTheory,
+    returnToLessonLabel,
+    onReturnToLesson,
     initialCategoryId,
     initialExerciseId,
     onSelectionChange
 }: {
     exerciseDatabase: ExerciseDatabase;
-    onSimulate: (data: AutomatoData) => void;
+    onSimulate: ExerciseSimulateHandler;
     onOpenTheory?: (moduleId: string, lessonId: string) => void;
+    returnToLessonLabel?: string | null;
+    onReturnToLesson?: () => void;
     initialCategoryId?: string;
     initialExerciseId?: number | null;
     onSelectionChange?: (categoryId: string, exerciseId: number | null) => void;
@@ -113,12 +125,27 @@ const LoadedExercisesSection = ({
         verification.setGrammarError(null);
     }, [selection, verification]);
 
+    const getHintCount = useCallback((exerciseId: number) => {
+        const exercise = selection.exercises.find((item) => item.id === exerciseId);
+        return exercise?.dicas?.length ?? (exercise?.dica ? 1 : 0);
+    }, [selection.exercises]);
+
     const toggleHint = useCallback((exerciseId: number) => {
-        selection.setRevealedHints((previous) => ({
+        selection.setRevealedHintCounts((previous) => {
+            const isOpen = (previous[exerciseId] ?? 0) > 0;
+            return {
+                ...previous,
+                [exerciseId]: isOpen ? 0 : Math.min(1, getHintCount(exerciseId))
+            };
+        });
+    }, [getHintCount, selection]);
+
+    const revealNextHint = useCallback((exerciseId: number) => {
+        selection.setRevealedHintCounts((previous) => ({
             ...previous,
-            [exerciseId]: !previous[exerciseId]
+            [exerciseId]: Math.min((previous[exerciseId] ?? 0) + 1, getHintCount(exerciseId))
         }));
-    }, [selection]);
+    }, [getHintCount, selection]);
 
     const toggleAnswer = useCallback((exerciseId: number) => {
         selection.setRevealedAnswers((previous) => ({
@@ -131,6 +158,19 @@ const LoadedExercisesSection = ({
         if (!selection.currentExercise) return;
         markExerciseCompleted(selection.activeCategory, selection.currentExercise.id);
     }, [markExerciseCompleted, selection.activeCategory, selection.currentExercise]);
+
+    const handleSimulateFromExercise = useCallback((data: AutomatoData) => {
+        if (!selection.currentExercise) {
+            onSimulate(data);
+            return;
+        }
+
+        onSimulate(data, {
+            categoryId: selection.activeCategory,
+            exerciseId: selection.currentExercise.id,
+            label: `Exercício ${selection.currentExercise.id} · ${selection.activeCategoryConfig.label}`
+        });
+    }, [onSimulate, selection.activeCategory, selection.activeCategoryConfig.label, selection.currentExercise]);
 
     const answeredLabel = isExerciseCompleted(selection.activeCategory, selection.currentExercise?.id ?? null);
     const totalExercisesCount = useMemo(
@@ -206,14 +246,17 @@ const LoadedExercisesSection = ({
                 exercises={selection.exercises}
                 filteredExercises={selection.filteredExercises}
                 completedInActiveCategory={completedInActiveCategory}
-                revealedHints={selection.revealedHints}
+                revealedHintCounts={selection.revealedHintCounts}
                 revealedAnswers={selection.revealedAnswers}
                 isExerciseCompleted={isExerciseCompleted}
                 onToggleHint={toggleHint}
+                onRevealNextHint={revealNextHint}
                 onToggleAnswer={toggleAnswer}
                 onStartSolving={startSolving}
                 onOpenSidebar={() => selection.setSidebarOpen(true)}
                 onOpenConverter={selection.openConverter}
+                returnToLessonLabel={returnToLessonLabel}
+                onReturnToLesson={onReturnToLesson}
             />
 
             <ExerciseSolverModal
@@ -230,7 +273,7 @@ const LoadedExercisesSection = ({
                 hasSavedAttempt={selection.savedAttemptAutomaton !== null}
                 isViewingAnswerAutomaton={selection.isViewingAnswerAutomaton}
                 editorSessionKey={selection.editorSessionKey}
-                onSimulate={onSimulate}
+                onSimulate={handleSimulateFromExercise}
                 userRegex={selection.userRegex}
                 onRegexChange={handleRegexChange}
                 regexError={verification.regexError}
@@ -264,6 +307,8 @@ const LoadedExercisesSection = ({
                 equivalenceStatus={verification.equivalenceStatus}
                 lastTrace={verification.lastTrace}
                 formatStateList={verification.formatStateList}
+                returnToLessonLabel={returnToLessonLabel}
+                onReturnToLesson={onReturnToLesson}
             />
 
             <Suspense fallback={<div className="py-10 text-center text-secondary">Carregando conversor...</div>}>
@@ -284,12 +329,16 @@ const LoadedExercisesSection = ({
 export const ExerciciosSection = ({
     onSimulate,
     onOpenTheory,
+    returnToLessonLabel,
+    onReturnToLesson,
     initialCategoryId,
     initialExerciseId,
     onSelectionChange
 }: {
-    onSimulate: (data: AutomatoData) => void;
+    onSimulate: ExerciseSimulateHandler;
     onOpenTheory?: (moduleId: string, lessonId: string) => void;
+    returnToLessonLabel?: string | null;
+    onReturnToLesson?: () => void;
     initialCategoryId?: string;
     initialExerciseId?: number | null;
     onSelectionChange?: (categoryId: string, exerciseId: number | null) => void;
@@ -309,6 +358,8 @@ export const ExerciciosSection = ({
             exerciseDatabase={exerciseDatabase}
             onSimulate={onSimulate}
             onOpenTheory={onOpenTheory}
+            returnToLessonLabel={returnToLessonLabel}
+            onReturnToLesson={onReturnToLesson}
             initialCategoryId={initialCategoryId}
             initialExerciseId={initialExerciseId}
             onSelectionChange={onSelectionChange}

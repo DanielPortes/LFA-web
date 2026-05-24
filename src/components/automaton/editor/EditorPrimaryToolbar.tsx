@@ -122,7 +122,10 @@ export const EditorPrimaryToolbar: React.FC<EditorPrimaryToolbarProps> = ({
                     </div>
 
                     {showCoachMarks && (
-                        <div className="absolute left-full top-0 ml-3 w-80 glass-panel rounded-2xl border border-default p-3 shadow-apple-lg z-40">
+                        <div
+                            data-testid="editor-coach-marks"
+                            className="absolute bottom-full left-full z-40 mb-3 ml-3 w-80 glass-panel rounded-2xl border border-default p-3 shadow-apple-lg"
+                        >
                             <div className="flex items-start justify-between gap-3">
                                 <div>
                                     <p className="text-sm font-semibold text-primary">Sugestões rápidas</p>

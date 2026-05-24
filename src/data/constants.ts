@@ -794,8 +794,8 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 11,
             nivel: 'facil',
-            pergunta: 'Reconheca identificadores maiusculos: [A-Z][A-Z0-9_]*',
-            dica: 'Comece com letra maiuscula e permita letras, digitos e _.',
+            pergunta: 'Reconheça identificadores maiúsculos: [A-Z][A-Z0-9_]*',
+            dica: 'Comece com letra maiúscula e permita letras, dígitos e _.',
             respostaTexto: 'Ex.: ABC, A1, A_B válidos; aA e 1A inválidos.',
             testes: [
                 { input: 'ABC', expected: 'accept' },
@@ -808,8 +808,8 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 12,
             nivel: 'medio',
-            pergunta: 'Reconheca hexadecimal: 0x[0-9a-fA-F]+',
-            dica: 'Exige prefixo 0x e ao menos um digito hex.',
+            pergunta: 'Reconheça hexadecimal: 0x[0-9a-fA-F]+',
+            dica: 'Exige prefixo 0x e ao menos um dígito hex.',
             respostaTexto: 'Ex.: 0x1A, 0xff aceitos; 0x, x1 rejeitados.',
             testes: [
                 { input: '0x1A', expected: 'accept' },
@@ -821,8 +821,8 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 13,
             nivel: 'medio',
-            pergunta: 'Reconheca inteiros com sinal: [+-]?(0|[1-9][0-9]*)',
-            dica: 'Sinal opcional, sem zeros a esquerda.',
+            pergunta: 'Reconheça inteiros com sinal: [+-]?(0|[1-9][0-9]*)',
+            dica: 'Sinal opcional, sem zeros à esquerda.',
             respostaTexto: 'Ex.: +7, -2, 0 aceitos; 00, +01 rejeitados.',
             testes: [
                 { input: '+7', expected: 'accept' },
@@ -835,8 +835,8 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 14,
             nivel: 'dificil',
-            pergunta: 'Reconheca ponto flutuante: [+-]?[0-9]+.[0-9]+(e[+-]?[0-9]+)?',
-            dica: 'Obrigatorio ponto e parte fracionaria; expoente opcional.',
+            pergunta: 'Reconheça ponto flutuante: [+-]?[0-9]+.[0-9]+(e[+-]?[0-9]+)?',
+            dica: 'Obrigatório ponto e parte fracionária; expoente opcional.',
             respostaTexto: 'Ex.: 3.14, -0.5, 2.0e10 aceitos; 3., .5 rejeitados.',
             testes: [
                 { input: '3.14', expected: 'accept' },
@@ -849,8 +849,8 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 15,
             nivel: 'medio',
-            pergunta: 'Reconheca o operador relacional: ==, !=, <=, >=, <, >',
-            dica: 'Se comeca com = ou !, precisa de segundo =.',
+            pergunta: 'Reconheça o operador relacional: ==, !=, <=, >=, <, >',
+            dica: 'Se começa com = ou !, precisa de segundo =.',
             respostaTexto: 'Tokens: ==, !=, <=, >=, <, >.'
         }
     ],
@@ -1369,22 +1369,22 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 3,
             nivel: 'medio',
-            pergunta: 'A gramatica S -> S S | a e ambigua? Justifique com uma palavra.',
-            respostaTexto: 'Sim. A palavra "aa" tem duas arvores de derivacao distintas: (S S) e (S (S)).',
+            pergunta: 'A gramática S -> S S | a é ambígua? Justifique com uma palavra.',
+            respostaTexto: 'Sim. A palavra "aa" tem duas árvores de derivação distintas: (S S) e (S (S)).',
             mode: 'text'
         },
         {
             id: 4,
             nivel: 'dificil',
-            pergunta: 'Explique por que a linguagem { a^n b^n c^n | n >= 0 } nao e livre de contexto.',
-            dica: 'Use o lema do bombeamento para CFL ou intersecao com regular.',
-            respostaTexto: 'Qualquer bombeamento quebra a igualdade entre os tres blocos; logo nao e CFL.',
+            pergunta: 'Explique por que a linguagem { a^n b^n c^n | n >= 0 } não é livre de contexto.',
+            dica: 'Use o lema do bombeamento para CFL ou interseção com regular.',
+            respostaTexto: 'Qualquer bombeamento quebra a igualdade entre os três blocos; logo não é CFL.',
             mode: 'text'
         },
         {
             id: 5,
             nivel: 'medio',
-            pergunta: 'Escreva uma GLC para palindromos de comprimento par sobre {a,b}.',
+            pergunta: 'Escreva uma GLC para palíndromos de comprimento par sobre {a,b}.',
             dica: 'Produza a mesma letra nas extremidades e use eps como base.',
             respostaTexto: 'S -> a S a | b S b | eps',
             mode: 'grammar',
@@ -1406,7 +1406,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 1,
             nivel: 'facil',
             pergunta: 'Construa um AP que reconhece L = { a^n b^n | n >= 0 }.',
-            dica: 'Empilhe um simbolo para cada a e desempilhe para cada b. Configure a pilha inicial como Z.',
+            dica: 'Empilhe um símbolo para cada a e desempilhe para cada b. Configure a pilha inicial como Z.',
             respostaTexto: 'Empilhe para cada a e desempilhe para cada b; aceite por pilha vazia ou estado final.',
             mode: 'automaton',
             tipo: 'AP',
@@ -1422,14 +1422,14 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 2,
             nivel: 'medio',
-            pergunta: 'Qual a diferenca entre aceitar por estado final e por pilha vazia?',
-            respostaTexto: 'Estado final depende do estado alcancado; pilha vazia depende do conteudo da pilha. Sao equivalentes em poder, mas nao sempre na mesma maquina.',
+            pergunta: 'Qual a diferença entre aceitar por estado final e por pilha vazia?',
+            respostaTexto: 'Estado final depende do estado alcançado; pilha vazia depende do conteúdo da pilha. São equivalentes em poder, mas não sempre na mesma máquina.',
             mode: 'text'
         },
         {
             id: 3,
             nivel: 'medio',
-            pergunta: 'Explique como um AP pode reconhecer palindromos sobre {a,b}.',
+            pergunta: 'Explique como um AP pode reconhecer palíndromos sobre {a,b}.',
             respostaTexto: 'Empilhe a primeira metade, use eps para adivinhar o meio e depois desempilhe comparando com a segunda metade.',
             mode: 'text'
         }

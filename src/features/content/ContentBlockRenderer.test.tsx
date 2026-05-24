@@ -21,6 +21,19 @@ const automaton: AutomatoData = {
     transicoes: []
 };
 
+const pdaAutomaton: AutomatoData = {
+    tipo: 'AP',
+    estados: [
+        { id: 'q0', label: 'q0', x: 120, y: 120, isInicial: true, isFinal: false },
+        { id: 'q1', label: 'q1', x: 320, y: 120, isInicial: false, isFinal: true },
+    ],
+    transicoes: [
+        { id: 't0', de: 'q0', para: 'q1', simbolo: 'a, Z -> AZ', curvatura: 0 },
+    ],
+    alfabetoPilha: ['Z', 'A'],
+    simboloInicialPilha: 'Z',
+};
+
 describe('ContentBlockRenderer', () => {
     it('encaminha simulação e expansão a partir do bloco de exemplo', () => {
         const onSimulate = vi.fn();
@@ -94,10 +107,29 @@ describe('ContentBlockRenderer', () => {
             />
         );
 
-        fireEvent.click(screen.getByRole('button', { name: 'Abrir no treino' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Tentar resolver' }));
 
         expect(screen.getByText('Aplicação guiada')).toBeInTheDocument();
         expect(screen.getByText(/Exercício 1/i)).toBeInTheDocument();
         expect(onOpenExercise).toHaveBeenCalledWith('afd:1');
+    });
+
+    it('mostra um visual de pilha quando o exemplo é um autômato de pilha', () => {
+        render(
+            <ContentBlockRenderer
+                block={{
+                    type: 'example',
+                    title: 'AP para a^n b^n',
+                    content: 'Empilhe A para cada a e desempilhe ao ler b.',
+                    automatoRef: pdaAutomaton
+                }}
+                onSimulate={vi.fn()}
+                onExpand={vi.fn()}
+            />
+        );
+
+        expect(screen.getByText('Pilha durante a leitura')).toBeInTheDocument();
+        expect(screen.getByText('Z')).toBeInTheDocument();
+        expect(screen.getByText('A')).toBeInTheDocument();
     });
 });

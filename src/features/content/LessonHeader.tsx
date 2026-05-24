@@ -24,6 +24,15 @@ const statusLabel: Record<LessonStatusType, string> = {
     canonical: 'Canônico'
 };
 
+const getModuleDisplayLabel = (moduleTitle: string, moduleIndex: number): string => {
+    const canonicalMatch = moduleTitle.match(/^Módulo\s+(\d+)/i);
+    return canonicalMatch ? `Módulo ${canonicalMatch[1]}` : `Módulo ${moduleIndex}`;
+};
+
+const getModuleTrailLabel = (moduleTitle: string): string => (
+    moduleTitle.replace(/^Módulo\s+\d+\s*:\s*/i, '').trim() || moduleTitle
+);
+
 export const LessonHeader: React.FC<LessonHeaderProps> = ({
     moduleIndex,
     moduleTitle,
@@ -40,6 +49,8 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
     onOpenSidebar
 }) => {
     const hasPedagogicalHeader = objectives.length > 0 || prerequisites.length > 0 || references.length > 0;
+    const moduleDisplayLabel = getModuleDisplayLabel(moduleTitle, moduleIndex);
+    const moduleTrailLabel = getModuleTrailLabel(moduleTitle);
 
     return (
         <header className="mb-12 animate-fade-in glass-card p-6 md:p-8">
@@ -55,9 +66,9 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
                 </button>
             </div>
             <div className="ui-kicker mb-6 flex flex-wrap items-center gap-2 text-secondary">
-                <span className="surface-chip rounded-md border-default px-2 py-1 text-secondary">Módulo {moduleIndex}</span>
+                <span className="surface-chip rounded-md border-default px-2 py-1 text-secondary">{moduleDisplayLabel}</span>
                 <ChevronRight size={10} />
-                <span className="text-ios-blue">{moduleTitle}</span>
+                <span className="text-ios-blue">{moduleTrailLabel}</span>
             </div>
 
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">

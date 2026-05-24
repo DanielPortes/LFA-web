@@ -8,6 +8,8 @@ import { cloneAutomaton } from '../utils/cloneAutomaton';
 interface SimulatorProps {
     initialData?: AutomatoData;
     onInitialDataConsumed?: () => void;
+    returnToExerciseLabel?: string | null;
+    onReturnToExercise?: () => void;
 }
 
 const emptyAutomaton: AutomatoData = {
@@ -19,7 +21,9 @@ const emptyAutomaton: AutomatoData = {
 
 export const SimulatorPage: React.FC<SimulatorProps> = ({
     initialData,
-    onInitialDataConsumed
+    onInitialDataConsumed,
+    returnToExerciseLabel,
+    onReturnToExercise
 }) => {
     const [data, setData] = useLocalStorageState<AutomatoData>(
         SIMULATOR_STORAGE_KEY,
@@ -49,6 +53,8 @@ export const SimulatorPage: React.FC<SimulatorProps> = ({
                 onChange={setData}
                 resetToken={workspaceResetToken}
                 variant="page"
+                returnToExerciseLabel={returnToExerciseLabel}
+                onReturnToExercise={onReturnToExercise}
             />
         </div>
     );

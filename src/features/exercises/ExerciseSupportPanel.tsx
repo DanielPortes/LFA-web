@@ -43,7 +43,7 @@ const patternLabel: Record<string, string> = {
     construction: 'Construção',
 };
 
-const sectionBodyClassName = 'border-t border-default/60 px-4 py-4';
+const sectionBodyClassName = 'border-t border-default/60 px-3 py-3';
 
 const SupportSection: React.FC<SupportSectionProps> = ({
     title,
@@ -61,21 +61,19 @@ const SupportSection: React.FC<SupportSectionProps> = ({
             onClick={onToggle}
             aria-expanded={isOpen}
             aria-label={title}
-            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-1/40"
+            title={subtitle}
+            className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-hover/60"
         >
-            <div className="flex min-w-0 items-center gap-3">
-                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-default/70 bg-surface-1/80 ${iconClassName}`}>
+            <div className="flex min-w-0 items-center gap-2.5">
+                <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${iconClassName}`}>
                     {icon}
                 </div>
-                <div className="min-w-0">
-                    <p className="text-sm font-semibold text-primary">{title}</p>
-                    <p className="text-xs leading-relaxed text-secondary">{subtitle}</p>
-                </div>
+                <p className="min-w-0 truncate text-sm font-semibold text-primary">{title}</p>
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
                 {badge && (
-                    <span className="surface-chip rounded-full border border-default px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-secondary dark:bg-black/10">
+                    <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-secondary">
                         {badge}
                     </span>
                 )}
@@ -162,7 +160,7 @@ export const ExerciseSupportPanel: React.FC<ExerciseSupportPanelProps> = ({
         if (equivalenceStatus === 'fail') {
             return {
                 title: 'Revise a estrutura',
-                description: 'Os testes não garantem equivalência por si só. Use estratégia, teoria e erros comuns para revisar a estrutura do modelo.',
+                description: 'Abra estratégia, teoria ou erros comuns para comparar a estrutura do modelo.',
                 className: 'border-status-warning/25 bg-status-warning-soft/45 text-status-warning',
             };
         }
@@ -216,26 +214,25 @@ export const ExerciseSupportPanel: React.FC<ExerciseSupportPanelProps> = ({
     }
 
     return (
-        <section className="rounded-[22px] border border-default/70 bg-surface-2/80">
-            <div className="px-4 py-4">
-                <div className="flex items-start justify-between gap-3">
-                    <div>
-                        <div className="ui-kicker text-secondary">Ajuda opcional</div>
-                        <p className="mt-1 text-sm font-semibold text-primary">Abra só o que precisar</p>
-                        <p className="mt-1 text-xs leading-relaxed text-secondary">
-                            Estratégia, teoria e gabarito ficam recolhidos por padrão para manter o foco na verificação.
-                        </p>
+        <section data-testid="exercise-support-panel" className="border-y border-default bg-transparent">
+            <div className="px-3 py-2.5">
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2 text-secondary">
+                        <BookOpen size={15} className="shrink-0 text-ios-indigo" />
+                        <div className="min-w-0 text-[11px] font-black uppercase tracking-[0.13em]">
+                            Apoio de estudo
+                        </div>
                     </div>
                     {normalizedHints.length > 0 && (
-                        <span className="surface-chip rounded-full border border-default px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-secondary dark:bg-black/10">
+                        <span className="shrink-0 rounded-full bg-surface-muted px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-secondary">
                             {revealedHintCount}/{normalizedHints.length} pistas
                         </span>
                     )}
                 </div>
 
                 {supportSummary && (
-                    <div className={`mt-3 rounded-[18px] border px-3 py-3 ${supportSummary.className}`}>
-                        <p className="text-xs font-black uppercase tracking-[0.16em]">{supportSummary.title}</p>
+                    <div className={`mt-2 rounded-xl border px-3 py-2 ${supportSummary.className}`}>
+                        <p className="text-[11px] font-black uppercase tracking-[0.12em]">{supportSummary.title}</p>
                         <p className="mt-1 text-xs leading-relaxed">{supportSummary.description}</p>
                     </div>
                 )}

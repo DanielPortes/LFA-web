@@ -42,10 +42,35 @@ describe('SimulatorPage layout', () => {
             fireEvent.change(screen.getByPlaceholderText('Digite a entrada para o autômato...'), {
                 target: { value: 'a' },
             });
-            fireEvent.click(screen.getByRole('button', { name: 'Abrir inspetor da simulação' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Abrir painel de diagnóstico da simulação' }));
 
             expect(screen.getByText('Simulação e diagnóstico')).toBeInTheDocument();
             expect(screen.getByText(/Defina o alfabeto de entrada no autômato/)).toBeInTheDocument();
         });
+    });
+
+    it('mantém retorno claro quando o simulador foi aberto a partir de um exercício', async () => {
+        mockAnimationFrames();
+        mockResizeObserver();
+        mockViewport({ width: 1280, height: 800 });
+        const onReturnToExercise = vi.fn();
+
+        await act(async () => {
+            render(
+                <UiSettingsProvider>
+                    <ToastProvider>
+                        <SimulatorPage
+                            returnToExerciseLabel="Exercício 1 · Autômato de Pilha"
+                            onReturnToExercise={onReturnToExercise}
+                        />
+                    </ToastProvider>
+                </UiSettingsProvider>
+            );
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: /Voltar · Exercício 1 · Autômato de Pilha/ }));
+        expect(onReturnToExercise).toHaveBeenCalledTimes(1);
     });
 });

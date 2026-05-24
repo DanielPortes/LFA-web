@@ -9,12 +9,14 @@ export interface SimulationInspectorItem {
 interface SimulationInspectorPanelProps {
     items: SimulationInspectorItem[];
     preferredItemId?: string;
+    emptyState?: React.ReactNode;
     className?: string;
 }
 
 export const SimulationInspectorPanel: React.FC<SimulationInspectorPanelProps> = ({
     items,
     preferredItemId,
+    emptyState,
     className = '',
 }) => {
     const availableItems = useMemo(
@@ -40,7 +42,7 @@ export const SimulationInspectorPanel: React.FC<SimulationInspectorPanelProps> =
         setActiveItemId(preferredItemId);
     }, [availableItems, preferredItemId]);
 
-    if (availableItems.length === 0) return null;
+    if (availableItems.length === 0) return emptyState ? <>{emptyState}</> : null;
     if (availableItems.length === 1) return <>{availableItems[0].content}</>;
 
     const activeItem = availableItems.find((item) => item.id === activeItemId) ?? availableItems[0];

@@ -35,6 +35,7 @@ describe('SimulationDock', () => {
         expect(within(screen.getByTestId('bottom')).getByText('REGEX')).toBeInTheDocument();
         expect(within(screen.getByTestId('bottom')).getByText('CONTROLS')).toBeInTheDocument();
         expect(within(screen.getByTestId('bottom')).queryByText('WARNINGS')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Fechar painel lateral de diagnóstico' })).toBeInTheDocument();
     });
 
     it('traz um inspetor tabulado para baixo quando o layout é bottom', () => {
@@ -98,5 +99,32 @@ describe('SimulationDock', () => {
 
         expect(within(screen.getByTestId('bottom')).getByText('TAPE')).toBeInTheDocument();
         expect(within(screen.getByTestId('bottom')).queryByText('WARNINGS')).not.toBeInTheDocument();
+    });
+
+    it('prioriza visualização de pilha no inspetor de AP quando não há erro', () => {
+        render(
+            <SimulationDock
+                desktopInspector={true}
+                inspectorOpen={true}
+                onCloseInspector={() => {}}
+                regexImportPanel={<span>REGEX</span>}
+                warningsPanel={<span>WARNINGS</span>}
+                detailsPanel={<span>DETAILS</span>}
+                tapePanel={<span>TAPE</span>}
+                controlsBar={<span>CONTROLS</span>}
+                disableReason={null}
+                isPda={true}
+                showWarningsPanel={true}
+                showDetailsPanel={false}
+                showTapePanel={true}
+            >
+                {({ rightDock }) => <section data-testid="right">{rightDock}</section>}
+            </SimulationDock>
+        );
+
+        expect(within(screen.getByTestId('right')).getByText('TAPE')).toBeInTheDocument();
+        expect(within(screen.getByTestId('right')).queryByText('WARNINGS')).not.toBeInTheDocument();
+        expect(within(screen.getByTestId('right')).getByRole('button', { name: 'Visualização' })).toBeInTheDocument();
+        expect(within(screen.getByTestId('right')).getByRole('button', { name: 'Alertas' })).toBeInTheDocument();
     });
 });

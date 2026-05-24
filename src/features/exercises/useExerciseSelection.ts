@@ -13,6 +13,54 @@ interface UseExerciseSelectionOptions {
     setLastCategory: (categoryId: string) => void;
 }
 
+type ExerciseSearchIndex = Record<string, Map<number, string>>;
+
+const normalizeExerciseSearch = (value: string) => value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+
+const getExerciseSearchTokens = (value: string) => normalizeExerciseSearch(value)
+    .split(/\s+/)
+    .filter(Boolean);
+
+const buildExerciseSearchText = (exercise: Exercicio) => {
+    const searchableParts = [
+        exercise.id.toString(),
+        exercise.pergunta,
+        exercise.dica,
+        ...(exercise.dicas?.map((hint) => hint.text) ?? []),
+        exercise.estrategia,
+        exercise.respostaTexto,
+        ...(exercise.guidedSolution?.flatMap((step) => [
+            step.title,
+            step.explanation,
+            step.expectedStudentAction,
+            step.checkpointQuestion
+        ]) ?? []),
+        ...(exercise.commonMistakes?.flatMap((mistake) => [
+            mistake.title,
+            mistake.symptom,
+            mistake.correction
+        ]) ?? []),
+        exercise.metadata?.learningGoal,
+        exercise.metadata?.pattern,
+        ...(exercise.metadata?.prerequisites ?? []),
+        ...(exercise.metadata?.theoryRefs ?? [])
+    ]
+        .filter((part): part is string => Boolean(part))
+        .map(normalizeExerciseSearch);
+
+    return searchableParts.join(' ');
+};
+
+const exerciseMatchesSearch = (searchText: string, tokens: string[]) => {
+    if (tokens.length === 0) return true;
+
+    return tokens.every((token) => searchText.includes(token));
+};
+
 export const useExerciseSelection = ({
     exerciseDatabase,
     initialCategoryId,
@@ -43,7 +91,7 @@ export const useExerciseSelection = ({
     const [activeCategory, setActiveCategory] = useState(() => {
         return externalCategoryId ?? fallbackCategoryId;
     });
-    const [revealedHints, setRevealedHints] = useState<Record<number, boolean>>({});
+    const [revealedHintCounts, setRevealedHintCounts] = useState<Record<number, number>>({});
     const [revealedAnswers, setRevealedAnswers] = useState<Record<number, boolean>>({});
     const [solvingExercise, setSolvingExercise] = useState<number | null>(null);
     const [solverMode, setSolverMode] = useState<SolverMode>('automaton');
@@ -59,6 +107,18 @@ export const useExerciseSelection = ({
     const [showConverter, setShowConverter] = useState(false);
     const [converterData, setConverterData] = useState<ConverterData>({});
     const [editorSessionKey, setEditorSessionKey] = useState(0);
+    const exerciseSearchIndex = useMemo<ExerciseSearchIndex>(() => {
+        const index: ExerciseSearchIndex = {};
+
+        for (const [categoryId, categoryExercises] of Object.entries(exerciseDatabase)) {
+            index[categoryId] = new Map(
+                categoryExercises.map((exercise) => [exercise.id, buildExerciseSearchText(exercise)])
+            );
+        }
+
+        return index;
+    }, [exerciseDatabase]);
+    const searchTokens = useMemo(() => getExerciseSearchTokens(searchQuery), [searchQuery]);
 
     const lastSyncedSelectionRef = useRef<{
         categoryId: string;
@@ -87,38 +147,33 @@ export const useExerciseSelection = ({
     );
 
     const filteredExercises = useMemo(() => {
-        if (!searchQuery.trim()) return exercises;
-        const query = searchQuery.trim().toLowerCase();
+        if (searchTokens.length === 0) return exercises;
+        const activeCategoryIndex = exerciseSearchIndex[activeCategory] ?? new Map<number, string>();
+
         return exercises.filter((exercise) =>
-            exercise.id.toString() === query
-            || exercise.pergunta.toLowerCase().includes(query)
-            || exercise.dica?.toLowerCase().includes(query)
-            || exercise.dicas?.some((hint) => hint.text.toLowerCase().includes(query))
-            || exercise.estrategia?.toLowerCase().includes(query)
-            || exercise.respostaTexto?.toLowerCase().includes(query)
-            || exercise.guidedSolution?.some((step) =>
-                step.title.toLowerCase().includes(query)
-                || step.explanation.toLowerCase().includes(query)
-                || step.expectedStudentAction?.toLowerCase().includes(query)
-                || step.checkpointQuestion?.toLowerCase().includes(query)
-            )
-            || exercise.commonMistakes?.some((mistake) =>
-                mistake.title.toLowerCase().includes(query)
-                || mistake.symptom.toLowerCase().includes(query)
-                || mistake.correction.toLowerCase().includes(query)
-            )
-            || exercise.metadata?.learningGoal.toLowerCase().includes(query)
-            || exercise.metadata?.pattern.toLowerCase().includes(query)
-            || exercise.metadata?.prerequisites?.some((prerequisite) => prerequisite.toLowerCase().includes(query))
-            || exercise.metadata?.theoryRefs?.some((reference) => reference.toLowerCase().includes(query))
+            exerciseMatchesSearch(activeCategoryIndex.get(exercise.id) ?? buildExerciseSearchText(exercise), searchTokens)
         );
-    }, [exercises, searchQuery]);
+    }, [activeCategory, exerciseSearchIndex, exercises, searchTokens]);
 
     const filteredCategories = useMemo(() => {
-        if (!searchQuery.trim()) return exerciseCategories;
-        const query = searchQuery.trim().toLowerCase();
-        return exerciseCategories.filter((category) => category.label.toLowerCase().includes(query));
-    }, [searchQuery]);
+        if (searchTokens.length === 0) return exerciseCategories;
+
+        return exerciseCategories.filter((category) => {
+            const categoryLabelMatches = searchTokens.every((token) =>
+                normalizeExerciseSearch(category.label).includes(token)
+            );
+            if (categoryLabelMatches) return true;
+
+            const categoryIndex = exerciseSearchIndex[category.id];
+            if (!categoryIndex) return false;
+
+            for (const searchText of categoryIndex.values()) {
+                if (exerciseMatchesSearch(searchText, searchTokens)) return true;
+            }
+
+            return false;
+        });
+    }, [exerciseSearchIndex, searchTokens]);
 
     const currentExercise = solvingExercise !== null
         ? exercises.find((exercise) => exercise.id === solvingExercise) ?? null
@@ -202,7 +257,7 @@ export const useExerciseSelection = ({
     const handleCategorySelect = useCallback((categoryId: string) => {
         setActiveCategory(categoryId);
         setLastCategory(categoryId);
-        setRevealedHints({});
+        setRevealedHintCounts({});
         setRevealedAnswers({});
         setSidebarOpen(false);
     }, [setLastCategory]);
@@ -321,7 +376,7 @@ export const useExerciseSelection = ({
     return {
         activeCategory,
         activeCategoryConfig,
-        revealedHints,
+        revealedHintCounts,
         revealedAnswers,
         solvingExercise,
         solverMode,
@@ -342,7 +397,7 @@ export const useExerciseSelection = ({
         filteredCategories,
         currentExercise,
         tests,
-        setRevealedHints,
+        setRevealedHintCounts,
         setRevealedAnswers,
         setUserAutomaton,
         setUserRegex,

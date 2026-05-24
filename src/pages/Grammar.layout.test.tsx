@@ -26,14 +26,17 @@ describe('GrammarPage layout', () => {
                 </UiSettingsProvider>
             );
 
-            expect(screen.queryByText('Laboratório de gramáticas')).not.toBeInTheDocument();
+            expect(screen.getByText('Laboratório de gramáticas')).toBeInTheDocument();
+            expect(screen.queryByText('Rail da gramática')).not.toBeInTheDocument();
             if (width < 1024) {
                 fireEvent.click(screen.getByRole('button', { name: 'Abrir painel da gramática' }));
             }
             expect(screen.getByLabelText('Fonte da gramática')).toBeInTheDocument();
             expect(screen.getByText('Pronto para derivar')).toBeInTheDocument();
+            expect(screen.queryByText(/rail lateral/i)).not.toBeInTheDocument();
             expect(screen.getByRole('button', { name: /Derivar/i })).toBeInTheDocument();
             expect(screen.getByLabelText('Palavra a ser derivada')).toBeInTheDocument();
+            expect(screen.getByText('Entrada vazia representa ε.')).toBeInTheDocument();
         });
     });
 });

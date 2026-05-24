@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import type { AutomatoData } from '../../types';
-import { calculatePath, getLabelPosition } from '../../utils/geometry';
+import { calculateControlPoint, calculatePath, getLabelPosition } from '../../utils/geometry';
+import { calculateOptimalCurvatures, calculateSmartLabelPositions } from '../../utils/layout';
 
 interface AutomatonPreviewProps {
     data: AutomatoData;
@@ -8,26 +9,95 @@ interface AutomatonPreviewProps {
     ariaLabel?: string;
 }
 
+const STATE_RADIUS = 28;
+const INITIAL_ARROW_EXTENT = 46;
+
+const getTransitionLabel = (data: AutomatoData, symbol: string, output?: string): string => {
+    const label = symbol.trim() || '?';
+    if (data.tipo !== 'Mealy') {
+        return label;
+    }
+
+    const [inputRaw, ...rest] = label.split('/');
+    const input = inputRaw.trim();
+    const resolvedOutput = output ?? (rest.length > 0 ? rest.join('/').trim() : '');
+    return resolvedOutput ? `${input}/${resolvedOutput}` : input;
+};
+
 export const AutomatonPreview: React.FC<AutomatonPreviewProps> = ({
     data,
     className = '',
     ariaLabel = `Pré-visualização do autômato ${data.tipo}`
 }) => {
+    const previewLayout = useMemo(() => {
+        const curvatures = calculateOptimalCurvatures(data.transicoes, data.estados);
+        const labelTexts = new Map(
+            data.transicoes.map((transition) => [
+                transition.id,
+                getTransitionLabel(data, transition.simbolo, transition.output)
+            ])
+        );
+        const labelPositions = calculateSmartLabelPositions(
+            data.transicoes,
+            data.estados,
+            curvatures,
+            labelTexts
+        );
+
+        return { curvatures, labelPositions };
+    }, [data]);
+
     const bounds = useMemo(() => {
         if (data.estados.length === 0) {
             return { minX: 0, minY: 0, maxX: 400, maxY: 240 };
         }
 
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+        const includeBox = (x: number, y: number, radiusX: number, radiusY = radiusX) => {
+            minX = Math.min(minX, x - radiusX);
+            minY = Math.min(minY, y - radiusY);
+            maxX = Math.max(maxX, x + radiusX);
+            maxY = Math.max(maxY, y + radiusY);
+        };
+
+        const stateMap = new Map(data.estados.map((state) => [state.id, state]));
+
         data.estados.forEach(s => {
-            minX = Math.min(minX, s.x);
-            minY = Math.min(minY, s.y);
-            maxX = Math.max(maxX, s.x);
-            maxY = Math.max(maxY, s.y);
+            const stateLabel = data.tipo === 'Moore' && s.output ? `${s.label}/${s.output}` : s.label;
+            const stateLabelRadius = Math.max(STATE_RADIUS, stateLabel.length * 4 + 10);
+            includeBox(s.x, s.y, stateLabelRadius, STATE_RADIUS);
+
+            if (s.isInicial) {
+                includeBox(s.x - INITIAL_ARROW_EXTENT, s.y, 6, 6);
+            }
+        });
+
+        data.transicoes.forEach((transition) => {
+            const source = stateMap.get(transition.de);
+            const target = stateMap.get(transition.para);
+            if (!source || !target) return;
+
+            const curvature = previewLayout.curvatures.get(transition.id) ?? transition.curvatura ?? 0;
+            const label = getTransitionLabel(data, transition.simbolo, transition.output);
+            const labelWidth = Math.max(32, label.length * 7 + 14);
+            const labelPos = previewLayout.labelPositions.get(transition.id)
+                ?? getLabelPosition(source, target, curvature, transition.controlPoint);
+
+            includeBox(labelPos.x, labelPos.y, labelWidth / 2 + 8, 18);
+
+            if (source.id === target.id) {
+                const loopRadius = 56 + Math.abs(curvature) * 0.5;
+                includeBox(source.x, source.y - loopRadius, loopRadius + 8, loopRadius * 0.8);
+                return;
+            }
+
+            const controlPoint = calculateControlPoint(source, target, curvature, transition.controlPoint);
+            includeBox(controlPoint.x, controlPoint.y, 8, 8);
         });
 
         return { minX, minY, maxX, maxY };
-    }, [data.estados]);
+    }, [data, previewLayout]);
 
     const padding = 64;
     const width = Math.max(1, bounds.maxX - bounds.minX + padding * 2);
@@ -52,15 +122,11 @@ export const AutomatonPreview: React.FC<AutomatonPreviewProps> = ({
                 const target = data.estados.find(e => e.id === t.para);
                 if (!source || !target) return null;
 
-                const pathD = calculatePath(source, target, t.curvatura, t.controlPoint);
-                const labelPos = getLabelPosition(source, target, t.curvatura, t.controlPoint);
-                let label = t.simbolo.trim() || '?';
-                if (data.tipo === 'Mealy') {
-                    const [inputRaw, ...rest] = label.split('/');
-                    const input = inputRaw.trim();
-                    const output = t.output ?? (rest.length > 0 ? rest.join('/').trim() : '');
-                    label = output ? `${input}/${output}` : input;
-                }
+                const curvature = previewLayout.curvatures.get(t.id) ?? t.curvatura ?? 0;
+                const pathD = calculatePath(source, target, curvature, t.controlPoint);
+                const labelPos = previewLayout.labelPositions.get(t.id)
+                    ?? getLabelPosition(source, target, curvature, t.controlPoint);
+                const label = getTransitionLabel(data, t.simbolo, t.output);
                 const labelWidth = Math.max(32, label.length * 7 + 14);
 
                 return (

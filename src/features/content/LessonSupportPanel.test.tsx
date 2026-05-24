@@ -37,7 +37,7 @@ describe('LessonSupportPanel', () => {
         expect(screen.getByText('Resumo para revisão')).toBeInTheDocument();
         expect(screen.getByText('Erros comuns')).toBeInTheDocument();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Abrir exercício guiado' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Tentar resolver' }));
 
         expect(onOpenExercise).toHaveBeenCalledWith('afd', 5);
     });

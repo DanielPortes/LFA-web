@@ -24,7 +24,7 @@ interface UseContentSelectionParams {
     initialLessonId?: string;
     lastVisitedLessonId?: string | null;
     markLessonVisited: (lessonId: string) => void;
-    onSelectionChange?: (moduleId: string, lessonId: string) => void;
+    onSelectionChange?: (moduleId: string, lessonId: string, lessonTitle?: string) => void;
     scrollContainerId?: string;
 }
 
@@ -129,6 +129,21 @@ export const useContentSelection = ({
         setSidebarOpen(false);
     }, []);
 
+    const navigateToFirstSearchResult = useCallback(() => {
+        const queryTokens = normalizeForSearch(searchQuery)
+            .split(' ')
+            .filter(Boolean);
+        if (queryTokens.length === 0) return;
+
+        const firstMatch = contentIndex.find((entry) =>
+            queryTokens.every((token) => entry.searchableText.includes(token))
+        );
+        if (!firstMatch) return;
+
+        handleNavigate(firstMatch.moduleId, firstMatch.lessonId);
+        setSearchQuery('');
+    }, [contentIndex, handleNavigate, searchQuery]);
+
     const openSidebar = useCallback(() => setSidebarOpen(true), []);
     const closeSidebar = useCallback(() => setSidebarOpen(false), []);
     const clearSelectedAutomaton = useCallback(() => setSelectedAutomaton(null), []);
@@ -152,8 +167,8 @@ export const useContentSelection = ({
 
     useEffect(() => {
         markLessonVisited(activeLessonId);
-        onSelectionChange?.(activeModuleId, activeLessonId);
-    }, [activeLessonId, activeModuleId, markLessonVisited, onSelectionChange]);
+        onSelectionChange?.(activeModuleId, activeLessonId, activeLesson.title);
+    }, [activeLesson.title, activeLessonId, activeModuleId, markLessonVisited, onSelectionChange]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return undefined;
@@ -191,6 +206,7 @@ export const useContentSelection = ({
         isSidebarOpen,
         lastVisitedLesson,
         moduleIndex,
+        navigateToFirstSearchResult,
         navigationState,
         openSidebar,
         searchQuery,

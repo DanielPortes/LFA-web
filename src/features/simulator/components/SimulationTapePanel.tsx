@@ -33,7 +33,7 @@ export const SimulationTapePanel: React.FC<SimulationTapePanelProps> = ({
     totalSteps,
 }) => (
     <div className={`glass-panel p-5 rounded-3xl shadow-apple-md border border-default transition-all duration-500 bg-surface-1/90 ${
-        (inputTokens.length > 0 || isTuring) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+        (inputTokens.length > 0 || isTuring || isPda) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
     }`}>
         <div className="flex items-center justify-between mb-4 px-1">
             <div className="flex items-center gap-2">
@@ -42,7 +42,7 @@ export const SimulationTapePanel: React.FC<SimulationTapePanelProps> = ({
                     simulationStatus === 'rejected' ? 'bg-ios-red' : 'bg-ios-blue animate-pulse'
                 }`} />
                 <span className="ui-kicker-xs text-primary font-black tracking-widest">
-                    {isAll ? 'Fita limitada' : isTuring ? 'Fita infinita' : 'Visualização'}
+                    {isAll ? 'Fita limitada' : isTuring ? 'Fita infinita' : isPda ? 'Pilha e entrada' : 'Visualização'}
                 </span>
             </div>
             <div className="flex items-center gap-3">
@@ -65,13 +65,17 @@ export const SimulationTapePanel: React.FC<SimulationTapePanelProps> = ({
                 minIndex={isAll ? 0 : undefined}
                 maxIndex={isAll ? inputTokens.length + 1 : undefined}
             />
-        ) : (
+        ) : inputTokens.length > 0 ? (
             <div className="flex justify-center overflow-x-auto custom-scrollbar pb-2">
                 <InputTape
                     tokens={inputTokens}
                     processedCount={simulationState?.processedInput.length || 0}
                     showLabels={false}
                 />
+            </div>
+        ) : (
+            <div className="rounded-2xl border border-dashed border-default bg-surface-2/60 px-4 py-3 text-center text-xs font-semibold text-secondary">
+                Entrada vazia: acompanhe a pilha inicial e transições ε.
             </div>
         )}
 
@@ -121,8 +125,13 @@ export const SimulationTapePanel: React.FC<SimulationTapePanelProps> = ({
         )}
 
         {isPda && simulationState?.activeConfigs && simulationState.activeConfigs.length > 0 && (
-            <div className="mt-5 flex justify-center bg-surface-muted/30 p-4 rounded-2xl border border-default/40 shadow-inner">
-                <StackVisualizer stack={simulationState.activeConfigs[0].stack} />
+            <div className="mt-5 rounded-2xl border border-default/40 bg-surface-muted/30 p-4 shadow-inner">
+                <div className="mb-3 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-wide text-secondary">
+                    <span>Topo da pilha</span>
+                </div>
+                <div className="flex justify-center">
+                    <StackVisualizer stack={simulationState.activeConfigs[0].stack} />
+                </div>
             </div>
         )}
     </div>
