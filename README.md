@@ -1,6 +1,32 @@
 # LFA Web
 
+[Acesse a versão publicada](https://danielportes.github.io/LFA-web/)
+
 Aplicação React + TypeScript + Vite para estudo e simulação de conteúdos de Linguagens Formais e Autômatos.
+
+## Capturas de tela
+
+As capturas abaixo mostram as principais páginas no tema escuro.
+
+### Início
+
+![Página inicial em tema escuro](docs/screenshots/home-dark.png)
+
+### Trilha
+
+![Trilha de estudos em tema escuro](docs/screenshots/trilha-dark.png)
+
+### Exercícios
+
+![Lista de exercícios em tema escuro](docs/screenshots/exercicios-dark.png)
+
+### Simulador
+
+![Simulador de autômatos em tema escuro](docs/screenshots/simulador-dark.png)
+
+### Gramática
+
+![Laboratório de gramática em tema escuro](docs/screenshots/gramatica-dark.png)
 
 ## Requisitos
 
