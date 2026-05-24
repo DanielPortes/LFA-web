@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     AlertTriangle,
     BookOpen,
@@ -64,7 +64,25 @@ const GrammarRail = ({
     clearTransform: () => void;
     onClose?: () => void;
     mobile?: boolean;
-}) => (
+}) => {
+    const duplicateRules = useMemo(() => {
+        const seen = new Set<string>();
+        const duplicates = new Set<string>();
+        grammarSource
+            .split(/\r?\n/)
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .forEach((line) => {
+                if (seen.has(line)) {
+                    duplicates.add(line);
+                    return;
+                }
+                seen.add(line);
+            });
+        return [...duplicates];
+    }, [grammarSource]);
+
+    return (
     <div className={`flex h-full min-h-0 flex-col rounded-[28px] border border-default bg-surface-1/95 shadow-apple-xl ${mobile ? '' : 'bg-surface-1/92'}`}>
         <div className="flex items-center justify-between border-b border-default/60 px-5 py-4">
             <div className="flex items-center gap-3">
@@ -132,6 +150,25 @@ const GrammarRail = ({
                         <div className="space-y-1">
                             {grammarWarnings.map((warning, index) => (
                                 <p key={`${warning}-${index}`}>{warning}</p>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {duplicateRules.length > 0 && (
+                    <div className="rounded-[24px] border border-status-warning bg-status-warning-soft/30 p-4 text-xs leading-relaxed text-status-warning">
+                        <div className="mb-2 flex items-center gap-2 ui-kicker-xs text-status-warning">
+                            <AlertTriangle size={12} />
+                            Regras duplicadas
+                        </div>
+                        <p className="mb-2">
+                            Repetições podem deixar a busca mais lenta e dificultar a leitura da derivação.
+                        </p>
+                        <div className="space-y-1">
+                            {duplicateRules.map((rule) => (
+                                <code key={rule} className="block rounded-xl bg-surface-1/80 px-3 py-2 font-mono text-[11px] text-primary">
+                                    {rule}
+                                </code>
                             ))}
                         </div>
                     </div>
@@ -217,7 +254,8 @@ const GrammarRail = ({
             </section>
         </div>
     </div>
-);
+    );
+};
 
 export const GrammarWorkspace: React.FC<GrammarWorkspaceProps> = ({
     headerContent,

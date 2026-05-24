@@ -15,7 +15,7 @@ import { EditorEmptyState } from './editor/EditorEmptyState';
 import { EditorModalStack } from './editor/EditorModalStack';
 import { EditorPrimaryToolbar, type EditorToolDefinition } from './editor/EditorPrimaryToolbar';
 import { EditorShell } from './editor/EditorShell';
-import { getEditorPdaProps } from './editor/editorUtils';
+import { getEditorPdaProps, normalizeAutomatonForType } from './editor/editorUtils';
 import { useEditorConversions } from './editor/useEditorConversions';
 import { useEditorImportExport } from './editor/useEditorImportExport';
 import { useEditorViewport } from './editor/useEditorViewport';
@@ -40,6 +40,7 @@ interface EditorProps {
     compactVariant?: 'workspace' | 'modal' | 'solver';
     fitRequestToken?: number;
     sessionKey?: number;
+    hideCompactInspectorLauncher?: boolean;
 }
 
 const EDITOR_COACH_STORAGE_KEY = 'lfa-simulator-coach-dismissed-v1';
@@ -55,7 +56,8 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
     onViewStateChange,
     compact = false,
     compactVariant = 'modal',
-    fitRequestToken
+    fitRequestToken,
+    hideCompactInspectorLauncher = false,
 }) => {
     const [localTool, setTool] = useState<Tool>('pointer');
     const tool = localTool;
@@ -318,29 +320,8 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
     }, [data.estados.length, tool]);
 
     const handleTypeChange = useCallback((nextTipo: AutomatoData['tipo']) => {
-        if (nextTipo === 'AP') {
-            const apData: APData = {
-                tipo: 'AP',
-                estados: data.estados,
-                transicoes: data.transicoes,
-                alfabeto: data.alfabeto,
-                descricao: data.descricao,
-                alfabetoPilha: pdaProps.alfabetoPilha,
-                simboloInicialPilha: pdaProps.simboloInicialPilha ?? 'Z',
-                pdaAcceptance: pdaProps.pdaAcceptance ?? 'final',
-            };
-            handleChange(apData);
-            return;
-        }
-
-        handleChange({
-            tipo: nextTipo,
-            estados: data.estados,
-            transicoes: data.transicoes,
-            alfabeto: data.alfabeto,
-            descricao: data.descricao,
-        } as AutomatoData);
-    }, [data, handleChange, pdaProps.alfabetoPilha, pdaProps.pdaAcceptance, pdaProps.simboloInicialPilha]);
+        handleChange(normalizeAutomatonForType(data, nextTipo, pdaProps));
+    }, [data, handleChange, pdaProps]);
 
     const handleAutoAlphabet = useCallback(() => {
         setIsEditingAlphabet(false);
@@ -660,20 +641,22 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
                         </>
                     )}
 
-                    <div className="pointer-events-auto absolute right-4 top-4 flex flex-col items-end gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setShowCompactInspector((current) => !current)}
-                            className={compactLauncherClass}
-                            aria-label={showCompactInspector ? 'Fechar inspetor do editor' : 'Abrir inspetor do editor'}
-                            aria-expanded={showCompactInspector}
-                        >
-                            {showCompactInspector ? <X size={16} /> : <SlidersHorizontal size={16} />}
-                            <span>{showCompactInspector ? 'Fechar painel' : 'Inspetor'}</span>
-                        </button>
+                    {!hideCompactInspectorLauncher && (
+                        <div className="pointer-events-auto absolute right-4 top-4 flex flex-col items-end gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowCompactInspector((current) => !current)}
+                                className={compactLauncherClass}
+                                aria-label={showCompactInspector ? 'Fechar inspetor do editor' : 'Abrir inspetor do editor'}
+                                aria-expanded={showCompactInspector}
+                            >
+                                {showCompactInspector ? <X size={16} /> : <SlidersHorizontal size={16} />}
+                                <span>{showCompactInspector ? 'Fechar painel' : 'Inspetor'}</span>
+                            </button>
 
-                        {compactInspector}
-                    </div>
+                            {compactInspector}
+                        </div>
+                    )}
                 </>
             ) : (
                 <div className="absolute inset-x-2 top-2 flex items-start justify-between gap-3">

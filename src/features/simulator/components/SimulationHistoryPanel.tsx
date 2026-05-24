@@ -9,6 +9,12 @@ interface SimulationHistoryPanelProps {
     formatStateList: (ids: string[] | undefined) => string;
 }
 
+const STATUS_LABELS: Record<SimulationStep['status'], string> = {
+    running: 'Rodando',
+    accepted: 'Aceito',
+    rejected: 'Rejeitado',
+};
+
 export const SimulationHistoryPanel: React.FC<SimulationHistoryPanelProps> = ({
     showDetails,
     history,
@@ -40,7 +46,8 @@ export const SimulationHistoryPanel: React.FC<SimulationHistoryPanelProps> = ({
                         <p className="text-[11px] font-bold uppercase tracking-wider">Aguardando execução</p>
                     </div>
                 ) : history.map((stepItem, index) => {
-                    const symbolLabel = stepItem.symbol ?? (index === 0 ? 'START' : 'ε');
+                    const symbolLabel = stepItem.symbol ?? (index === 0 ? 'Início' : 'ε');
+                    const statusLabel = STATUS_LABELS[stepItem.status];
                     return (
                         <div key={index} className="rounded-2xl border border-default/60 p-4 text-[11px] bg-surface-muted/20 transition-all hover:bg-surface-muted/40 hover:translate-x-1">
                             <div className="flex items-center justify-between mb-3">
@@ -52,7 +59,7 @@ export const SimulationHistoryPanel: React.FC<SimulationHistoryPanelProps> = ({
                                     stepItem.status === 'accepted' ? 'bg-ios-green text-white border-green-600/20' :
                                     stepItem.status === 'rejected' ? 'bg-ios-red text-white border-red-600/20' : 'bg-surface-strong text-secondary border-default'
                                 }`}>
-                                    {stepItem.status}
+                                    {statusLabel}
                                 </span>
                             </div>
                             <div className="grid grid-cols-2 gap-4">

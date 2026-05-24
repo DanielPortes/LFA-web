@@ -52,12 +52,26 @@ export const EditorConversionModal: React.FC<EditorConversionModalProps> = ({
             )}
 
             {modal?.automaton && (
+                <div className="rounded-2xl border border-default bg-surface-2/70 p-4 shadow-apple-sm">
+                    <div className="ui-kicker-xs text-secondary">Resultado gerado</div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        <span className="badge badge-info">{modal.automaton.tipo}</span>
+                        <span className="badge badge-neutral">{modal.automaton.estados.length} estados</span>
+                        <span className="badge badge-neutral">{modal.automaton.transicoes.length} transições</span>
+                    </div>
+                    <p className="mt-3 text-xs font-semibold leading-relaxed text-secondary">
+                        Substitui o autômato atual no canvas. Use Ctrl+Z para voltar e comparar com a versão anterior.
+                    </p>
+                </div>
+            )}
+
+            {modal?.automaton && (
                 <div className="flex justify-end pt-4 border-t border-default">
                     <button
                         onClick={() => onApplyAutomaton(modal.automaton as AutomatoData)}
                         className="px-4 py-2 rounded-xl bg-ios-blue text-white text-sm font-bold hover:bg-blue-600 transition-colors"
                     >
-                        Substituir Autômato Atual
+                        Aplicar conversão
                     </button>
                 </div>
             )}

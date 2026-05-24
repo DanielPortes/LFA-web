@@ -18,8 +18,14 @@ const categoryIcons: Record<string, React.ReactNode> = {
 
 export const TemplatesGallery: React.FC<TemplatesGalleryProps> = ({ isOpen, onClose, onSelect }) => {
     const [activeCategory, setActiveCategory] = useState<string>('basic');
+    const [activeType, setActiveType] = useState<AutomatoData['tipo'] | 'todos'>('todos');
 
-    const filteredTemplates = automatonTemplates.filter(t => t.category === activeCategory);
+    const typeOptions = Array.from(new Set(automatonTemplates.map((template) => template.data.tipo)));
+    const filteredTemplates = automatonTemplates.filter((template) =>
+        activeType === 'todos'
+            ? template.category === activeCategory
+            : template.data.tipo === activeType
+    );
 
     const handleSelect = (template: AutomatonTemplate) => {
         // Deep clone to avoid modifying original
@@ -52,12 +58,51 @@ export const TemplatesGallery: React.FC<TemplatesGalleryProps> = ({ isOpen, onCl
                     </nav>
 
                     <p className="hidden sm:block text-xs text-muted leading-relaxed mt-4 pt-4 border-t border-default">
-                        Selecione um template para começar rapidamente.
+                        Selecione uma categoria e filtre pelo tipo quando quiser criar vários modelos em sequência.
                     </p>
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
+                    <div className="mb-4 rounded-2xl border border-default bg-surface-2/70 p-3">
+                        <div className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-secondary">
+                            Filtrar por tipo
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setActiveType('todos')}
+                                className={`rounded-full border px-3 py-1.5 text-xs font-black transition-colors ${
+                                    activeType === 'todos'
+                                        ? 'border-ios-blue bg-ios-blue text-white'
+                                        : 'border-default bg-surface-1 text-secondary hover:text-primary'
+                                }`}
+                            >
+                                Todos
+                            </button>
+                            {typeOptions.map((type) => (
+                                <button
+                                    key={type}
+                                    type="button"
+                                    onClick={() => setActiveType(type)}
+                                    className={`rounded-full border px-3 py-1.5 text-xs font-black transition-colors ${
+                                        activeType === type
+                                            ? 'border-ios-blue bg-ios-blue text-white'
+                                            : 'border-default bg-surface-1 text-secondary hover:text-primary'
+                                    }`}
+                                    aria-label={`Tipo ${type}`}
+                                >
+                                    {type}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="mt-2 text-[11px] font-semibold text-secondary">
+                            {activeType === 'todos'
+                                ? `${filteredTemplates.length} templates nesta categoria.`
+                                : `${filteredTemplates.length} templates do tipo ${activeType}.`}
+                        </div>
+                    </div>
+
                     <div className="grid gap-3 sm:grid-cols-2">
                         {filteredTemplates.map(template => (
                             <button

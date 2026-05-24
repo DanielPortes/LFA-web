@@ -225,11 +225,23 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
 
     const stepCount = simulationState?.processedInput.length || 0;
     const totalSteps = inputTokens.length;
-    const simulationStatus = simulationState?.status ?? 'idle';
+    const rawSimulationStatus = simulationState?.status ?? 'idle';
+    const hasTerminalResult = rawSimulationStatus === 'accepted' || rawSimulationStatus === 'rejected';
     const hasAlphabetForInput = inputTokens.length === 0 || alphabet.length > 0 || isTuring || isAll;
     const canPlay = !hasInvalidInput && hasAlphabetForInput;
     const canStepForward = canPlay && simulationState?.status === 'running';
-    const hasSimulationProgress = !!simulationState && (history.length > 1 || stepCount > 0);
+    const hasSimulationProgress = !!simulationState && (history.length > 1 || stepCount > 0 || hasTerminalResult);
+    const simulationStatus = hasSimulationProgress ? rawSimulationStatus : 'idle';
+    const displayedSimulationState = simulationState && !hasSimulationProgress
+        ? { ...simulationState, activeStates: [] }
+        : simulationState;
+    const simulationStatusLabel = simulationStatus === 'accepted'
+        ? 'aceita'
+        : simulationStatus === 'rejected'
+            ? 'rejeitada'
+            : simulationStatus === 'running'
+                ? 'rodando'
+                : 'pronta';
     const disableReason = hasInvalidInput
         ? `Entrada contém símbolos fora do alfabeto: ${invalidSymbols.join(', ')}.`
         : !hasAlphabetForInput
@@ -297,7 +309,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
             data={data}
             inputTokens={inputTokens}
             history={history}
-            simulationState={simulationState}
+            simulationState={displayedSimulationState}
             simulationStatus={simulationStatus}
             isTuring={isTuring}
             isAll={isAll}
@@ -374,9 +386,9 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
     return (
         <>
             <div className="sr-only" aria-live="polite">
-                {`Simulação ${simulationStatus}. ${data.estados.length} estados, ${data.transicoes.length} transições. ${
-                    simulationState?.activeStates.length
-                        ? `Estados ativos: ${formatStateList(simulationState.activeStates)}.`
+                {`Simulação ${simulationStatusLabel}. ${data.estados.length} estados, ${data.transicoes.length} transições. ${
+                    displayedSimulationState?.activeStates.length
+                        ? `Estados ativos: ${formatStateList(displayedSimulationState.activeStates)}.`
                         : 'Nenhum estado ativo.'
                 }`}
             </div>
@@ -402,14 +414,15 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
                             <AutomatonEditor
                                 data={data}
                                 onChange={onChange}
-                                activeStates={simulationState?.activeStates}
+                                activeStates={displayedSimulationState?.activeStates}
                                 activeTransitions={activeTransitions}
-                                readOnly={!!simulationState && simulationState.processedInput.length > 0}
+                                readOnly={hasSimulationProgress}
                                 viewState={viewState}
                                 onViewStateChange={handleViewStateChange}
                                 compact
                                 compactVariant="workspace"
                                 fitRequestToken={fitRequestToken}
+                                hideCompactInspectorLauncher={isDesktopViewport && inspectorOpen}
                             />
                         )}
                         topBar={topBar}

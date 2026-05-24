@@ -154,7 +154,6 @@ export const EditorDiagnosticsPanel: React.FC<EditorDiagnosticsPanelProps> = ({
                             active={showBatchTest}
                             onClick={onToggleBatchTest}
                             side="left"
-                            disabled={data.tipo === 'AP'}
                         />
                         <ToolbarButton
                             icon={Table}
@@ -162,7 +161,6 @@ export const EditorDiagnosticsPanel: React.FC<EditorDiagnosticsPanelProps> = ({
                             active={showTable}
                             onClick={onToggleTable}
                             side="left"
-                            disabled={data.tipo === 'AP'}
                         />
                         <ToolbarButton
                             icon={Sparkles}

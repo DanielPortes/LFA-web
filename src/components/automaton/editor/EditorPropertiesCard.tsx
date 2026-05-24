@@ -25,6 +25,12 @@ interface EditorPropertiesCardProps {
     onStackStartCommit: (value: string) => void;
 }
 
+const PDA_ACCEPTANCE_LABELS = {
+    final: 'estado final',
+    empty: 'pilha vazia',
+    both: 'estado final ou pilha vazia',
+} satisfies Record<NonNullable<EditorPdaProps['pdaAcceptance']>, string>;
+
 export const EditorPropertiesCard: React.FC<EditorPropertiesCardProps> = ({
     data,
     pdaProps,
@@ -124,7 +130,7 @@ export const EditorPropertiesCard: React.FC<EditorPropertiesCardProps> = ({
 
                         {pdaProps.pdaAcceptance && (
                             <p className="text-[11px] text-muted leading-relaxed">
-                                Modo de aceitação atual: <span className="font-semibold text-secondary">{pdaProps.pdaAcceptance}</span>
+                                Modo de aceitação atual: <span className="font-semibold text-secondary">{PDA_ACCEPTANCE_LABELS[pdaProps.pdaAcceptance]}</span>
                             </p>
                         )}
                     </>
