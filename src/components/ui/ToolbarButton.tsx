@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn';
 
 export interface ToolbarButtonProps {
@@ -27,44 +28,98 @@ export const ToolbarButton: React.FC<ToolbarButtonProps> = ({
     danger,
     side = 'right',
     badge,
-}) => (
-    <button
-        onClick={onClick}
-        disabled={disabled}
-        aria-label={label}
-        className={cn(
-            'p-2.5 rounded-xl transition-all duration-200 relative group/tooltip flex items-center justify-center shrink-0',
-            active && 'bg-ios-blue text-white shadow-md shadow-blue-500/20',
-            !active && 'text-secondary hover:bg-surface-hover',
-            danger && 'text-status-danger status-hover-danger',
-            disabled && 'opacity-40 cursor-not-allowed',
-            className
-        )}
-    >
-        <Icon size={20} strokeWidth={2.5} />
-        {badge !== undefined && (
-            <span className="absolute -top-1 -right-1 bg-ios-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm min-w-[16px] flex items-center justify-center">
-                {badge}
-            </span>
-        )}
-        {/* Tooltip */}
-        <div
-            className={cn(
-                'absolute top-1/2 -translate-y-1/2 px-3 py-2 bg-gray-900 text-white text-xs font-medium rounded-lg opacity-0 group-hover/tooltip:opacity-100 pointer-events-none whitespace-nowrap transition-opacity z-50 shadow-xl border border-white/10 invisible group-hover/tooltip:visible',
-                side === 'right' ? 'left-full ml-3' : 'right-full mr-3'
-            )}
-        >
-            <div className="font-bold leading-none">{label}</div>
-            {(shortcut || hint) && (
-                <div className="text-xs text-gray-300 flex items-center gap-1 mt-1">
-                    {shortcut && (
-                        <span className="bg-white/20 px-1.5 py-0.5 rounded font-mono">
-                            {shortcut}
-                        </span>
-                    )}
-                    {hint && <span>{hint}</span>}
-                </div>
-            )}
-        </div>
-    </button>
-);
+}) => {
+    const buttonRef = useRef<HTMLButtonElement | null>(null);
+    const [tooltipOpen, setTooltipOpen] = useState(false);
+    const [tooltipPosition, setTooltipPosition] = useState<React.CSSProperties | null>(null);
+
+    const updateTooltipPosition = useCallback(() => {
+        if (!buttonRef.current || typeof window === 'undefined') return;
+
+        const rect = buttonRef.current.getBoundingClientRect();
+        const offset = 12;
+        setTooltipPosition({
+            top: rect.top + rect.height / 2,
+            ...(side === 'right'
+                ? { left: rect.right + offset }
+                : { right: window.innerWidth - rect.left + offset }),
+        });
+    }, [side]);
+
+    const showTooltip = () => {
+        if (disabled) return;
+        updateTooltipPosition();
+        setTooltipOpen(true);
+    };
+
+    const hideTooltip = () => setTooltipOpen(false);
+
+    useLayoutEffect(() => {
+        if (!tooltipOpen) return undefined;
+
+        updateTooltipPosition();
+        window.addEventListener('resize', updateTooltipPosition);
+        window.addEventListener('scroll', updateTooltipPosition, true);
+
+        return () => {
+            window.removeEventListener('resize', updateTooltipPosition);
+            window.removeEventListener('scroll', updateTooltipPosition, true);
+        };
+    }, [tooltipOpen, updateTooltipPosition]);
+
+    const tooltip = tooltipOpen && tooltipPosition && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+                className={cn(
+                    'pointer-events-none fixed z-[9999] -translate-y-1/2 whitespace-nowrap rounded-lg border border-white/10 bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-100 shadow-xl',
+                    side === 'right' ? 'animate-fade-in' : 'animate-fade-in'
+                )}
+                style={tooltipPosition}
+            >
+                <div className="font-bold leading-none">{label}</div>
+                {(shortcut || hint) && (
+                    <div className="mt-1 flex items-center gap-1 text-xs text-gray-300">
+                        {shortcut && (
+                            <span className="rounded bg-white/20 px-1.5 py-0.5 font-mono">
+                                {shortcut}
+                            </span>
+                        )}
+                        {hint && <span>{hint}</span>}
+                    </div>
+                )}
+            </div>,
+            document.body
+        )
+        : null;
+
+    return (
+        <>
+            <button
+                ref={buttonRef}
+                onClick={onClick}
+                disabled={disabled}
+                aria-label={label}
+                onMouseEnter={showTooltip}
+                onMouseLeave={hideTooltip}
+                onFocus={showTooltip}
+                onBlur={hideTooltip}
+                className={cn(
+                    'relative flex shrink-0 items-center justify-center rounded-xl p-2.5 transition-all duration-200',
+                    active && 'bg-ios-blue text-white shadow-md shadow-blue-500/20',
+                    !active && 'text-secondary hover:bg-surface-hover',
+                    danger && 'text-status-danger status-hover-danger',
+                    disabled && 'cursor-not-allowed opacity-40',
+                    className
+                )}
+            >
+                <Icon size={20} strokeWidth={2.5} />
+                {badge !== undefined && (
+                    <span className="absolute -right-1 -top-1 flex min-w-[16px] items-center justify-center rounded-full bg-ios-red px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                        {badge}
+                    </span>
+                )}
+            </button>
+            {tooltip}
+        </>
+    );
+};

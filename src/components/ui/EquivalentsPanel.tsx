@@ -113,8 +113,8 @@ const ExpandableSection: React.FC<{
             {expanded && (
                 <div className="border-t border-default p-3 bg-surface-muted animate-scale-in origin-top">
                     {error ? (
-                        <div className="text-xs text-ios-red flex items-center gap-2">
-                            <AlertCircle size={14} />
+                        <div className="flex items-center gap-2 rounded-lg border border-default bg-surface-soft px-3 py-2 text-xs text-secondary">
+                            <AlertCircle size={14} className="text-ios-orange" />
                             {error}
                         </div>
                     ) : content ? (
@@ -294,6 +294,30 @@ export const EquivalentsPanel: React.FC<EquivalentsPanelProps> = ({
         return JSON.stringify(automaton, null, 2);
     };
 
+    const conversionSections = [
+        {
+            title: 'AFN → AFD',
+            icon: Zap,
+            description: 'Conversão por construção de subconjuntos',
+            content: formatAutomatonAsText(equivalents.dfa.value),
+            automaton: equivalents.dfa.value,
+        },
+        {
+            title: 'AFD Minimizado',
+            icon: Minimize2,
+            description: 'Estados equivalentes colapsados',
+            content: formatAutomatonAsText(equivalents.minimized.value),
+            automaton: equivalents.minimized.value,
+        },
+        {
+            title: 'Sem ε-transições',
+            icon: RefreshCcw,
+            description: 'Eliminação de transições vazias',
+            content: formatAutomatonAsText(equivalents.noEpsilon.value),
+            automaton: equivalents.noEpsilon.value,
+        },
+    ].filter((section) => section.content);
+
     return (
         <div className="glass-panel p-4 rounded-2xl shadow-apple-md border border-default animate-fade-in-up">
             {/* Header */}
@@ -396,47 +420,25 @@ export const EquivalentsPanel: React.FC<EquivalentsPanelProps> = ({
                 )}
 
                 {activeTab === 'conversions' && (
-                    <>
-                        <ExpandableSection
-                            title="AFN → AFD"
-                            icon={Zap}
-                            description="Conversão por construção de subconjuntos"
-                            content={formatAutomatonAsText(equivalents.dfa.value)}
-                            error={equivalents.dfa.error}
-                            onLoadAutomaton={
-                                equivalents.dfa.value
-                                    ? () => handleLoadAutomaton(equivalents.dfa.value)
-                                    : undefined
-                            }
-                            category="conversion"
-                        />
-                        <ExpandableSection
-                            title="AFD Minimizado"
-                            icon={Minimize2}
-                            description="Estados equivalentes colapsados"
-                            content={formatAutomatonAsText(equivalents.minimized.value)}
-                            error={equivalents.minimized.error}
-                            onLoadAutomaton={
-                                equivalents.minimized.value
-                                    ? () => handleLoadAutomaton(equivalents.minimized.value)
-                                    : undefined
-                            }
-                            category="conversion"
-                        />
-                        <ExpandableSection
-                            title="Sem ε-transições"
-                            icon={RefreshCcw}
-                            description="Eliminação de transições vazias"
-                            content={formatAutomatonAsText(equivalents.noEpsilon.value)}
-                            error={equivalents.noEpsilon.error}
-                            onLoadAutomaton={
-                                equivalents.noEpsilon.value
-                                    ? () => handleLoadAutomaton(equivalents.noEpsilon.value)
-                                    : undefined
-                            }
-                            category="conversion"
-                        />
-                    </>
+                    conversionSections.length > 0 ? (
+                        <>
+                            {conversionSections.map((section) => (
+                                <ExpandableSection
+                                    key={section.title}
+                                    title={section.title}
+                                    icon={section.icon}
+                                    description={section.description}
+                                    content={section.content}
+                                    onLoadAutomaton={() => handleLoadAutomaton(section.automaton)}
+                                    category="conversion"
+                                />
+                            ))}
+                        </>
+                    ) : (
+                        <div className="rounded-xl border border-dashed border-default bg-surface-soft p-4 text-xs leading-relaxed text-secondary">
+                            Nenhuma conversão aplicável para este tipo de autômato.
+                        </div>
+                    )
                 )}
             </div>
 
