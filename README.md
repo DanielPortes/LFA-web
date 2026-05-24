@@ -1,12 +1,15 @@
 # LFA Web
 
 [Acesse a versão publicada](https://danielportes.github.io/LFA-web/)
+```text
+https://danielportes.github.io/LFA-web/
+```
 
 Aplicação React + TypeScript + Vite para estudo e simulação de conteúdos de Linguagens Formais e Autômatos.
 
 ## Capturas de tela
 
-As capturas abaixo mostram as principais páginas no tema escuro.
+As capturas abaixo mostram as principais páginas.
 
 ### Início
 
