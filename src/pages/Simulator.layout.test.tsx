@@ -3,7 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '../components/ui';
 import { UiSettingsProvider } from '../hooks/UiSettingsContext';
 import { mockAnimationFrames, mockResizeObserver, mockViewport } from '../test/browserMocks';
-import { simplePDA } from '../test/fixtures';
+import { emptyStringDFA, simpleDFA, simplePDA } from '../test/fixtures';
+import type { AutomatoData } from '../types';
 import { SimulatorPage } from './Simulator';
 
 const viewportMatrix = [
@@ -94,7 +95,7 @@ describe('SimulatorPage layout', () => {
 
         expect(screen.getByText(/Simulação pronta/)).toBeInTheDocument();
         expect(screen.queryByText(/Simulação running/)).not.toBeInTheDocument();
-        expect(screen.getByText('Pronto')).toBeInTheDocument();
+        expect(screen.queryByText('Pronto')).not.toBeInTheDocument();
     });
 
     it('não mantém estados ativos visíveis enquanto a simulação ainda está pronta', async () => {
@@ -115,6 +116,112 @@ describe('SimulatorPage layout', () => {
         });
 
         expect(screen.getByText(/Simulação pronta/)).toHaveTextContent('Nenhum estado ativo.');
+    });
+
+    it('abre o diagnóstico quando o aluno inicia pelo Enter no campo de entrada', async () => {
+        mockAnimationFrames();
+        mockResizeObserver();
+        mockViewport({ width: 1280, height: 800 });
+
+        await act(async () => {
+            render(
+                <UiSettingsProvider>
+                    <ToastProvider>
+                        <SimulatorPage initialData={simpleDFA} />
+                    </ToastProvider>
+                </UiSettingsProvider>
+            );
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+
+        expect(screen.queryByText('Simulação e diagnóstico')).not.toBeInTheDocument();
+
+        const input = screen.getByPlaceholderText('Digite a entrada para o autômato...');
+        fireEvent.change(input, { target: { value: 'ab' } });
+        fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
+
+        expect(screen.getByText('Simulação e diagnóstico')).toBeInTheDocument();
+        expect(screen.getByText('Visualização')).toBeInTheDocument();
+    });
+
+    it('mostra a visualização da entrada vazia quando o aluno testa sem símbolos', async () => {
+        mockAnimationFrames();
+        mockResizeObserver();
+        mockViewport({ width: 1280, height: 800 });
+
+        await act(async () => {
+            render(
+                <UiSettingsProvider>
+                    <ToastProvider>
+                        <SimulatorPage initialData={emptyStringDFA} />
+                    </ToastProvider>
+                </UiSettingsProvider>
+            );
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Iniciar simulação' }));
+
+        expect(screen.getByText('Simulação e diagnóstico')).toBeInTheDocument();
+        const emptyInputNotice = screen.getByText(/Entrada vazia/);
+        expect(emptyInputNotice).toBeVisible();
+        expect(emptyInputNotice.closest('.opacity-0')).toBeNull();
+    });
+
+    it('mantém a pilha visível no inspetor quando o aluno testa um AP', async () => {
+        mockAnimationFrames();
+        mockResizeObserver();
+        mockViewport({ width: 1280, height: 800 });
+
+        await act(async () => {
+            render(
+                <UiSettingsProvider>
+                    <ToastProvider>
+                        <SimulatorPage initialData={simplePDA} />
+                    </ToastProvider>
+                </UiSettingsProvider>
+            );
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Iniciar simulação' }));
+
+        const stackTitle = screen.getByText('Topo da pilha');
+        expect(stackTitle).toBeVisible();
+        expect(stackTitle.closest('.opacity-0')).toBeNull();
+    });
+
+    it('reflete no canvas e no status o tipo inferido do autômato finito em edição', async () => {
+        mockAnimationFrames();
+        mockResizeObserver();
+        mockViewport({ width: 1280, height: 800 });
+
+        const structurallyNfa: AutomatoData = {
+            ...simpleDFA,
+            tipo: 'AFD',
+            transicoes: [
+                { id: 't1', de: 'q0', para: 'q0', simbolo: 'a', curvatura: 0 },
+                { id: 't2', de: 'q0', para: 'q1', simbolo: 'a', curvatura: 0 },
+            ],
+        };
+
+        await act(async () => {
+            render(
+                <UiSettingsProvider>
+                    <ToastProvider>
+                        <SimulatorPage initialData={structurallyNfa} />
+                    </ToastProvider>
+                </UiSettingsProvider>
+            );
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+
+        expect(screen.getByRole('region', { name: 'Canvas do autômato AFN' })).toBeInTheDocument();
+        expect(screen.getByText('AFN')).toBeInTheDocument();
     });
 
     it('remove o inspetor compacto do editor enquanto o painel lateral de simulação ocupa a área', async () => {

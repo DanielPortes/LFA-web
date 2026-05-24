@@ -12,6 +12,16 @@ const EPSILON_ALIASES = new Set([
     'iŹ¬'
 ]);
 
+const EMPTY_INPUT_ALIASES = new Set([
+    'eps',
+    'epsilon',
+    'vazio',
+    'empty',
+    'lambda',
+    'λ',
+    'ε'
+]);
+
 export const normalizeToken = (token: string) => token.trim();
 
 export const splitSymbolTokens = (symbol: string): string[] =>
@@ -71,6 +81,7 @@ export interface TokenizationOptions {
 export const tokenizeInput = (input: string, options: TokenizationOptions = {}): string[] => {
     const trimmed = input.trim();
     if (!trimmed) return [];
+    if (EMPTY_INPUT_ALIASES.has(trimmed.toLowerCase())) return [];
 
     const mode = options.mode ?? 'auto';
     if (mode === 'char') {

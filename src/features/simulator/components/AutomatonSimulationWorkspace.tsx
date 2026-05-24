@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import { regexToNfa } from '../../../utils/conversions';
+import { inferAutomatonKind } from '../../../utils/automatonKind';
 import type { AutomatoData } from '../../../types';
 import { useToast } from '../../../components/ui';
 import { useUiSettings } from '../../../hooks/useUiSettings';
@@ -44,6 +45,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
     const [regexImportError, setRegexImportError] = useState<string | null>(null);
     const [showRegexImport, setShowRegexImport] = useState(false);
     const [inspectorOpen, setInspectorOpen] = useState(false);
+    const [hasRequestedSimulationView, setHasRequestedSimulationView] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const regexImportErrorId = useId();
 
@@ -58,11 +60,22 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
         mode: inputTokenization,
         separator: inputSeparator
     }), [inputSeparator, inputTokenization]);
+    const inferredKind = useMemo(() => inferAutomatonKind(data), [data]);
+    const effectiveData = useMemo<AutomatoData>(() => (
+        inferredKind.runtimeType === data.tipo
+            ? data
+            : { ...data, tipo: inferredKind.runtimeType } as AutomatoData
+    ), [data, inferredKind.runtimeType]);
 
     const requestCanvasCenter = useCallback(() => {
         setViewState({ zoom: 1, pan: { x: 0, y: 0 } });
         setFitRequestToken((value) => value + 1);
     }, []);
+
+    useEffect(() => {
+        if (inferredKind.runtimeType === data.tipo) return;
+        onChange(effectiveData);
+    }, [data.tipo, effectiveData, inferredKind.runtimeType, onChange]);
 
     useEffect(() => {
         if (resetToken === undefined) return;
@@ -71,9 +84,10 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
         setRegexImport('');
         setRegexImportError(null);
         setShowRegexImport(false);
-        setInspectorOpen(data.tipo === 'AP');
+        setInspectorOpen(effectiveData.tipo === 'AP');
+        setHasRequestedSimulationView(false);
         requestAnimationFrame(() => requestCanvasCenter());
-    }, [data.tipo, requestCanvasCenter, resetToken]);
+    }, [effectiveData.tipo, requestCanvasCenter, resetToken]);
 
     const handleViewStateChange = useCallback((zoom: number, pan: { x: number; y: number }) => {
         setViewState((prev) => {
@@ -106,7 +120,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
         step,
         stepBack
     } = useAutomatonSimulation(
-        data,
+        effectiveData,
         inputString,
         tokenizationConfig
     );
@@ -132,12 +146,23 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
         }
     }, [isPda]);
 
+    const revealSimulationView = useCallback(() => {
+        setInspectorOpen(true);
+        setHasRequestedSimulationView(true);
+    }, []);
+
     const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         setInputString(event.target.value);
     }, []);
 
     const clearInput = useCallback(() => {
         setInputString('');
+        resetSimulation(true);
+        inputRef.current?.focus();
+    }, [resetSimulation]);
+
+    const useEmptyInputAlias = useCallback(() => {
+        setInputString('eps');
         resetSimulation(true);
         inputRef.current?.focus();
     }, [resetSimulation]);
@@ -168,6 +193,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
                 if (event.key === 'Enter' && !event.repeat) {
                     inputRef.current?.blur();
                     if (canStartSimulation) {
+                        revealSimulationView();
                         resetSimulation();
                         setIsPlaying(true);
                     }
@@ -186,6 +212,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
                     if (canStartSimulation) {
                         const shouldStartFromBeginning = !simulationState || simulationState.status !== 'running';
                         if (shouldStartFromBeginning) {
+                            revealSimulationView();
                             resetSimulation();
                             setIsPlaying(true);
                         } else {
@@ -196,6 +223,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
                 case 'ArrowRight':
                     event.preventDefault();
                     if (canStartSimulation) {
+                        revealSimulationView();
                         setIsPlaying(false);
                         if (!simulationState || simulationState.status !== 'running') {
                             resetSimulation();
@@ -261,9 +289,9 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
                 </button>
             )}
             <SimulatorStatusBar
-                automatonType={data.tipo}
-                stateCount={data.estados.length}
-                transitionCount={data.transicoes.length}
+                automatonType={inferredKind.displayType}
+                stateCount={effectiveData.estados.length}
+                transitionCount={effectiveData.transicoes.length}
                 simulationStatus={simulationStatus}
                 hasSimulationProgress={hasSimulationProgress}
             />
@@ -285,28 +313,24 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
             />
         </div>
     ) : (
-        <div className="pointer-events-auto max-w-[240px]">
+        <div className="pointer-events-auto">
             <button
                 onClick={() => setShowRegexImport(true)}
-                className="glass-panel flex w-full items-center justify-between rounded-2xl border border-default bg-surface-1/90 px-4 py-3 text-left shadow-apple-md transition-all hover:bg-surface-1"
+                className="glass-panel inline-flex items-center gap-2 rounded-full border border-default bg-surface-1/90 px-3 py-1.5 text-left shadow-apple-sm transition-all hover:bg-surface-1 hover:shadow-apple-md"
+                aria-label="Abrir importação rápida Regex para AFN"
             >
-                <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-ios-blue/10 p-2 text-ios-blue">
-                        <Sparkles size={16} />
-                    </div>
-                    <div>
-                        <div className="ui-kicker-xs text-primary">Regex → AFN</div>
-                        <div className="text-[11px] text-secondary">Abrir importação rápida</div>
-                    </div>
+                <div className="rounded-full bg-ios-blue/10 p-1 text-ios-blue">
+                    <Sparkles size={13} />
                 </div>
-                <span className="badge badge-info font-mono text-[9px]">ER</span>
+                <span className="text-xs font-bold text-primary">Regex → AFN</span>
+                <span className="hidden text-[11px] text-secondary sm:inline">Importar ER</span>
             </button>
         </div>
     );
 
     const tapePanel = (
         <SimulationTapePanel
-            data={data}
+            data={effectiveData}
             inputTokens={inputTokens}
             history={history}
             simulationState={displayedSimulationState}
@@ -348,6 +372,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
             setInputTokenization={setInputTokenization}
             setInputSeparator={setInputSeparator}
             clearInput={clearInput}
+            useEmptyInputAlias={useEmptyInputAlias}
             hasInvalidInput={hasInvalidInput}
             isPlaying={isPlaying}
             canPlay={canPlay}
@@ -363,6 +388,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
             inspectorOpen={inspectorOpen}
             onToggleInspector={() => setInspectorOpen((value) => !value)}
             onPlay={() => {
+                revealSimulationView();
                 if (!simulationState || simulationState.status !== 'running') {
                     resetSimulation();
                 }
@@ -370,6 +396,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
             }}
             onPause={() => setIsPlaying(false)}
             onStep={() => {
+                revealSimulationView();
                 if (!simulationState || simulationState.status !== 'running') {
                     resetSimulation();
                     return;
@@ -386,7 +413,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
     return (
         <>
             <div className="sr-only" aria-live="polite">
-                {`Simulação ${simulationStatusLabel}. ${data.estados.length} estados, ${data.transicoes.length} transições. ${
+                {`Simulação ${simulationStatusLabel}. ${effectiveData.estados.length} estados, ${effectiveData.transicoes.length} transições. ${
                     displayedSimulationState?.activeStates.length
                         ? `Estados ativos: ${formatStateList(displayedSimulationState.activeStates)}.`
                         : 'Nenhum estado ativo.'
@@ -405,14 +432,14 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
                 isPda={isPda}
                 showWarningsPanel={Boolean(disableReason || isPda)}
                 showDetailsPanel={history.length > 1 || hasSimulationProgress}
-                showTapePanel={inputTokens.length > 0 || isTuring || isPda}
+                showTapePanel={inputTokens.length > 0 || isTuring || isPda || hasRequestedSimulationView || hasSimulationProgress}
             >
                 {({ rightDock, bottomDock }) => (
                     <AutomatonWorkspace
                         variant={variant}
                         editor={(
                             <AutomatonEditor
-                                data={data}
+                                data={effectiveData}
                                 onChange={onChange}
                                 activeStates={displayedSimulationState?.activeStates}
                                 activeTransitions={activeTransitions}

@@ -32,9 +32,7 @@ export const SimulationTapePanel: React.FC<SimulationTapePanelProps> = ({
     stepCount,
     totalSteps,
 }) => (
-    <div className={`glass-panel p-5 rounded-3xl shadow-apple-md border border-default transition-all duration-500 bg-surface-1/90 ${
-        (inputTokens.length > 0 || isTuring || isPda) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
-    }`}>
+    <div className="glass-panel p-5 rounded-3xl shadow-apple-md border border-default transition-all duration-500 bg-surface-1/90 opacity-100 translate-y-0">
         <div className="flex items-center justify-between mb-4 px-1">
             <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${
@@ -125,11 +123,11 @@ export const SimulationTapePanel: React.FC<SimulationTapePanelProps> = ({
         )}
 
         {isPda && simulationState?.activeConfigs && simulationState.activeConfigs.length > 0 && (
-            <div className="mt-5 rounded-2xl border border-default/40 bg-surface-muted/30 p-4 shadow-inner">
-                <div className="mb-3 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-wide text-secondary">
+            <div className="mt-3 rounded-2xl border border-default/40 bg-surface-muted/25 p-3 shadow-inner">
+                <div className="mb-2 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-wide text-secondary">
                     <span>Topo da pilha</span>
                 </div>
-                <div className="flex justify-center">
+                <div className="flex justify-center overflow-x-auto custom-scrollbar">
                     <StackVisualizer stack={simulationState.activeConfigs[0].stack} />
                 </div>
             </div>

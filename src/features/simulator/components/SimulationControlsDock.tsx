@@ -12,6 +12,7 @@ interface SimulationControlsDockProps {
     setInputTokenization: (value: 'auto' | 'char' | 'separator') => void;
     setInputSeparator: (value: string) => void;
     clearInput: () => void;
+    useEmptyInputAlias: () => void;
     hasInvalidInput: boolean;
     isPlaying: boolean;
     canPlay: boolean;
@@ -44,6 +45,7 @@ export const SimulationControlsDock: React.FC<SimulationControlsDockProps> = ({
     setInputTokenization,
     setInputSeparator,
     clearInput,
+    useEmptyInputAlias,
     hasInvalidInput,
     isPlaying,
     canPlay,
@@ -66,14 +68,14 @@ export const SimulationControlsDock: React.FC<SimulationControlsDockProps> = ({
     onResetToEditor,
     onSpeedChange,
 }) => (
-    <div className="glass-card p-2 md:p-3 rounded-[40px] flex flex-col lg:flex-row lg:items-center gap-3 pointer-events-auto shadow-apple-2xl border border-default/80 backdrop-blur-3xl bg-surface-1/90">
-        <div className={`flex w-full lg:flex-1 items-center bg-surface-2/50 rounded-[28px] px-5 py-1 border-2 transition-all duration-300 ${
+    <div className="glass-card flex flex-col gap-2 rounded-[32px] border border-default/80 bg-surface-1/90 p-1.5 shadow-apple-xl backdrop-blur-3xl md:p-2 lg:flex-row lg:items-center">
+        <div className={`flex w-full items-center rounded-[24px] border-2 bg-surface-2/50 px-3 py-0.5 transition-all duration-300 lg:flex-1 ${
             hasInvalidInput
                 ? 'border-ios-red ring-4 ring-ios-red/10'
                 : 'border-default focus-within:border-ios-blue focus-within:ring-4 focus-within:ring-ios-blue/10 shadow-inner'
         }`}>
-            <div className={`p-2 rounded-full mr-3 transition-colors ${hasInvalidInput ? 'text-ios-red bg-ios-red/10' : 'text-muted bg-surface-muted'}`}>
-                <Keyboard size={20} strokeWidth={2.5} />
+            <div className={`mr-2 rounded-full p-1.5 transition-colors ${hasInvalidInput ? 'text-ios-red bg-ios-red/10' : 'text-muted bg-surface-muted'}`}>
+                <Keyboard size={16} strokeWidth={2.5} />
             </div>
             <input
                 ref={inputRef}
@@ -81,16 +83,25 @@ export const SimulationControlsDock: React.FC<SimulationControlsDockProps> = ({
                 value={inputString}
                 onChange={onInputChange}
                 placeholder="Digite a entrada para o autômato..."
-                className="flex-1 bg-transparent border-none outline-none text-base font-mono font-black py-3 text-primary placeholder:text-muted placeholder:opacity-40 min-w-0"
+                className="min-w-0 flex-1 border-none bg-transparent py-2 font-mono text-sm font-black text-primary outline-none placeholder:text-muted placeholder:opacity-40"
                 aria-invalid={hasInvalidInput}
             />
 
-            <div className="flex items-center gap-2 ml-3">
-                <div className="flex items-center bg-surface-muted/80 rounded-2xl p-1.5 border border-default/60 shadow-sm">
+            <div className="ml-2 flex items-center gap-1.5">
+                <button
+                    type="button"
+                    onClick={useEmptyInputAlias}
+                    className="rounded-xl border border-default bg-surface-muted/80 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-secondary shadow-sm transition-all hover:bg-ios-blue/10 hover:text-ios-blue"
+                    title="Usar entrada vazia (eps)"
+                    aria-label="Usar entrada vazia, eps"
+                >
+                    eps
+                </button>
+                <div className="flex items-center rounded-xl border border-default/60 bg-surface-muted/80 p-1 shadow-sm">
                     <select
                         value={inputTokenization}
                         onChange={(event) => setInputTokenization(event.target.value as 'auto' | 'char' | 'separator')}
-                        className="text-[10px] font-black uppercase tracking-widest bg-transparent px-3 py-1 text-secondary outline-none cursor-pointer hover:text-primary transition-colors"
+                        className="cursor-pointer bg-transparent px-2 py-1 text-[10px] font-black uppercase tracking-widest text-secondary outline-none transition-colors hover:text-primary"
                         title="Modo de leitura da entrada"
                         aria-label="Modo de leitura da entrada"
                     >
@@ -102,7 +113,7 @@ export const SimulationControlsDock: React.FC<SimulationControlsDockProps> = ({
                         <input
                             value={inputSeparator}
                             onChange={(event) => setInputSeparator(event.target.value)}
-                            className="w-10 text-xs font-mono font-black bg-white dark:bg-black/40 rounded-xl px-2 py-1 text-center text-ios-blue border border-ios-blue/30 shadow-inner outline-none mx-1"
+                            className="mx-1 w-9 rounded-lg border border-ios-blue/30 bg-white px-2 py-1 text-center font-mono text-xs font-black text-ios-blue shadow-inner outline-none dark:bg-black/40"
                             title="Símbolo separador"
                             placeholder="|"
                             aria-label="Símbolo separador da entrada"
@@ -114,18 +125,18 @@ export const SimulationControlsDock: React.FC<SimulationControlsDockProps> = ({
             {inputString && (
                 <button
                     onClick={clearInput}
-                    className="ml-3 p-2 rounded-full text-muted hover:text-ios-red hover:bg-ios-red/10 transition-all active:scale-90"
+                    className="ml-2 rounded-full p-1.5 text-muted transition-all hover:bg-ios-red/10 hover:text-ios-red active:scale-90"
                     title="Limpar entrada"
                     aria-label="Limpar entrada"
                 >
-                    <X size={20} strokeWidth={3} />
+                    <X size={18} strokeWidth={3} />
                 </button>
             )}
         </div>
 
-        <div className="hidden lg:block w-px h-12 bg-border/40 mx-2"></div>
+        <div className="mx-1 hidden h-10 w-px bg-border/40 lg:block"></div>
 
-        <div className="w-full lg:w-auto flex justify-center scale-110 lg:scale-100 origin-center px-4">
+        <div className="flex w-full origin-center justify-center px-1 lg:w-auto">
             <SimulationControls
                 isPlaying={isPlaying}
                 canPlay={canPlay}
@@ -143,23 +154,23 @@ export const SimulationControlsDock: React.FC<SimulationControlsDockProps> = ({
             />
         </div>
 
-        <div className="flex items-center gap-2 lg:border-l border-default/40 lg:pl-4 justify-end">
+        <div className="flex items-center justify-end gap-1.5 border-default/40 lg:border-l lg:pl-3">
             {simulationState && hasSimulationProgress && (
                 <button
                     onClick={onResetToEditor}
-                    className="p-3 rounded-[20px] bg-surface-muted text-secondary hover:text-ios-blue hover:bg-ios-blue/10 hover:border-ios-blue/30 border border-transparent transition-all active:scale-90"
+                    className="rounded-2xl border border-transparent bg-surface-muted p-2.5 text-secondary transition-all hover:border-ios-blue/30 hover:bg-ios-blue/10 hover:text-ios-blue active:scale-90"
                     title="Reiniciar e voltar ao editor"
                     aria-label="Reiniciar e voltar ao editor"
                 >
-                    <RotateCcw size={22} />
+                    <RotateCcw size={19} />
                 </button>
             )}
-            <div className="hidden sm:flex items-center justify-center min-w-[70px] text-[11px] font-black font-mono text-ios-blue bg-ios-blue/5 rounded-2xl h-12 border border-ios-blue/20 shadow-inner">
+            <div className="hidden h-10 min-w-[58px] items-center justify-center rounded-2xl border border-ios-blue/20 bg-ios-blue/5 font-mono text-[11px] font-black text-ios-blue shadow-inner sm:flex">
                 {isTuring ? `H:${simulationState?.headPos ?? 0}` : `${stepCount}/${totalSteps}`}
             </div>
             <button
                 onClick={onToggleInspector}
-                className={`p-3 rounded-[20px] transition-all border-2 active:scale-95 ${
+                className={`rounded-2xl border-2 p-2.5 transition-all active:scale-95 ${
                     inspectorOpen
                         ? 'bg-ios-blue text-white shadow-xl shadow-blue-500/40 border-ios-blue'
                         : 'bg-surface-muted text-secondary hover:text-primary hover:bg-surface-hover border-transparent'
@@ -167,7 +178,7 @@ export const SimulationControlsDock: React.FC<SimulationControlsDockProps> = ({
                 title={inspectorOpen ? 'Fechar painel de diagnóstico' : 'Abrir painel de diagnóstico'}
                 aria-label={inspectorOpen ? 'Fechar painel de diagnóstico da simulação' : 'Abrir painel de diagnóstico da simulação'}
             >
-                <ListOrdered size={22} strokeWidth={2.5} />
+                <ListOrdered size={19} strokeWidth={2.5} />
             </button>
         </div>
     </div>

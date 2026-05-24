@@ -1,11 +1,11 @@
 /**
- * Simulation control buttons and speed slider
+ * Simulation control buttons and speed presets
  *
  * @module components/ui/SimulationControls
  */
 
-import React, { useId } from 'react';
-import { Play, Pause, SkipForward, SkipBack, RotateCcw, Zap } from 'lucide-react';
+import React from 'react';
+import { Play, Pause, SkipForward, SkipBack, RotateCcw, Zap, Rabbit, Gauge, Turtle } from 'lucide-react';
 
 interface SimulationControlsProps {
     isPlaying: boolean;
@@ -24,9 +24,15 @@ interface SimulationControlsProps {
     compact?: boolean;
 }
 
-const speedOptions = [200, 400, 700, 1000, 1500, 2000] as const;
+const speedPresets = [
+    { label: 'Rápido', value: 500, Icon: Rabbit },
+    { label: 'Normal', value: 1000, Icon: Gauge },
+    { label: 'Lento', value: 1800, Icon: Turtle },
+] as const;
 
-const formatSpeed = (value: number) => `${(value / 1000).toFixed(1)}s`;
+const getClosestSpeedPreset = (speed: number) => speedPresets.reduce((closest, preset) => (
+    Math.abs(preset.value - speed) < Math.abs(closest.value - speed) ? preset : closest
+), speedPresets[0]);
 
 export const SimulationControls: React.FC<SimulationControlsProps> = ({
     isPlaying,
@@ -44,16 +50,16 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
     disabled = false,
     compact = false
 }) => {
-    const speedControlId = useId();
     const buttonClass = compact
         ? 'p-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ios-blue/35'
-        : 'p-2 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ios-blue/35';
+        : 'p-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ios-blue/35';
 
-    const iconSize = compact ? 16 : 18;
+    const iconSize = compact ? 16 : 17;
+    const selectedSpeed = getClosestSpeedPreset(speed).value;
 
     return (
         <div className="flex items-center gap-1.5">
-            <div className="flex items-center gap-0.5 bg-surface-muted/50 rounded-xl p-1 border border-default/50">
+            <div className="flex items-center gap-0.5 rounded-xl border border-default/50 bg-surface-muted/50 p-1">
                 <button
                     type="button"
                     onClick={onReset}
@@ -84,7 +90,7 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
                         isPlaying
                             ? 'bg-ios-red text-white shadow-lg shadow-red-500/20 active:scale-90'
                             : 'bg-ios-green text-white shadow-lg shadow-green-500/20 active:scale-90'
-                    } px-4`}
+                    } px-3.5`}
                     title={isPlaying ? 'Pausar (Espaço)' : 'Iniciar (Espaço)'}
                     aria-label={isPlaying ? 'Pausar simulação' : 'Iniciar simulação'}
                 >
@@ -116,49 +122,36 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
                 )}
             </div>
 
-            {compact ? (
-                <div className="flex items-center gap-1">
-                    <label htmlFor={speedControlId} className="sr-only">Velocidade da simulação</label>
-                    <select
-                        id={speedControlId}
-                        value={speed}
-                        onChange={(e) => onSpeedChange(Number(e.target.value))}
-                        className="h-8 rounded-lg border border-default bg-surface-2 px-1 text-[10px] font-black text-secondary uppercase"
-                        title="Velocidade"
-                        aria-label="Velocidade da simulação"
-                    >
-                        {speedOptions.map((option) => (
-                            <option key={option} value={option}>{formatSpeed(option)}</option>
-                        ))}
-                    </select>
-                </div>
-            ) : (
-                <div className="flex items-center gap-2 px-2 py-1 bg-surface-muted/30 rounded-xl border border-default/40 ml-1">
-                    <span className="text-[10px] text-muted font-black uppercase tracking-tighter w-10 text-center">
-                        {formatSpeed(speed)}
-                    </span>
-                    <label htmlFor={speedControlId} className="sr-only">Velocidade da simulação</label>
-                    <div>
-                        <input
-                            id={speedControlId}
-                            type="range"
-                            min="100"
-                            max="2000"
-                            step="100"
-                            value={speed}
-                            onChange={(e) => onSpeedChange(Number(e.target.value))}
-                            className="w-24 accent-ios-blue h-1.5"
-                            title="Velocidade da simulação"
-                            aria-label="Velocidade da simulação"
-                            aria-valuetext={`${formatSpeed(speed)} por passo; valores menores aceleram`}
-                        />
-                        <div className="mt-0.5 flex justify-between text-[9px] font-bold uppercase text-muted">
-                            <span>Rápido</span>
-                            <span>Lento</span>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <div
+                className={`ml-1 flex items-center gap-0.5 rounded-xl border border-default/40 bg-surface-muted/30 p-1 ${
+                    compact ? 'max-w-[12rem] overflow-x-auto custom-scrollbar' : ''
+                }`}
+                role="group"
+                aria-label="Velocidade da simulação"
+            >
+                {speedPresets.map((preset) => {
+                    const isSelected = selectedSpeed === preset.value;
+
+                    return (
+                        <button
+                            key={preset.value}
+                            type="button"
+                            onClick={() => onSpeedChange(preset.value)}
+                            disabled={disabled}
+                            className={`flex h-7 w-8 items-center justify-center rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ios-blue/35 ${
+                                isSelected
+                                    ? 'bg-ios-blue text-white shadow-md shadow-ios-blue/20'
+                                    : 'text-secondary hover:bg-surface-hover hover:text-primary'
+                            } disabled:cursor-not-allowed disabled:opacity-50`}
+                            title={preset.label}
+                            aria-label={preset.label}
+                            aria-pressed={isSelected}
+                        >
+                            <preset.Icon size={15} aria-hidden="true" />
+                        </button>
+                    );
+                })}
+            </div>
         </div>
     );
 };

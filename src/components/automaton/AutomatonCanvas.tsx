@@ -34,6 +34,7 @@ interface CanvasProps {
 const GRID_SIZE = 40;
 const STATE_RADIUS = 28;
 const MIN_STATE_SPACING = 96;
+const STATE_DRAG_THRESHOLD_PX = 4;
 const TRANSITION_HINT_STORAGE_KEY = 'lfa-transition-control-hint-dismissed';
 
 // Safe ID Generator
@@ -80,6 +81,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
     const dragStartRef = useRef({ x: 0, y: 0 });
     const dragInitialPanRef = useRef({ x: 0, y: 0 });
     const dragInitialStatesRef = useRef<Map<string, { x: number, y: number }>>(new Map());
+    const stateDragMovedRef = useRef(false);
     const [isDragging, setIsDragging] = useState(false);
     const [dragMode, setDragMode] = useState<'state' | 'pan' | 'controlPoint'>('pan');
 
@@ -267,7 +269,10 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
     useEffect(() => {
         const handleGlobalMouseUp = () => {
             if (isDraggingRef.current && dragTypeRef.current === 'state') {
-                commitDraggedStatePositions();
+                if (stateDragMovedRef.current) {
+                    commitDraggedStatePositions();
+                    setSelection(null);
+                }
             }
             if (isDraggingRef.current && dragTypeRef.current === 'controlPoint') {
                 commitControlPointDraft();
@@ -277,6 +282,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
             dragTypeRef.current = 'pan';
             setDragMode('pan');
             dragTargetRef.current = null;
+            stateDragMovedRef.current = false;
             setIsSelecting(false);
             scheduleRender();
         };
@@ -447,6 +453,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
         setDragMode('state');
         dragTargetRef.current = stateId;
         dragStartRef.current = { x: pos.x, y: pos.y };
+        stateDragMovedRef.current = false;
 
         const initialPositions = new Map<string, { x: number, y: number }>();
         data.estados.forEach(s => {
@@ -506,8 +513,18 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
             }
 
             if (dragTypeRef.current === 'state') {
-                const dx = (pos.x - dragStartRef.current.x) / zoom;
-                const dy = (pos.y - dragStartRef.current.y) / zoom;
+                const screenDx = pos.x - dragStartRef.current.x;
+                const screenDy = pos.y - dragStartRef.current.y;
+                const hasMovedPastClickThreshold = Math.hypot(screenDx, screenDy) >= STATE_DRAG_THRESHOLD_PX;
+
+                if (!stateDragMovedRef.current && !hasMovedPastClickThreshold) {
+                    return;
+                }
+
+                stateDragMovedRef.current = true;
+
+                const dx = screenDx / zoom;
+                const dy = screenDy / zoom;
 
                 dragInitialStatesRef.current.forEach((initialPos, id) => {
                     let newX = initialPos.x + dx;
@@ -550,7 +567,10 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
     const handleMouseUp = () => {
         if (isDraggingRef.current) {
             if (dragTypeRef.current === 'state') {
-                commitDraggedStatePositions();
+                if (stateDragMovedRef.current) {
+                    commitDraggedStatePositions();
+                    setSelection(null);
+                }
             }
             if (dragTypeRef.current === 'controlPoint') {
                 commitControlPointDraft();
@@ -561,6 +581,7 @@ export const AutomatonCanvas = forwardRef<SVGSVGElement, CanvasProps>(({
             dragTypeRef.current = 'pan';
             setDragMode('pan');
             dragTargetRef.current = null;
+            stateDragMovedRef.current = false;
             scheduleRender();
         } else if (creatingTransition) {
             const targetState = [...data.estados].reverse().find(s => {

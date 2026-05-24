@@ -94,12 +94,12 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
                     {inspectorShell}
                 </div>
             )}
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr),auto] lg:items-end">
-                <div className="min-w-0">
-                    {controlsBar}
-                </div>
-                <div className="lg:justify-self-end lg:self-center">
+            <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-2">
+                <div data-testid="regex-import-slot" className="flex justify-end">
                     {regexImportPanel}
+                </div>
+                <div data-testid="simulation-controls-slot" className="min-w-0">
+                    {controlsBar}
                 </div>
             </div>
         </div>

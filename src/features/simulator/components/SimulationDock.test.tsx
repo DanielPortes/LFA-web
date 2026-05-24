@@ -32,10 +32,39 @@ describe('SimulationDock', () => {
         expect(within(screen.getByTestId('right')).getByText('WARNINGS')).toBeInTheDocument();
         expect(within(screen.getByTestId('right')).getByRole('button', { name: 'Fita' })).toBeInTheDocument();
         expect(within(screen.getByTestId('right')).queryByRole('button', { name: 'Histórico' })).not.toBeInTheDocument();
-        expect(within(screen.getByTestId('bottom')).getByText('REGEX')).toBeInTheDocument();
-        expect(within(screen.getByTestId('bottom')).getByText('CONTROLS')).toBeInTheDocument();
+        expect(within(screen.getByTestId('regex-import-slot')).getByText('REGEX')).toBeInTheDocument();
+        expect(within(screen.getByTestId('simulation-controls-slot')).getByText('CONTROLS')).toBeInTheDocument();
         expect(within(screen.getByTestId('bottom')).queryByText('WARNINGS')).not.toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Fechar painel lateral de diagnóstico' })).toBeInTheDocument();
+    });
+
+    it('posiciona a importação por regex acima dos controles da simulação', () => {
+        render(
+            <SimulationDock
+                desktopInspector={true}
+                inspectorOpen={false}
+                onCloseInspector={() => {}}
+                regexImportPanel={<span>REGEX</span>}
+                warningsPanel={<span>WARNINGS</span>}
+                detailsPanel={<span>DETAILS</span>}
+                tapePanel={<span>TAPE</span>}
+                controlsBar={<span>CONTROLS</span>}
+                disableReason={null}
+                isPda={false}
+                showWarningsPanel={false}
+                showDetailsPanel={false}
+                showTapePanel={false}
+            >
+                {({ bottomDock }) => <section data-testid="bottom">{bottomDock}</section>}
+            </SimulationDock>
+        );
+
+        const regexSlot = screen.getByTestId('regex-import-slot');
+        const controlsSlot = screen.getByTestId('simulation-controls-slot');
+
+        expect(regexSlot.compareDocumentPosition(controlsSlot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(within(regexSlot).getByText('REGEX')).toBeInTheDocument();
+        expect(within(controlsSlot).getByText('CONTROLS')).toBeInTheDocument();
     });
 
     it('traz um inspetor tabulado para baixo quando o layout é bottom', () => {
