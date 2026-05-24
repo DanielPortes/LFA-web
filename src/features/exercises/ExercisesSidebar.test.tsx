@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ExercisesSidebar } from './ExercisesSidebar';
 
 describe('ExercisesSidebar', () => {
-    it('mostra o destino da busca e confirma com Enter', () => {
+    it('mostra o alvo da busca e confirma o filtro com Enter', () => {
         const onSearchSubmit = vi.fn();
 
         render(
@@ -42,12 +42,13 @@ describe('ExercisesSidebar', () => {
             />
         );
 
-        const targetCopy = screen.getByText('abre: Exercício 2 · Regex');
+        const targetCopy = screen.getByText('filtra: Exercício 2 · Regex');
         expect(targetCopy).toBeInTheDocument();
         expect(targetCopy).toHaveClass('search-target-copy');
         expect(targetCopy.closest('.search-target-shell')).toBeInTheDocument();
         expect(screen.getByText('1/1')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Regex/ })).toHaveClass('search-target-row');
+        expect(screen.getByText('alvo')).toBeInTheDocument();
 
         fireEvent.keyDown(screen.getByLabelText('Buscar exercício'), { key: 'Enter' });
 
@@ -90,5 +91,44 @@ describe('ExercisesSidebar', () => {
 
         expect(onMoveSearchResult).toHaveBeenNthCalledWith(1, 1);
         expect(onMoveSearchResult).toHaveBeenNthCalledWith(2, -1);
+    });
+
+    it('mostra categoria como alvo quando a busca bate no nome da categoria', () => {
+        render(
+            <ExercisesSidebar
+                sidebarId="exercicios-sidebar"
+                isSidebarOpen={false}
+                searchInputId="search-ex"
+                searchQuery="regex"
+                onSearchChange={vi.fn()}
+                onSearchSubmit={vi.fn()}
+                onMoveSearchResult={vi.fn()}
+                firstSearchResult={{
+                    categoryId: 'er',
+                    categoryLabel: 'Regex',
+                    exerciseId: null,
+                    question: 'Regex',
+                    resultCount: 1
+                }}
+                activeSearchResult={{
+                    categoryId: 'er',
+                    categoryLabel: 'Regex',
+                    exerciseId: null,
+                    question: 'Regex',
+                    resultCount: 1
+                }}
+                searchResultPosition={{ current: 1, total: 1 }}
+                progressPercent={20}
+                completedExercisesCount={2}
+                totalExercisesCount={10}
+                onResetExercises={vi.fn()}
+                items={[{ id: 'er', label: 'Regex', index: 5, total: 1, completed: 0 }]}
+                activeCategory="afd"
+                onSelectCategory={vi.fn()}
+            />
+        );
+
+        expect(screen.getByText('filtra: Regex')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Regex/ })).toHaveClass('search-target-row');
     });
 });

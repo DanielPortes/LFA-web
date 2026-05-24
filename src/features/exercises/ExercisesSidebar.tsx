@@ -56,8 +56,13 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
         ? `${searchResultPosition.current}/${searchResultPosition.total}`
         : '0';
     const searchTargetKey = visibleSearchResult
-        ? `${visibleSearchResult.categoryId}-${visibleSearchResult.exerciseId}-${searchResultPosition?.current ?? 0}`
+        ? `${visibleSearchResult.categoryId}-${visibleSearchResult.exerciseId ?? 'categoria'}-${searchResultPosition?.current ?? 0}`
         : `empty-${trimmedSearch}`;
+    const searchTargetLabel = visibleSearchResult
+        ? visibleSearchResult.exerciseId === null
+            ? `filtra: ${visibleSearchResult.categoryLabel}`
+            : `filtra: Exercício ${visibleSearchResult.exerciseId} · ${visibleSearchResult.categoryLabel}`
+        : 'Sem resultado para filtrar';
 
     return (
     <aside
@@ -152,9 +157,7 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
                                 Enter
                             </span>
                             <span className="search-target-copy min-w-0 flex-1 truncate font-medium text-secondary">
-                                {visibleSearchResult
-                                    ? `abre: Exercício ${visibleSearchResult.exerciseId} · ${visibleSearchResult.categoryLabel}`
-                                    : 'Sem destino para Enter'}
+                                {searchTargetLabel}
                             </span>
                             <span className="search-target-count flex h-6 flex-shrink-0 items-center rounded-lg border border-default bg-surface-1 px-2 font-mono font-bold text-secondary">
                                 {resultCountLabel}
@@ -208,7 +211,7 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
                             <span className="flex-1 truncate">{item.label}</span>
                             {isEnterTarget && (
                                 <span className="search-target-badge flex-shrink-0 rounded-full border border-ios-blue/25 bg-ios-blue/10 px-2 py-0.5 text-[0.65rem] font-black uppercase text-ios-blue">
-                                    Enter
+                                    alvo
                                 </span>
                             )}
                             <span className={`rounded-full border px-2 py-0.5 text-xs font-bold ${

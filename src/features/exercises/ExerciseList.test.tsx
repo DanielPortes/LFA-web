@@ -71,7 +71,7 @@ describe('ExerciseList', () => {
         fireEvent.click(screen.getByRole('button', { name: /Pistas \(2\)/i }));
         fireEvent.click(screen.getByRole('button', { name: /Apoio e gabarito/i }));
 
-        expect(screen.getByText('construction')).toBeInTheDocument();
+        expect(screen.getByText('Construção')).toBeInTheDocument();
         expect(screen.getByText('Estratégia')).toBeInTheDocument();
         expect(screen.getByText('Solução guiada')).toBeInTheDocument();
         expect(screen.getByText(/Construa um AFD/i).closest('[data-deferred-render="card"]')).not.toBeNull();

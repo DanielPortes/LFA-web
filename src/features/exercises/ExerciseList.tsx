@@ -14,6 +14,17 @@ import type { Exercicio } from '../../types';
 import type { ConverterData, ExerciseSolverStartOptions } from './types';
 import { ExerciseSupportPanel } from './ExerciseSupportPanel';
 
+const exercisePatternLabels: Record<string, string> = {
+    construction: 'Construção',
+    proof: 'Prova',
+    conversion: 'Conversão',
+    simulation: 'Simulação',
+    analysis: 'Análise',
+    design: 'Projeto'
+};
+
+const getExercisePatternLabel = (pattern: string) => exercisePatternLabels[pattern] ?? pattern;
+
 interface ExerciseListProps {
     activeCategory: string;
     activeCategoryLabel: string;
@@ -126,23 +137,28 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                             <h3 className="text-lg font-medium text-primary leading-relaxed pt-1">{exercise.pergunta}</h3>
                         </div>
 
-                        <div className="flex flex-wrap gap-3 mt-6 sm:mt-8 ml-0 sm:ml-14">
+                        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] font-bold text-secondary sm:ml-14">
                             {exercise.metadata && (
-                                <span className="badge border-default bg-surface-muted text-secondary">
-                                    {exercise.metadata.pattern}
+                                <span className="inline-flex items-center gap-1.5">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-current opacity-45" />
+                                    {getExercisePatternLabel(exercise.metadata.pattern)}
                                 </span>
                             )}
                             {exercise.estrategia && (
-                                <span className="badge gap-2 border-status-info bg-status-info-soft text-status-info">
+                                <span className="inline-flex items-center gap-1.5 text-status-info">
                                     <Brain size={12} />
                                     Estratégia
                                 </span>
                             )}
                             {exercise.guidedSolution && exercise.guidedSolution.length > 0 && (
-                                <span className="badge border-status-success bg-status-success-soft text-status-success">
+                                <span className="inline-flex items-center gap-1.5 text-status-success">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
                                     Solução guiada
                                 </span>
                             )}
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap gap-3 sm:ml-14">
                             <button
                                 onClick={() => onStartSolving(exercise.id)}
                                 className={`btn-icon px-4 py-2.5 rounded-xl text-[13px] font-bold gap-2 border transition-all

@@ -96,6 +96,12 @@ describe('useExerciseSelection', () => {
 
         expect(result.current.filteredExercises).toHaveLength(0);
         expect(result.current.filteredCategories.map((category) => category.id)).toEqual(['er']);
+        expect(result.current.firstSearchResult).toMatchObject({
+            categoryId: 'er',
+            categoryLabel: 'Regex',
+            exerciseId: null,
+            question: 'Regex'
+        });
 
         act(() => {
             result.current.setSidebarOpen(true);
@@ -108,6 +114,27 @@ describe('useExerciseSelection', () => {
         expect(result.current.activeCategory).toBe('er');
         expect(result.current.isSidebarOpen).toBe(false);
         expect(result.current.exercises).toHaveLength(1);
+    });
+
+    it('usa Enter em alvo de categoria para abrir a lista completa da categoria', () => {
+        const { result } = renderHook(() => useExerciseSelection({
+            exerciseDatabase,
+            initialCategoryId: 'afd',
+            setLastCategory: vi.fn()
+        }));
+
+        act(() => {
+            result.current.setSearchQuery('regex');
+        });
+
+        act(() => {
+            result.current.navigateToFirstSearchResult();
+        });
+
+        expect(result.current.activeCategory).toBe('er');
+        expect(result.current.searchQuery).toBe('');
+        expect(result.current.filteredExercises.map((exercise) => exercise.id)).toEqual([2]);
+        expect(result.current.solvingExercise).toBeNull();
     });
 
     it('busca também em estratégia e metadados pedagógicos', () => {
@@ -141,7 +168,7 @@ describe('useExerciseSelection', () => {
         expect(result.current.filteredCategories.map((category) => category.id)).toContain('afd');
     });
 
-    it('expõe o destino do Enter e abre o primeiro exercício encontrado mesmo em outra categoria', () => {
+    it('expõe o alvo do Enter e filtra a categoria encontrada sem abrir modal', () => {
         const setLastCategory = vi.fn();
         const onSelectionChange = vi.fn();
         const { result } = renderHook(() => useExerciseSelection({
@@ -168,15 +195,15 @@ describe('useExerciseSelection', () => {
         });
 
         expect(result.current.activeCategory).toBe('er');
-        expect(result.current.solvingExercise).toBe(2);
-        expect(result.current.currentExercise?.id).toBe(2);
-        expect(result.current.solverMode).toBe('regex');
+        expect(result.current.solvingExercise).toBeNull();
+        expect(result.current.currentExercise).toBeNull();
+        expect(result.current.filteredExercises.map((exercise) => exercise.id)).toEqual([2]);
         expect(result.current.searchQuery).toBe('sufixo obrigatório');
         expect(setLastCategory).toHaveBeenCalledWith('er');
-        expect(onSelectionChange).toHaveBeenCalledWith('er', 2);
+        expect(onSelectionChange).toHaveBeenCalledWith('er', null);
     });
 
-    it('alterna o destino da busca com as setas antes de abrir o exercício', () => {
+    it('alterna o alvo da busca com as setas antes de filtrar a lista', () => {
         const { result } = renderHook(() => useExerciseSelection({
             exerciseDatabase,
             initialCategoryId: 'afd',
@@ -201,7 +228,8 @@ describe('useExerciseSelection', () => {
             result.current.navigateToFirstSearchResult();
         });
 
-        expect(result.current.solvingExercise).toBe(5);
+        expect(result.current.solvingExercise).toBeNull();
+        expect(result.current.filteredExercises.map((exercise) => exercise.id)).toEqual([1, 5]);
         expect(result.current.searchQuery).toBe('construa afd');
     });
 

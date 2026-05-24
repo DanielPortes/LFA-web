@@ -18,7 +18,7 @@ type ExerciseSearchIndex = Record<string, Map<number, string>>;
 export interface ExerciseSearchResultPreview {
     categoryId: string;
     categoryLabel: string;
-    exerciseId: number;
+    exerciseId: number | null;
     question: string;
     resultCount: number;
 }
@@ -192,6 +192,19 @@ export const useExerciseSelection = ({
         for (const category of exerciseCategories) {
             const categoryExercises = exerciseDatabase[category.id] ?? [];
             const categoryIndex = exerciseSearchIndex[category.id] ?? new Map<number, string>();
+            const categoryLabelMatches = searchTokens.every((token) =>
+                normalizeExerciseSearch(category.label).includes(token)
+            );
+
+            if (categoryLabelMatches) {
+                matches.push({
+                    categoryId: category.id,
+                    categoryLabel: category.label,
+                    exerciseId: null,
+                    question: category.label,
+                    resultCount: 0
+                });
+            }
 
             for (const exercise of categoryExercises) {
                 const searchText = categoryIndex.get(exercise.id) ?? buildExerciseSearchText(exercise);
@@ -273,9 +286,18 @@ export const useExerciseSelection = ({
     const navigateToFirstSearchResult = useCallback(() => {
         if (!activeSearchResult) return;
 
-        startSolvingInCategory(activeSearchResult.categoryId, activeSearchResult.exerciseId);
+        setActiveCategory(activeSearchResult.categoryId);
+        setLastCategory(activeSearchResult.categoryId);
+        setSolvingExercise(null);
+        setUserAutomaton(null);
+        setSavedAttemptAutomaton(null);
+        setIsViewingAnswerAutomaton(false);
+        setShowExpected(false);
+        if (activeSearchResult.exerciseId === null) {
+            setSearchQuery('');
+        }
         setSidebarOpen(false);
-    }, [activeSearchResult, startSolvingInCategory]);
+    }, [activeSearchResult, setLastCategory]);
     const moveSearchResultSelection = useCallback((delta: number) => {
         if (searchResults.length === 0) return;
 
