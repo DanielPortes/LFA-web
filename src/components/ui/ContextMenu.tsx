@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { BaseProps } from './types';
 
 interface ContextMenuOption {
@@ -78,9 +79,10 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, options, onClose
         left: adjustedPos.x,
     };
 
-    return (
+    const menu = (
         <div
             ref={menuRef}
+            data-context-menu
             className={`fixed z-50 min-w-[180px] glass-panel p-1.5 rounded-xl shadow-apple-lg animate-scale-in flex flex-col gap-0.5 ${className}`}
             style={{ ...positionStyle, ...style }}
             onContextMenu={(e) => e.preventDefault()}
@@ -108,4 +110,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, options, onClose
             ))}
         </div>
     );
+
+    return createPortal(menu, document.body);
 };

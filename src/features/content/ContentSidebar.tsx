@@ -84,7 +84,10 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
             flex flex-col md:self-start
         `}
     >
-        <div className="render-lite-panel render-lite-shell glass-panel rounded-3xl min-w-0 flex flex-col overflow-hidden shadow-apple-md md:sticky md:top-0">
+        <div
+            data-content-sidebar-shell
+            className="render-lite-panel render-lite-shell glass-panel rounded-3xl min-w-0 flex flex-col overflow-hidden shadow-apple-md md:sticky md:top-0 md:h-[clamp(34rem,calc(100vh-6.5rem),64rem)]"
+        >
             <div className="sticky top-0 z-20 rounded-t-3xl border-b border-default bg-surface-1/80 p-6 backdrop-blur-md">
                 <div className="mb-3 flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-ios-green" />
@@ -199,7 +202,10 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 pb-6 custom-scrollbar md:overflow-visible">
+            <div
+                data-content-sidebar-list
+                className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-2 pb-6 custom-scrollbar md:min-h-[28rem]"
+            >
                 {filteredModules.map((module, modIdx) => (
                     <div key={module.id} className="mb-6 last:mb-0">
                         <div className="sticky top-0 z-10 flex items-center gap-3 rounded-lg border-b border-transparent bg-surface-1/90 px-4 py-3 backdrop-blur">
