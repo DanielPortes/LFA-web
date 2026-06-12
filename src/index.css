@@ -1735,6 +1735,11 @@ body::after {
     transition: box-shadow 180ms ease, border-color 180ms ease;
 }
 
+.home-hero--settling {
+    transition-duration: 520ms;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .home-hero--tilting {
     border-color: rgba(125, 211, 252, 0.36);
     box-shadow:
@@ -1743,14 +1748,25 @@ body::after {
 }
 
 .home-hero__scene {
+    min-height: inherit;
     transform: perspective(1400px) rotateX(0deg) rotateY(0deg);
     transform-style: preserve-3d;
     transition: transform 180ms ease;
     will-change: transform;
 }
 
-.home-hero--tilting .home-hero__scene {
+.home-hero--tilting .home-hero__scene,
+.home-hero--settling .home-hero__scene {
     transform: perspective(1400px) rotateX(var(--hero-rotate-x)) rotateY(var(--hero-rotate-y));
+}
+
+.home-hero--settling .home-hero__scene,
+.home-hero--settling .home-hero__base,
+.home-hero--settling .home-hero__grid,
+.home-hero--settling .home-hero__orb,
+.home-hero--settling .home-lab-card {
+    transition-duration: 520ms;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .home-hero__base {
@@ -1762,7 +1778,8 @@ body::after {
     transition: transform 180ms ease;
 }
 
-.home-hero--tilting .home-hero__base {
+.home-hero--tilting .home-hero__base,
+.home-hero--settling .home-hero__base {
     transform: translate3d(calc(var(--hero-depth-x) * -0.2), calc(var(--hero-depth-y) * -0.2), -24px) scale(1.04);
 }
 
@@ -1777,7 +1794,8 @@ body::after {
     transition: transform 180ms ease;
 }
 
-.home-hero--tilting .home-hero__grid {
+.home-hero--tilting .home-hero__grid,
+.home-hero--settling .home-hero__grid {
     transform: translate3d(calc(var(--hero-depth-x) * -0.3), calc(var(--hero-depth-y) * -0.3), -12px) scale(1.03);
 }
 
@@ -1788,7 +1806,8 @@ body::after {
     transition: transform 180ms ease;
 }
 
-.home-hero--tilting .home-hero__orb {
+.home-hero--tilting .home-hero__orb,
+.home-hero--settling .home-hero__orb {
     transform: translate3d(calc(var(--hero-depth-x) * 0.35), calc(var(--hero-depth-y) * 0.35), 16px);
 }
 
@@ -1822,7 +1841,8 @@ body::after {
     transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
 }
 
-.home-hero--tilting .home-lab-card {
+.home-hero--tilting .home-lab-card,
+.home-hero--settling .home-lab-card {
     border-color: rgba(191, 219, 254, 0.34);
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.055)),
@@ -1844,6 +1864,14 @@ body::after {
         0 38px 90px rgba(35, 91, 153, 0.24),
         0 16px 34px rgba(15, 23, 42, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.76);
+}
+
+.light .home-hero--settling {
+    border-color: rgba(255, 255, 255, 0.64);
+    box-shadow:
+        0 32px 76px rgba(35, 91, 153, 0.2),
+        0 12px 28px rgba(15, 23, 42, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .light .home-hero__base {

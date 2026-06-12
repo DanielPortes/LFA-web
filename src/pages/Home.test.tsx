@@ -1,10 +1,15 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { HomeSection } from './Home';
 
 describe('HomeSection', () => {
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
     it('mantém os três CTAs principais dentro do hero inicial', () => {
         const { container } = render(<HomeSection onNavigate={vi.fn()} />);
         const hero = container.querySelector('.home-hero') as HTMLElement;
@@ -34,6 +39,7 @@ describe('HomeSection', () => {
         fireEvent.pointerMove(hero, { clientX: 8, clientY: 250 });
 
         expect(hero).not.toHaveClass('home-hero--tilting');
+        expect(hero).not.toHaveClass('home-hero--settling');
         expect(hero.style.getPropertyValue('--hero-rotate-x')).toBe('0deg');
         expect(hero.style.getPropertyValue('--hero-rotate-y')).toBe('0deg');
         expect(hero.style.getPropertyValue('--hero-depth-x')).toBe('0px');
@@ -49,6 +55,8 @@ describe('HomeSection', () => {
 
         fireEvent.pointerLeave(hero);
 
+        expect(hero).not.toHaveClass('home-hero--tilting');
+        expect(hero).toHaveClass('home-hero--settling');
         expect(hero.style.getPropertyValue('--hero-rotate-x')).toBe('0deg');
         expect(hero.style.getPropertyValue('--hero-rotate-y')).toBe('0deg');
         expect(hero.style.getPropertyValue('--hero-depth-x')).toBe('0px');
@@ -58,9 +66,45 @@ describe('HomeSection', () => {
     it('mantém a área do hero estática e aplica o 3D em uma cena interna', () => {
         const { container } = render(<HomeSection onNavigate={vi.fn()} />);
         const hero = container.querySelector('.home-hero') as HTMLElement;
+        const scene = hero.querySelector('.home-hero__scene') as HTMLElement;
 
-        expect(hero.querySelector('.home-hero__scene')).toBeInTheDocument();
+        expect(scene).toBeInTheDocument();
+        expect(scene).not.toHaveClass('absolute');
+        expect(scene).not.toHaveClass('inset-0');
+        expect(scene).toHaveClass('relative', 'w-full');
         expect(hero.querySelector('.home-hero__scene .home-lab-card')).toBeInTheDocument();
+    });
+
+    it('mantém o retorno lento do hero antes de limpar o estado de animação', () => {
+        vi.useFakeTimers();
+
+        const { container } = render(<HomeSection onNavigate={vi.fn()} />);
+        const hero = container.querySelector('.home-hero') as HTMLElement;
+
+        vi.spyOn(hero, 'getBoundingClientRect').mockReturnValue({
+            x: 0,
+            y: 0,
+            width: 1000,
+            height: 500,
+            top: 0,
+            right: 1000,
+            bottom: 500,
+            left: 0,
+            toJSON: () => ({})
+        } as DOMRect);
+
+        fireEvent.pointerMove(hero, { clientX: 750, clientY: 125 });
+        fireEvent.pointerLeave(hero);
+
+        expect(hero).toHaveClass('home-hero--settling');
+
+        vi.advanceTimersByTime(519);
+        expect(hero).toHaveClass('home-hero--settling');
+
+        vi.advanceTimersByTime(1);
+        expect(hero).not.toHaveClass('home-hero--settling');
+
+        vi.useRealTimers();
     });
 
     it('exibe assinatura discreta no final da página com link do GitHub por ícone', () => {

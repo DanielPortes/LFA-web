@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useRef, type MutableRefObject, type PointerEvent as ReactPointerEvent } from 'react';
 import { BookOpen, ChevronRight, Code, Github, GraduationCap, Move, PenTool, Play } from 'lucide-react';
 import type { Tab } from '../types';
 
@@ -70,16 +70,41 @@ const HERO_ROTATE_X_FACTOR = 6;
 const HERO_ROTATE_Y_FACTOR = 8;
 const HERO_DEPTH_X_FACTOR = 12;
 const HERO_DEPTH_Y_FACTOR = 8;
+const HERO_SETTLE_MS = 520;
 
-const resetHeroTilt = (element: HTMLElement) => {
+const settleHeroTilt = (element: HTMLElement, timeoutRef: MutableRefObject<number | null>) => {
+    const wasAnimating = element.classList.contains('home-hero--tilting') || element.classList.contains('home-hero--settling');
+    if (!wasAnimating && !timeoutRef.current) {
+        element.style.setProperty('--hero-rotate-x', '0deg');
+        element.style.setProperty('--hero-rotate-y', '0deg');
+        element.style.setProperty('--hero-depth-x', '0px');
+        element.style.setProperty('--hero-depth-y', '0px');
+        return;
+    }
+
+    if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+    }
+
     element.classList.remove('home-hero--tilting');
+    element.classList.add('home-hero--settling');
     element.style.setProperty('--hero-rotate-x', '0deg');
     element.style.setProperty('--hero-rotate-y', '0deg');
     element.style.setProperty('--hero-depth-x', '0px');
     element.style.setProperty('--hero-depth-y', '0px');
+
+    timeoutRef.current = window.setTimeout(() => {
+        element.classList.remove('home-hero--settling');
+        timeoutRef.current = null;
+    }, HERO_SETTLE_MS);
 };
 
-const applyHeroTilt = (element: HTMLElement, clientX: number, clientY: number) => {
+const applyHeroTilt = (
+    element: HTMLElement,
+    clientX: number,
+    clientY: number,
+    timeoutRef: MutableRefObject<number | null>
+) => {
     const rect = element.getBoundingClientRect();
     if (!rect.width || !rect.height) {
         return;
@@ -92,8 +117,13 @@ const applyHeroTilt = (element: HTMLElement, clientX: number, clientY: number) =
         clientY <= rect.bottom - HERO_EDGE_GUARD_PX;
 
     if (!isInStableArea) {
-        resetHeroTilt(element);
+        settleHeroTilt(element, timeoutRef);
         return;
+    }
+
+    if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
     }
 
     const relativeX = (clientX - rect.left) / rect.width - 0.5;
@@ -104,6 +134,7 @@ const applyHeroTilt = (element: HTMLElement, clientX: number, clientY: number) =
     const depthY = Math.max(-4, Math.min(4, relativeY * HERO_DEPTH_Y_FACTOR));
 
     element.classList.add('home-hero--tilting');
+    element.classList.remove('home-hero--settling');
     element.style.setProperty('--hero-rotate-x', `${rotateX.toFixed(2)}deg`);
     element.style.setProperty('--hero-rotate-y', `${rotateY.toFixed(2)}deg`);
     element.style.setProperty('--hero-depth-x', `${depthX.toFixed(2)}px`);
@@ -112,6 +143,7 @@ const applyHeroTilt = (element: HTMLElement, clientX: number, clientY: number) =
 
 export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => {
     const heroRef = useRef<HTMLDivElement | null>(null);
+    const heroSettleTimeoutRef = useRef<number | null>(null);
 
     const handleHeroPointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
         if (event.pointerType && event.pointerType !== 'mouse') {
@@ -123,13 +155,13 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) 
             return;
         }
 
-        applyHeroTilt(hero, event.clientX, event.clientY);
+        applyHeroTilt(hero, event.clientX, event.clientY, heroSettleTimeoutRef);
     }, []);
 
     const handleHeroPointerLeave = useCallback(() => {
         const hero = heroRef.current;
         if (hero) {
-            resetHeroTilt(hero);
+            settleHeroTilt(hero, heroSettleTimeoutRef);
         }
     }, []);
 
@@ -152,15 +184,21 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) 
                 event.clientY <= rect.bottom;
 
             if (isInsideHero) {
-                applyHeroTilt(hero, event.clientX, event.clientY);
+                applyHeroTilt(hero, event.clientX, event.clientY, heroSettleTimeoutRef);
                 return;
             }
 
-            resetHeroTilt(hero);
+            settleHeroTilt(hero, heroSettleTimeoutRef);
         };
 
         window.addEventListener('pointermove', handleWindowPointerMove, { passive: true });
-        return () => window.removeEventListener('pointermove', handleWindowPointerMove);
+        return () => {
+            window.removeEventListener('pointermove', handleWindowPointerMove);
+            if (heroSettleTimeoutRef.current) {
+                window.clearTimeout(heroSettleTimeoutRef.current);
+                heroSettleTimeoutRef.current = null;
+            }
+        };
     }, []);
 
     return (
@@ -171,7 +209,7 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) 
             onPointerLeave={handleHeroPointerLeave}
             className="home-hero relative flex min-h-[300px] items-center overflow-hidden rounded-[24px] text-white shadow-apple-xl md:min-h-[340px] md:rounded-[28px]"
         >
-            <div className="home-hero__scene absolute inset-0 flex items-center overflow-hidden rounded-[inherit]">
+            <div className="home-hero__scene relative flex w-full items-center overflow-hidden rounded-[inherit]">
                 <div className="home-hero__base absolute inset-0" />
                 <div className="home-hero__grid absolute inset-0" />
                 <div className="home-hero__orb home-hero__orb--a absolute rounded-full" />
