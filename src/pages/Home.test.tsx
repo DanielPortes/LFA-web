@@ -15,6 +15,37 @@ describe('HomeSection', () => {
         expect(within(hero).getByRole('button', { name: 'Abrir simulador' })).toBeInTheDocument();
     });
 
+    it('inclina o hero com profundidade apenas enquanto o mouse está sobre ele', () => {
+        const { container } = render(<HomeSection onNavigate={vi.fn()} />);
+        const hero = container.querySelector('.home-hero') as HTMLElement;
+
+        vi.spyOn(hero, 'getBoundingClientRect').mockReturnValue({
+            x: 0,
+            y: 0,
+            width: 1000,
+            height: 500,
+            top: 0,
+            right: 1000,
+            bottom: 500,
+            left: 0,
+            toJSON: () => ({})
+        } as DOMRect);
+
+        fireEvent.pointerMove(hero, { clientX: 750, clientY: 125 });
+
+        expect(hero.style.getPropertyValue('--hero-rotate-x')).toBe('4.00deg');
+        expect(hero.style.getPropertyValue('--hero-rotate-y')).toBe('5.00deg');
+        expect(hero.style.getPropertyValue('--hero-depth-x')).toBe('8.00px');
+        expect(hero.style.getPropertyValue('--hero-depth-y')).toBe('-6.00px');
+
+        fireEvent.pointerLeave(hero);
+
+        expect(hero.style.getPropertyValue('--hero-rotate-x')).toBe('0deg');
+        expect(hero.style.getPropertyValue('--hero-rotate-y')).toBe('0deg');
+        expect(hero.style.getPropertyValue('--hero-depth-x')).toBe('0px');
+        expect(hero.style.getPropertyValue('--hero-depth-y')).toBe('0px');
+    });
+
     it('exibe assinatura discreta no final da página com link do GitHub por ícone', () => {
         render(<HomeSection onNavigate={vi.fn()} />);
 

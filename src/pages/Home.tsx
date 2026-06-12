@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import { BookOpen, ChevronRight, Code, Github, GraduationCap, Move, PenTool, Play } from 'lucide-react';
 import type { Tab } from '../types';
 
@@ -64,9 +65,95 @@ const studySignals = [
     }
 ] as const;
 
-export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => (
+const resetHeroTilt = (element: HTMLElement) => {
+    element.classList.remove('home-hero--tilting');
+    element.style.setProperty('--hero-rotate-x', '0deg');
+    element.style.setProperty('--hero-rotate-y', '0deg');
+    element.style.setProperty('--hero-depth-x', '0px');
+    element.style.setProperty('--hero-depth-y', '0px');
+};
+
+const applyHeroTilt = (element: HTMLElement, clientX: number, clientY: number) => {
+    const rect = element.getBoundingClientRect();
+    if (!rect.width || !rect.height) {
+        return;
+    }
+
+    const relativeX = (clientX - rect.left) / rect.width - 0.5;
+    const relativeY = (clientY - rect.top) / rect.height - 0.5;
+    const rotateX = Math.max(-8, Math.min(8, -relativeY * 16));
+    const rotateY = Math.max(-10, Math.min(10, relativeX * 20));
+    const depthX = Math.max(-14, Math.min(14, relativeX * 32));
+    const depthY = Math.max(-12, Math.min(12, relativeY * 24));
+
+    element.classList.add('home-hero--tilting');
+    element.style.setProperty('--hero-rotate-x', `${rotateX.toFixed(2)}deg`);
+    element.style.setProperty('--hero-rotate-y', `${rotateY.toFixed(2)}deg`);
+    element.style.setProperty('--hero-depth-x', `${depthX.toFixed(2)}px`);
+    element.style.setProperty('--hero-depth-y', `${depthY.toFixed(2)}px`);
+};
+
+export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => {
+    const heroRef = useRef<HTMLDivElement | null>(null);
+
+    const handleHeroPointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+        if (event.pointerType && event.pointerType !== 'mouse') {
+            return;
+        }
+
+        const hero = heroRef.current;
+        if (!hero) {
+            return;
+        }
+
+        applyHeroTilt(hero, event.clientX, event.clientY);
+    }, []);
+
+    const handleHeroPointerLeave = useCallback(() => {
+        const hero = heroRef.current;
+        if (hero) {
+            resetHeroTilt(hero);
+        }
+    }, []);
+
+    useEffect(() => {
+        const handleWindowPointerMove = (event: PointerEvent) => {
+            if (event.pointerType && event.pointerType !== 'mouse') {
+                return;
+            }
+
+            const hero = heroRef.current;
+            if (!hero) {
+                return;
+            }
+
+            const rect = hero.getBoundingClientRect();
+            const isInsideHero =
+                event.clientX >= rect.left &&
+                event.clientX <= rect.right &&
+                event.clientY >= rect.top &&
+                event.clientY <= rect.bottom;
+
+            if (isInsideHero) {
+                applyHeroTilt(hero, event.clientX, event.clientY);
+                return;
+            }
+
+            resetHeroTilt(hero);
+        };
+
+        window.addEventListener('pointermove', handleWindowPointerMove, { passive: true });
+        return () => window.removeEventListener('pointermove', handleWindowPointerMove);
+    }, []);
+
+    return (
     <div className="home-page render-lite-shell animate-fade-in space-y-6 pb-8 md:space-y-8">
-        <div className="home-hero relative flex min-h-[300px] items-center overflow-hidden rounded-[24px] text-white shadow-apple-xl md:min-h-[340px] md:rounded-[28px]">
+        <div
+            ref={heroRef}
+            onPointerMove={handleHeroPointerMove}
+            onPointerLeave={handleHeroPointerLeave}
+            className="home-hero relative flex min-h-[300px] items-center overflow-hidden rounded-[24px] text-white shadow-apple-xl md:min-h-[340px] md:rounded-[28px]"
+        >
             <div className="home-hero__base absolute inset-0" />
             <div className="home-hero__grid absolute inset-0" />
             <div className="home-hero__orb home-hero__orb--a absolute rounded-full" />
@@ -238,4 +325,5 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) 
             </div>
         </footer>
     </div>
-);
+    );
+};
