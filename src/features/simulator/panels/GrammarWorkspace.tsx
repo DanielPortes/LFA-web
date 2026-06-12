@@ -408,8 +408,8 @@ export const GrammarWorkspace: React.FC<GrammarWorkspaceProps> = ({
     }, []);
 
     return (
-        <div data-testid="grammar-workspace" className="flex-1 min-h-0 px-3 pb-3 sm:px-4 sm:pb-4 lg:px-5 lg:pb-5 2xl:px-6 2xl:pb-6">
-            <div className="relative h-full min-h-[calc(100dvh-92px)] overflow-hidden rounded-[28px] border border-default bg-canvas shadow-apple-xl sm:min-h-[calc(100dvh-104px)] lg:min-h-[calc(100dvh-116px)]">
+        <div data-testid="grammar-workspace" className="flex h-full min-h-0 flex-1 px-3 pb-3 sm:px-4 sm:pb-4 lg:px-5 lg:pb-5 2xl:px-6 2xl:pb-6">
+            <div className="relative h-full min-h-0 w-full overflow-hidden rounded-[28px] border border-default bg-canvas shadow-apple-xl">
                 {!isDesktopViewport && railOpen && (
                     <button
                         type="button"
@@ -535,21 +535,41 @@ export const GrammarWorkspace: React.FC<GrammarWorkspaceProps> = ({
                             </div>
                         ) : (
                             <div data-testid="grammar-empty-stage" className="grid h-full min-h-[360px] place-items-center px-4 py-8">
-                                <div className="max-w-md rounded-[24px] border border-default bg-surface-1/90 px-7 py-8 text-center shadow-apple-lg">
+                                <div className="max-w-lg rounded-[24px] border border-default bg-surface-1/90 px-7 py-8 text-center shadow-apple-lg">
                                     <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-[20px] bg-ios-purple/12 text-ios-purple">
                                         <FileText size={28} />
                                     </div>
                                     <h2 className="text-xl font-black text-primary">Pronto para derivar</h2>
                                     <p className="mt-2 text-sm leading-relaxed text-secondary">
-                                        Edite as regras, informe a palavra e execute a derivação.
+                                        Siga o fluxo: editar regras, escolher exemplo, digitar palavra, derivar e ler por que a palavra foi aceita ou rejeitada.
                                     </p>
+                                    <div className="mt-5 grid gap-2 text-left text-xs font-semibold text-secondary sm:grid-cols-2">
+                                        {['Editar regras', 'Escolher exemplo', 'Digitar palavra', 'Derivar e revisar passos'].map((step, index) => (
+                                            <div key={step} className="rounded-2xl border border-default bg-surface-2/70 px-3 py-2">
+                                                <span className="mr-2 font-mono text-ios-purple">{index + 1}</span>
+                                                {step}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {!isDesktopViewport && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setRailOpen(true)}
+                                            className="mt-5 rounded-full bg-ios-purple px-4 py-2 text-xs font-black text-white shadow-lg"
+                                        >
+                                            Editar regras
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         )}
                     </main>
                 </div>
 
-                <div className="pointer-events-none absolute inset-x-4 bottom-4 z-30">
+                <div
+                    data-testid="grammar-derivation-dock"
+                    className="pointer-events-none absolute inset-x-4 bottom-4 z-30 lg:left-[calc(360px+1rem)] xl:left-[calc(380px+1rem)]"
+                >
                     <div className="pointer-events-auto mx-auto w-full max-w-[820px]">
                         <div className="glass-card flex flex-col gap-2 rounded-[24px] border border-default/80 bg-surface-1/95 p-2 shadow-apple-xl lg:flex-row lg:items-center">
                             <div className="flex min-h-11 flex-1 items-center gap-2 rounded-[20px] border border-default bg-surface-2/70 px-3 py-2 shadow-inner">

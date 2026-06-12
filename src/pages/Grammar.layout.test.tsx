@@ -37,6 +37,12 @@ describe('GrammarPage layout', () => {
             expect(screen.getByRole('button', { name: /Derivar/i })).toBeInTheDocument();
             expect(screen.getByLabelText('Palavra a ser derivada')).toBeInTheDocument();
             expect(screen.queryByText('Entrada vazia representa ε.')).not.toBeInTheDocument();
+
+            const dock = screen.getByTestId('grammar-derivation-dock');
+            if (width >= 1024) {
+                expect(dock).toHaveClass('lg:left-[calc(360px+1rem)]');
+                expect(dock).toHaveClass('xl:left-[calc(380px+1rem)]');
+            }
         });
     });
 });
