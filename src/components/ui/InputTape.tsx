@@ -49,7 +49,7 @@ export const InputTape: React.FC<InputTapeProps> = ({
                             isProcessed
                                 ? 'bg-status-success-soft border-status-success text-status-success'
                                 : isCurrent
-                                    ? 'bg-status-info-soft border-status-info text-status-info ring-2 ring-ios-blue/30'
+                                    ? 'motion-cell-focus bg-status-info-soft border-status-info text-status-info ring-2 ring-ios-blue/30'
                                     : 'bg-surface-muted border-default text-secondary'
                         }`}
                     >

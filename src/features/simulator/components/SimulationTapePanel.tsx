@@ -168,7 +168,7 @@ export const SimulationTapePanel: React.FC<SimulationTapePanelProps> = ({
                 />
             </div>
         ) : (
-            <div className="rounded-2xl border border-dashed border-default bg-surface-2/60 px-4 py-3 text-center text-xs font-semibold text-secondary">
+            <div className="motion-empty-state rounded-2xl border border-dashed border-default bg-surface-2/60 px-4 py-3 text-center text-xs font-semibold text-secondary">
                 Entrada vazia: acompanhe a pilha inicial e transições ε.
             </div>
         )}

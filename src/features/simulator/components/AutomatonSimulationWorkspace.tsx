@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Sparkles } from 'lucide-react';
+import { ArrowLeft, LayoutTemplate, PlusCircle, Sparkles } from 'lucide-react';
 import { regexToNfa } from '../../../utils/conversions';
 import { inferAutomatonKind } from '../../../utils/automatonKind';
 import type { AutomatoData } from '../../../types';
@@ -53,6 +53,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
     const {
         inputTokenization,
         inputSeparator,
+        simulatorLayout,
         setInputTokenization,
         setInputSeparator
     } = useUiSettings();
@@ -84,7 +85,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
         setRegexImport('');
         setRegexImportError(null);
         setShowRegexImport(false);
-        setInspectorOpen(effectiveData.tipo === 'AP');
+        setInspectorOpen(false);
         setHasRequestedSimulationView(false);
         requestAnimationFrame(() => requestCanvasCenter());
     }, [effectiveData.tipo, requestCanvasCenter, resetToken]);
@@ -103,6 +104,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
         isPlaying,
         speed,
         history,
+        currentHistoryIndex,
         activeTransitions,
         inputTokens,
         alphabet,
@@ -118,7 +120,8 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
         setIsPlaying,
         resetSimulation,
         step,
-        stepBack
+        stepBack,
+        goToHistoryStep
     } = useAutomatonSimulation(
         effectiveData,
         inputString,
@@ -142,14 +145,16 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
 
     useEffect(() => {
         if (isPda) {
-            setInspectorOpen(true);
+            setInspectorOpen(false);
         }
     }, [isPda]);
 
     const revealSimulationView = useCallback(() => {
-        setInspectorOpen(true);
+        if (!isPda) {
+            setInspectorOpen(true);
+        }
         setHasRequestedSimulationView(true);
-    }, []);
+    }, [isPda]);
 
     const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         setHasRequestedSimulationView(false);
@@ -195,6 +200,38 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
             setRegexImportError('Regex inválida');
         }
     }, [addToast, onChange, regexImport, requestCanvasCenter]);
+
+    const handleCreateFirstState = useCallback(() => {
+        onChange({
+            tipo: 'AFD',
+            descricao: 'Primeiro autômato',
+            estados: [
+                { id: 'q0', label: 'q0', x: 320, y: 240, isInicial: true, isFinal: false }
+            ],
+            transicoes: []
+        });
+        requestAnimationFrame(() => requestCanvasCenter());
+        addToast('Primeiro estado criado.', 'success');
+    }, [addToast, onChange, requestCanvasCenter]);
+
+    const handleLoadBeginnerTemplate = useCallback(() => {
+        onChange({
+            tipo: 'AFD',
+            descricao: 'Template: termina em a',
+            estados: [
+                { id: 'q0', label: 'não termina em a', x: 220, y: 240, isInicial: true, isFinal: false },
+                { id: 'q1', label: 'termina em a', x: 460, y: 240, isInicial: false, isFinal: true },
+            ],
+            transicoes: [
+                { id: 't1', de: 'q0', para: 'q1', simbolo: 'a', curvatura: 0 },
+                { id: 't2', de: 'q0', para: 'q0', simbolo: 'b', curvatura: -35 },
+                { id: 't3', de: 'q1', para: 'q1', simbolo: 'a', curvatura: -35 },
+                { id: 't4', de: 'q1', para: 'q0', simbolo: 'b', curvatura: 35 },
+            ]
+        });
+        requestAnimationFrame(() => requestCanvasCenter());
+        addToast('Template inicial carregado.', 'success');
+    }, [addToast, onChange, requestCanvasCenter]);
 
     const canStartSimulation = !hasInvalidInput && (inputTokens.length === 0 || alphabet.length > 0 || isTuring || isAll);
 
@@ -406,8 +443,10 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
         <SimulationHistoryPanel
             showDetails={inspectorOpen}
             history={history}
+            currentStepIndex={currentHistoryIndex}
             alphabet={alphabet}
             formatStateList={formatStateList}
+            onSelectStep={goToHistoryStep}
         />
     );
 
@@ -426,7 +465,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
             isPlaying={isPlaying}
             canPlay={canPlay}
             canStepForward={canStepForward}
-            historyLength={history.length}
+            historyLength={Math.max(0, currentHistoryIndex + 1)}
             speed={speed}
             simulationState={simulationState}
             hasSimulationProgress={hasSimulationProgress}
@@ -465,10 +504,17 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
         />
     );
 
-    const hasSideInspector = isDesktopViewport && inspectorOpen && Boolean(disableReason || (!isPda && (history.length > 1 || hasSimulationProgress)));
+    const useDesktopInspector = isDesktopViewport && simulatorLayout !== 'bottom';
+    const hasSideInspector = useDesktopInspector && inspectorOpen;
     const showSimulationReadout = isPda
         ? hasRequestedSimulationView || hasSimulationProgress
         : inputTokens.length > 0 || isTuring || hasRequestedSimulationView || hasSimulationProgress;
+    const floatingStackPanel = isDesktopViewport && isPda && showSimulationReadout && !disableReason
+        ? nativeSidePanel
+        : null;
+    const dockStackPanel = !isDesktopViewport && isPda
+        ? nativeSidePanel
+        : null;
 
     return (
         <>
@@ -480,7 +526,7 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
                 }`}
             </div>
             <SimulationDock
-                desktopInspector={isDesktopViewport}
+                desktopInspector={useDesktopInspector}
                 inspectorOpen={inspectorOpen}
                 onCloseInspector={() => setInspectorOpen(false)}
                 regexImportPanel={regexImportPanel}
@@ -488,7 +534,8 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
                 detailsPanel={detailsPanel}
                 tapePanel={tapePanel}
                 nativeTapePanel={nativeTapePanel}
-                nativeSidePanel={nativeSidePanel}
+                nativeSidePanel={dockStackPanel}
+                floatingSidePanel={floatingStackPanel}
                 controlsBar={controlsBar}
                 disableReason={disableReason}
                 isPda={isPda}
@@ -496,27 +543,70 @@ export const AutomatonSimulationWorkspace: React.FC<AutomatonSimulationWorkspace
                 showDetailsPanel={history.length > 1 || hasSimulationProgress}
                 showTapePanel={showSimulationReadout}
             >
-                {({ rightDock, bottomDock }) => (
+                {({ rightDock, bottomDock, floatingDock }) => (
                     <AutomatonWorkspace
                         variant={variant}
                         editor={(
-                            <AutomatonEditor
-                                data={effectiveData}
-                                onChange={onChange}
-                                activeStates={displayedSimulationState?.activeStates}
-                                activeTransitions={activeTransitions}
-                                readOnly={hasSimulationProgress}
-                                viewState={viewState}
-                                onViewStateChange={handleViewStateChange}
-                                compact
-                                compactVariant="workspace"
-                                fitRequestToken={fitRequestToken}
-                                hideCompactInspectorLauncher={hasSideInspector}
-                            />
+                            <>
+                                <AutomatonEditor
+                                    data={effectiveData}
+                                    onChange={onChange}
+                                    activeStates={displayedSimulationState?.activeStates}
+                                    activeTransitions={activeTransitions}
+                                    readOnly={hasSimulationProgress}
+                                    viewState={viewState}
+                                    onViewStateChange={handleViewStateChange}
+                                    compact
+                                    compactVariant="workspace"
+                                    fitRequestToken={fitRequestToken}
+                                    hideCompactInspectorLauncher={hasSideInspector}
+                                />
+                                {effectiveData.estados.length === 0 && (
+                                    <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center px-4 pb-32 pt-24">
+                                        <section className="pointer-events-auto w-full max-w-xl rounded-[24px] border border-default bg-surface-1/94 p-5 text-center shadow-apple-xl backdrop-blur-2xl sm:p-6">
+                                            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[20px] bg-ios-blue/12 text-ios-blue">
+                                                <PlusCircle size={28} />
+                                            </div>
+                                            <div className="ui-kicker text-secondary">Simulador vazio</div>
+                                            <h2 className="mt-2 text-xl font-black text-primary">Escolha como começar</h2>
+                                            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-secondary">
+                                                Crie um primeiro estado, carregue um exemplo simples ou importe uma expressão regular para gerar um AFN.
+                                            </p>
+                                            <div className="mt-5 grid gap-2 sm:grid-cols-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCreateFirstState}
+                                                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-ios-blue px-3 text-xs font-black text-white shadow-lg shadow-ios-blue/20 transition-colors hover:opacity-90"
+                                                >
+                                                    <PlusCircle size={15} />
+                                                    Criar primeiro estado
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleLoadBeginnerTemplate}
+                                                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-default bg-surface-2 px-3 text-xs font-black text-primary transition-colors hover:bg-surface-hover"
+                                                >
+                                                    <LayoutTemplate size={15} />
+                                                    Começar por template
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowRegexImport(true)}
+                                                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-ios-purple/25 bg-ios-purple/10 px-3 text-xs font-black text-ios-purple transition-colors hover:bg-ios-purple/15"
+                                                >
+                                                    <Sparkles size={15} />
+                                                    Importar Regex
+                                                </button>
+                                            </div>
+                                        </section>
+                                    </div>
+                                )}
+                            </>
                         )}
                         topBar={topBar}
                         showRightDock={hasSideInspector}
                         rightDock={rightDock}
+                        floatingDock={floatingDock}
                         bottomDock={bottomDock}
                     />
                 )}

@@ -55,7 +55,7 @@ export const TuringTape: React.FC<TuringTapeProps> = ({
                                 w-12 h-12 flex-shrink-0 rounded-md border flex items-center justify-center text-lg font-mono font-bold
                                 transition-all duration-200
                                 ${isHead
-                                    ? 'bg-surface-soft text-primary border-ios-purple/50 scale-100 z-10'
+                                    ? 'motion-cell-focus bg-surface-soft text-primary border-ios-purple/50 scale-100 z-10'
                                     : isBound
                                         ? 'bg-surface-soft text-primary border-ios-blue/40 opacity-80 scale-95'
                                         : 'bg-surface-muted text-secondary border-default opacity-70 scale-90'

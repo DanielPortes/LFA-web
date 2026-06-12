@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '../components/ui';
 import { UiSettingsProvider } from '../hooks/UiSettingsContext';
@@ -49,6 +49,60 @@ describe('SimulatorPage layout', () => {
             expect(screen.getByText('Simulação e diagnóstico')).toBeInTheDocument();
             expect(screen.getByText(/Defina o alfabeto de entrada no autômato/)).toBeInTheDocument();
         });
+    });
+
+    it('mostra ações centrais quando o simulador está vazio', async () => {
+        mockAnimationFrames();
+        mockResizeObserver();
+        mockViewport({ width: 1280, height: 800 });
+
+        await act(async () => {
+            render(
+                <UiSettingsProvider>
+                    <ToastProvider>
+                        <SimulatorPage />
+                    </ToastProvider>
+                </UiSettingsProvider>
+            );
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+
+        expect(screen.getByText('Escolha como começar')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Criar primeiro estado' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Começar por template' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Importar Regex' })).toBeInTheDocument();
+    });
+
+    it('respeita a preferência de layout inferior do simulador', async () => {
+        mockAnimationFrames();
+        mockResizeObserver();
+        mockViewport({ width: 1280, height: 800 });
+        localStorage.setItem('lfa-ui-settings', JSON.stringify({
+            simulatorLayout: 'bottom',
+            inputTokenization: 'auto',
+            inputSeparator: ' '
+        }));
+
+        await act(async () => {
+            render(
+                <UiSettingsProvider>
+                    <ToastProvider>
+                        <SimulatorPage initialData={simpleDFA} />
+                    </ToastProvider>
+                </UiSettingsProvider>
+            );
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+
+        fireEvent.change(screen.getByPlaceholderText('Digite a entrada para o autômato...'), {
+            target: { value: 'ab' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Abrir painel de diagnóstico da simulação' }));
+
+        expect(screen.getByText('Simulação e diagnóstico')).toBeInTheDocument();
+        expect(screen.queryByTestId('native-simulation-readout')).not.toBeInTheDocument();
     });
 
     it('mantém retorno claro quando o simulador foi aberto a partir de um exercício', async () => {
@@ -172,7 +226,7 @@ describe('SimulatorPage layout', () => {
         expect(emptyInputNotice.closest('.opacity-0')).toBeNull();
     });
 
-    it('mantém a pilha visível no inspetor quando o aluno testa um AP', async () => {
+    it('mantém a pilha do AP em um widget flutuante separado do player no desktop', async () => {
         mockAnimationFrames();
         mockResizeObserver();
         mockViewport({ width: 1280, height: 800 });
@@ -189,16 +243,26 @@ describe('SimulatorPage layout', () => {
             await Promise.resolve();
         });
 
+        fireEvent.change(screen.getByPlaceholderText('Digite a entrada para o autômato...'), {
+            target: { value: 'aabb' },
+        });
         fireEvent.click(screen.getByRole('button', { name: 'Iniciar simulação' }));
 
-        const stackWidget = screen.getByTestId('pda-stack-widget');
+        expect(screen.queryByText('Simulação e diagnóstico')).not.toBeInTheDocument();
+
+        const floatingDock = screen.getByTestId('simulator-floating-dock');
+        const stackWidget = within(floatingDock).getByTestId('pda-stack-widget');
+        expect(floatingDock).toHaveClass('bottom-32');
+        expect(floatingDock).not.toHaveClass('top-1/2');
         expect(stackWidget).toBeVisible();
         expect(stackWidget).toHaveClass('bg-transparent');
         expect(stackWidget).not.toHaveClass('border');
         expect(stackWidget.closest('.opacity-0')).toBeNull();
         expect(screen.queryByRole('button', { name: 'Alertas' })).not.toBeInTheDocument();
         expect(screen.queryByText(/AP:/)).not.toBeInTheDocument();
-        expect(screen.queryByTestId('pda-input-rail')).not.toBeInTheDocument();
+        expect(screen.getByTestId('pda-input-rail')).toBeInTheDocument();
+        expect(within(screen.getByTestId('pda-player-row')).queryByTestId('pda-stack-widget')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('pda-stack-corner-slot')).not.toBeInTheDocument();
     });
 
     it('esconde a fita do AP ao reiniciar ou editar antes de iniciar novamente', async () => {

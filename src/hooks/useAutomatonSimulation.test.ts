@@ -93,7 +93,8 @@ describe('useAutomatonSimulation (Turing history controls)', () => {
         });
 
         expect(result.current.simulationState?.activeStates).toEqual(['q0']);
-        expect(result.current.history).toHaveLength(1);
+        expect(result.current.history).toHaveLength(3);
+        expect(result.current.currentHistoryIndex).toBe(0);
 
         let replayResult: { finished: boolean; accepted?: boolean } | undefined;
         act(() => {
@@ -103,6 +104,49 @@ describe('useAutomatonSimulation (Turing history controls)', () => {
         expect(replayResult?.finished).toBe(false);
         expect(result.current.simulationState?.activeStates).toEqual(['q1']);
         expect(result.current.simulationState?.status).toBe('running');
+    });
+
+    it('jumps directly to a history step and keeps the replay path valid', () => {
+        const { result } = renderHook(() =>
+            useAutomatonSimulation(
+                replayableTuringMachine,
+                '',
+                tokenization,
+                { turingMaxSteps: 32, turingDetectLoops: true }
+            )
+        );
+
+        act(() => {
+            result.current.resetSimulation();
+        });
+        act(() => {
+            result.current.step();
+        });
+        act(() => {
+            result.current.step();
+        });
+
+        expect(result.current.simulationState?.activeStates).toEqual(['q2']);
+        expect(result.current.history).toHaveLength(3);
+
+        act(() => {
+            result.current.goToHistoryStep(1);
+        });
+
+        expect(result.current.simulationState?.activeStates).toEqual(['q1']);
+        expect(result.current.history).toHaveLength(3);
+        expect(result.current.currentHistoryIndex).toBe(1);
+
+        let replayResult: { finished: boolean; accepted?: boolean } | undefined;
+        act(() => {
+            replayResult = result.current.step();
+        });
+
+        expect(replayResult?.finished).toBe(false);
+        expect(result.current.simulationState?.activeStates).toEqual(['q2']);
+        expect(result.current.simulationState?.status).toBe('running');
+        expect(result.current.history).toHaveLength(3);
+        expect(result.current.currentHistoryIndex).toBe(2);
     });
 });
 

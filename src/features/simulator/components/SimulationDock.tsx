@@ -12,13 +12,14 @@ interface SimulationDockProps {
     tapePanel: React.ReactNode;
     nativeTapePanel?: React.ReactNode;
     nativeSidePanel?: React.ReactNode;
+    floatingSidePanel?: React.ReactNode;
     controlsBar: React.ReactNode;
     disableReason: string | null;
     isPda: boolean;
     showWarningsPanel: boolean;
     showDetailsPanel: boolean;
     showTapePanel: boolean;
-    children: (slots: { rightDock: React.ReactNode; bottomDock: React.ReactNode }) => React.ReactElement;
+    children: (slots: { rightDock: React.ReactNode; bottomDock: React.ReactNode; floatingDock: React.ReactNode }) => React.ReactElement;
 }
 
 export const SimulationDock: React.FC<SimulationDockProps> = ({
@@ -31,6 +32,7 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
     tapePanel,
     nativeTapePanel,
     nativeSidePanel,
+    floatingSidePanel,
     controlsBar,
     disableReason,
     isPda,
@@ -39,11 +41,21 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
     showTapePanel,
     children,
 }) => {
-    const showNativeReadout = desktopInspector && inspectorOpen && showTapePanel && !showWarningsPanel && (isPda || !showDetailsPanel);
+    const hasFloatingPdaStack = isPda && Boolean(floatingSidePanel);
+    const showPdaNativeReadout = isPda && showTapePanel && !showWarningsPanel;
+    const showNonPdaNativeReadout = !isPda && desktopInspector && inspectorOpen && showTapePanel && !showWarningsPanel && !showDetailsPanel;
+    const showNativeReadout = showPdaNativeReadout || showNonPdaNativeReadout;
     const nativeReadoutPanel = nativeTapePanel ?? tapePanel;
+    const hasInspectorContent = showWarningsPanel || showDetailsPanel || (!hasFloatingPdaStack && showTapePanel);
+    const showEmptyInspector = inspectorOpen && !showNonPdaNativeReadout && !hasInspectorContent && !showTapePanel;
+    const preferredInspectorItemId = disableReason || (hasFloatingPdaStack && showWarningsPanel)
+        ? 'warnings'
+        : hasFloatingPdaStack && showDetailsPanel
+            ? 'history'
+            : 'tape';
     const inspectorPanel = (
         <SimulationInspectorPanel
-            preferredItemId={disableReason ? 'warnings' : 'tape'}
+            preferredItemId={preferredInspectorItemId}
             emptyState={(
                 <div className="rounded-[22px] border border-dashed border-default bg-surface-2/60 p-4 text-sm leading-relaxed text-secondary">
                     Digite uma entrada e avance a simulação para ver fita, estados ativos e histórico de passos.
@@ -53,7 +65,7 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
                 {
                     id: 'tape',
                     label: isPda ? 'Visualização' : 'Fita',
-                    content: showTapePanel ? tapePanel : null,
+                    content: showTapePanel && !hasFloatingPdaStack ? tapePanel : null,
                 },
                 {
                     id: 'warnings',
@@ -69,7 +81,7 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
         />
     );
 
-    const inspectorShell = inspectorOpen && !showNativeReadout ? (
+    const inspectorShell = inspectorOpen && (hasInspectorContent || showEmptyInspector) && !showNonPdaNativeReadout ? (
         <section
             data-testid="simulation-inspector-shell"
             className={`flex min-h-0 flex-col rounded-[24px] border border-default/45 bg-surface-1/35 shadow-none backdrop-blur-sm ${
@@ -99,6 +111,11 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
     ) : null;
 
     const rightDock = desktopInspector ? inspectorShell : null;
+    const floatingDock = hasFloatingPdaStack ? (
+        <div data-testid="pda-floating-stack-slot">
+            {floatingSidePanel}
+        </div>
+    ) : null;
 
     const bottomDock = (
         <div className="space-y-3">
@@ -107,8 +124,8 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
                     {inspectorShell}
                 </div>
             )}
-            <div className="relative mx-auto flex w-full max-w-[1040px] flex-col gap-2 pt-10">
-                <div data-testid="regex-import-slot" className="pointer-events-auto absolute bottom-[4.75rem] right-0 z-10 flex justify-end">
+            <div className="relative mx-auto flex w-full max-w-[1040px] flex-col gap-2 pt-14 sm:pt-10">
+                <div data-testid="regex-import-slot" className="pointer-events-auto absolute right-0 top-0 z-10 flex justify-end sm:bottom-[4.75rem] sm:top-auto">
                     {regexImportPanel}
                 </div>
                 {showNativeReadout && !isPda && (
@@ -116,7 +133,7 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
                         {nativeReadoutPanel}
                     </div>
                 )}
-                {showNativeReadout && isPda ? (
+                {showPdaNativeReadout ? (
                     <>
                         <div data-testid="pda-native-readout-slot" className="pointer-events-auto mx-auto flex min-h-10 w-full max-w-[760px] items-center justify-center">
                             {nativeReadoutPanel}
@@ -126,7 +143,7 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
                                 {controlsBar}
                             </div>
                         </div>
-                        {nativeSidePanel && (
+                        {!desktopInspector && nativeSidePanel && (
                             <div data-testid="pda-stack-corner-slot" className="pointer-events-auto absolute bottom-0 right-0 translate-x-[calc(100%+0.75rem)]">
                                 {nativeSidePanel}
                             </div>
@@ -141,5 +158,5 @@ export const SimulationDock: React.FC<SimulationDockProps> = ({
         </div>
     );
 
-    return children({ rightDock, bottomDock });
+    return children({ rightDock, bottomDock, floatingDock });
 };

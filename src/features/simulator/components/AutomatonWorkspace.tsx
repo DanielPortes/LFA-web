@@ -4,6 +4,7 @@ interface AutomatonWorkspaceProps {
     editor: React.ReactNode;
     topBar: React.ReactNode;
     rightDock?: React.ReactNode;
+    floatingDock?: React.ReactNode;
     bottomDock: React.ReactNode;
     showRightDock: boolean;
     variant?: 'page' | 'modal';
@@ -13,6 +14,7 @@ export const AutomatonWorkspace: React.FC<AutomatonWorkspaceProps> = ({
     editor,
     topBar,
     rightDock,
+    floatingDock,
     bottomDock,
     showRightDock,
     variant = 'page'
@@ -42,6 +44,17 @@ export const AutomatonWorkspace: React.FC<AutomatonWorkspaceProps> = ({
                 <aside className="pointer-events-none absolute bottom-4 right-4 top-4 z-30 hidden md:block">
                     <div className="pointer-events-auto h-full max-h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
                         {rightDock}
+                    </div>
+                </aside>
+            )}
+
+            {floatingDock && (
+                <aside
+                    data-testid="simulator-floating-dock"
+                    className="pointer-events-none absolute bottom-32 right-6 z-30 hidden lg:block"
+                >
+                    <div className="pointer-events-auto">
+                        {floatingDock}
                     </div>
                 </aside>
             )}

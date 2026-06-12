@@ -5,8 +5,10 @@ import { History } from 'lucide-react';
 interface SimulationHistoryPanelProps {
     showDetails: boolean;
     history: SimulationStep[];
+    currentStepIndex?: number;
     alphabet: string[];
     formatStateList: (ids: string[] | undefined) => string;
+    onSelectStep?: (index: number) => void;
 }
 
 const STATUS_LABELS: Record<SimulationStep['status'], string> = {
@@ -18,19 +20,27 @@ const STATUS_LABELS: Record<SimulationStep['status'], string> = {
 export const SimulationHistoryPanel: React.FC<SimulationHistoryPanelProps> = ({
     showDetails,
     history,
+    currentStepIndex: currentStepIndexProp,
     alphabet,
     formatStateList,
+    onSelectStep,
 }) => {
     if (!showDetails) return null;
+    const currentStepIndex = currentStepIndexProp !== undefined && history.length > 0
+        ? Math.min(Math.max(currentStepIndexProp, 0), history.length - 1)
+        : Math.max(0, history.length - 1);
 
     return (
-        <div className="glass-panel p-6 rounded-[32px] shadow-apple-xl border border-default animate-scale-in origin-bottom-right bg-surface-1/95 backdrop-blur-2xl">
-            <div className="flex items-center justify-between mb-5 border-b border-default pb-4">
+        <div className="space-y-3 animate-scale-in origin-bottom-right">
+            <div className="flex items-center justify-between gap-3 px-1">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-ios-blue/10 text-ios-blue">
-                        <History size={20} />
+                    <div className="rounded-xl bg-ios-blue/10 p-2 text-ios-blue">
+                        <History size={16} />
                     </div>
-                    <span className="ui-kicker text-primary font-black tracking-widest">Histórico</span>
+                    <div>
+                        <div className="ui-kicker-xs text-secondary">Histórico</div>
+                        <div className="text-sm font-black text-primary">{history.length} passos</div>
+                    </div>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black text-muted uppercase">Alfabeto</span>
@@ -39,42 +49,61 @@ export const SimulationHistoryPanel: React.FC<SimulationHistoryPanelProps> = ({
                     </span>
                 </div>
             </div>
-            <div className="max-h-72 overflow-y-auto space-y-3 custom-scrollbar pr-2">
+
+            <div className="overflow-hidden rounded-2xl border border-default/45 bg-surface-1/35">
+                <div className="grid grid-cols-[4.75rem_4.5rem_minmax(0,1fr)_5rem] gap-2 border-b border-default/40 bg-surface-muted/25 px-3 py-2 text-[9px] font-black uppercase tracking-wide text-muted">
+                    <span>Passo</span>
+                    <span>Lido</span>
+                    <span>Configuração</span>
+                    <span className="text-right">Status</span>
+                </div>
+
+                <div className="max-h-72 overflow-y-auto custom-scrollbar">
                 {history.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center p-8 text-center opacity-40">
+                    <div className="motion-empty-state flex flex-col items-center justify-center p-8 text-center text-secondary">
                         <History size={32} className="mb-2" />
                         <p className="text-[11px] font-bold uppercase tracking-wider">Aguardando execução</p>
                     </div>
                 ) : history.map((stepItem, index) => {
                     const symbolLabel = stepItem.symbol ?? (index === 0 ? 'Início' : 'ε');
                     const statusLabel = STATUS_LABELS[stepItem.status];
+                    const isCurrent = index === currentStepIndex;
+                    const configLabel = stepItem.activeConfigs && stepItem.activeConfigs.length > 0
+                        ? stepItem.activeConfigs
+                            .map((config) => `${config.stateId} [${config.stack.join('') || 'vazio'}]`)
+                            .join(', ')
+                        : formatStateList(stepItem.activeStates);
                     return (
-                        <div key={index} className="rounded-2xl border border-default/60 p-4 text-[11px] bg-surface-muted/20 transition-all hover:bg-surface-muted/40 hover:translate-x-1">
-                            <div className="flex items-center justify-between mb-3">
-                                <span className="font-black text-ios-blue uppercase tracking-widest flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-ios-blue" />
-                                    Passo {index}
-                                </span>
-                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border shadow-sm ${
-                                    stepItem.status === 'accepted' ? 'bg-ios-green text-white border-green-600/20' :
-                                    stepItem.status === 'rejected' ? 'bg-ios-red text-white border-red-600/20' : 'bg-surface-strong text-secondary border-default'
-                                }`}>
-                                    {statusLabel}
-                                </span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1.5 bg-black/5 dark:bg-white/5 p-2 rounded-xl border border-default/30">
-                                    <span className="text-[9px] font-black text-muted uppercase block tracking-tighter">Símbolo lido</span>
-                                    <code className="font-black text-primary text-xs">{symbolLabel}</code>
-                                </div>
-                                <div className="space-y-1.5 bg-black/5 dark:bg-white/5 p-2 rounded-xl border border-default/30">
-                                    <span className="text-[9px] font-black text-muted uppercase block tracking-tighter">Configuração</span>
-                                    <span className="text-secondary font-black truncate block">{formatStateList(stepItem.activeStates)}</span>
-                                </div>
-                            </div>
-                        </div>
+                        <button
+                            key={index}
+                            type="button"
+                            onClick={() => onSelectStep?.(index)}
+                            disabled={!onSelectStep}
+                            aria-current={isCurrent ? 'step' : undefined}
+                            aria-label={`Voltar para o passo ${index}`}
+                            className={`grid w-full grid-cols-[4.75rem_4.5rem_minmax(0,1fr)_5rem] items-center gap-2 border-b border-default/25 px-3 py-2.5 text-left text-[11px] transition-colors last:border-b-0 ${
+                                isCurrent
+                                    ? 'bg-ios-blue/10 text-primary'
+                                    : 'text-secondary hover:bg-surface-hover hover:text-primary'
+                            } disabled:cursor-default`}
+                            style={{ animationDelay: `${Math.min(index, 8) * 35}ms` }}
+                        >
+                            <span className="flex items-center gap-2 font-black uppercase tracking-wide text-ios-blue">
+                                <span className={`h-1.5 w-1.5 rounded-full ${isCurrent ? 'bg-ios-blue' : 'bg-current opacity-60'}`} />
+                                Passo {index}
+                            </span>
+                            <code className="truncate font-mono text-[11px] font-black text-primary">{symbolLabel}</code>
+                            <span className="truncate font-semibold">{configLabel}</span>
+                            <span className={`justify-self-end rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-wide ${
+                                stepItem.status === 'accepted' ? 'border-green-600/20 bg-ios-green text-white' :
+                                stepItem.status === 'rejected' ? 'border-red-600/20 bg-ios-red text-white' : 'border-default bg-surface-strong text-secondary'
+                            }`}>
+                                {statusLabel}
+                            </span>
+                        </button>
                     );
                 })}
+                </div>
             </div>
         </div>
     );

@@ -64,7 +64,9 @@ describe('SimulationDock', () => {
 
         expect(regexSlot).toHaveClass('absolute');
         expect(regexSlot).toHaveClass('right-0');
-        expect(regexSlot).toHaveClass('bottom-[4.75rem]');
+        expect(regexSlot).toHaveClass('top-0');
+        expect(regexSlot).toHaveClass('sm:bottom-[4.75rem]');
+        expect(regexSlot).toHaveClass('sm:top-auto');
         expect(within(regexSlot).getByText('REGEX')).toBeInTheDocument();
         expect(within(controlsSlot).getByText('CONTROLS')).toBeInTheDocument();
     });
@@ -132,7 +134,7 @@ describe('SimulationDock', () => {
         expect(within(screen.getByTestId('bottom')).queryByText('WARNINGS')).not.toBeInTheDocument();
     });
 
-    it('prioriza visualização de pilha no inspetor de AP quando não há erro', () => {
+    it('prioriza alertas no inspetor quando a pilha de AP está em superfície flutuante', () => {
         render(
             <SimulationDock
                 desktopInspector={true}
@@ -142,20 +144,21 @@ describe('SimulationDock', () => {
                 warningsPanel={<span>WARNINGS</span>}
                 detailsPanel={<span>DETAILS</span>}
                 tapePanel={<span>TAPE</span>}
+                floatingSidePanel={<span>STACK</span>}
                 controlsBar={<span>CONTROLS</span>}
                 disableReason={null}
                 isPda={true}
                 showWarningsPanel={true}
-                showDetailsPanel={false}
+                showDetailsPanel={true}
                 showTapePanel={true}
             >
                 {({ rightDock }) => <section data-testid="right">{rightDock}</section>}
             </SimulationDock>
         );
 
-        expect(within(screen.getByTestId('right')).getByText('TAPE')).toBeInTheDocument();
-        expect(within(screen.getByTestId('right')).queryByText('WARNINGS')).not.toBeInTheDocument();
-        expect(within(screen.getByTestId('right')).getByRole('button', { name: 'Visualização' })).toBeInTheDocument();
+        expect(within(screen.getByTestId('right')).getByText('WARNINGS')).toBeInTheDocument();
+        expect(within(screen.getByTestId('right')).queryByText('TAPE')).not.toBeInTheDocument();
+        expect(within(screen.getByTestId('right')).queryByRole('button', { name: 'Visualização' })).not.toBeInTheDocument();
         expect(within(screen.getByTestId('right')).getByRole('button', { name: 'Alertas' })).toBeInTheDocument();
     });
 
@@ -201,6 +204,7 @@ describe('SimulationDock', () => {
                 warningsPanel={<span>WARNINGS</span>}
                 detailsPanel={<span>DETAILS</span>}
                 tapePanel={<span>TAPE</span>}
+                floatingSidePanel={<span>STACK</span>}
                 controlsBar={<span>CONTROLS</span>}
                 disableReason={null}
                 isPda={true}
@@ -208,10 +212,11 @@ describe('SimulationDock', () => {
                 showDetailsPanel={false}
                 showTapePanel={true}
             >
-                {({ rightDock, bottomDock }) => (
+                {({ rightDock, bottomDock, floatingDock }) => (
                     <div>
                         <section data-testid="right">{rightDock}</section>
                         <section data-testid="bottom">{bottomDock}</section>
+                        <section data-testid="floating">{floatingDock}</section>
                     </div>
                 )}
             </SimulationDock>
@@ -220,10 +225,36 @@ describe('SimulationDock', () => {
         expect(within(screen.getByTestId('right')).queryByText('TAPE')).not.toBeInTheDocument();
         expect(screen.queryByTestId('simulation-inspector-shell')).not.toBeInTheDocument();
         expect(within(screen.getByTestId('pda-native-readout-slot')).getByText('TAPE')).toBeInTheDocument();
+        expect(within(screen.getByTestId('pda-floating-stack-slot')).getByText('STACK')).toBeInTheDocument();
         expect(within(screen.getByTestId('simulation-controls-slot')).getByText('CONTROLS')).toBeInTheDocument();
     });
 
-    it('posiciona a pilha de AP no canto sem empurrar o player nativo', () => {
+    it('abre um estado vazio quando o aluno pede o diagnóstico antes de executar', () => {
+        render(
+            <SimulationDock
+                desktopInspector={true}
+                inspectorOpen={true}
+                onCloseInspector={() => {}}
+                regexImportPanel={<span>REGEX</span>}
+                warningsPanel={<span>WARNINGS</span>}
+                detailsPanel={<span>DETAILS</span>}
+                tapePanel={<span>TAPE</span>}
+                controlsBar={<span>CONTROLS</span>}
+                disableReason={null}
+                isPda={false}
+                showWarningsPanel={false}
+                showDetailsPanel={false}
+                showTapePanel={false}
+            >
+                {({ rightDock }) => <section data-testid="right">{rightDock}</section>}
+            </SimulationDock>
+        );
+
+        expect(screen.getByTestId('simulation-inspector-shell')).toBeInTheDocument();
+        expect(screen.getByText(/Digite uma entrada e avance a simulação/)).toBeInTheDocument();
+    });
+
+    it('expõe a pilha de AP como superfície flutuante separada do player nativo', () => {
         render(
             <SimulationDock
                 desktopInspector={true}
@@ -237,7 +268,7 @@ describe('SimulationDock', () => {
                         <div data-testid="pda-input-rail">FITA</div>
                     </div>
                 )}
-                nativeSidePanel={<div data-testid="pda-stack-widget">PILHA</div>}
+                floatingSidePanel={<div data-testid="pda-stack-widget">PILHA</div>}
                 controlsBar={<span>CONTROLS</span>}
                 disableReason={null}
                 isPda={true}
@@ -245,18 +276,21 @@ describe('SimulationDock', () => {
                 showDetailsPanel={false}
                 showTapePanel={true}
             >
-                {({ bottomDock }) => <section data-testid="bottom">{bottomDock}</section>}
+                {({ bottomDock, floatingDock }) => (
+                    <div>
+                        <section data-testid="bottom">{bottomDock}</section>
+                        <section data-testid="floating">{floatingDock}</section>
+                    </div>
+                )}
             </SimulationDock>
         );
 
-        const stackSlot = screen.getByTestId('pda-stack-corner-slot');
-
         expect(screen.getByTestId('pda-native-readout-slot')).toHaveClass('min-h-10');
         expect(within(screen.getByTestId('pda-native-readout-slot')).getByText('FITA')).toBeInTheDocument();
-        expect(stackSlot).toHaveClass('absolute');
-        expect(stackSlot).toHaveClass('right-0');
-        expect(within(stackSlot).getByText('PILHA')).toBeInTheDocument();
+        expect(screen.getByTestId('pda-floating-stack-slot')).toBeInTheDocument();
+        expect(within(screen.getByTestId('pda-floating-stack-slot')).getByText('PILHA')).toBeInTheDocument();
         expect(within(screen.getByTestId('pda-player-row')).getByText('CONTROLS')).toBeInTheDocument();
         expect(within(screen.getByTestId('pda-player-row')).queryByText('PILHA')).not.toBeInTheDocument();
+        expect(within(screen.getByTestId('bottom')).queryByText('PILHA')).not.toBeInTheDocument();
     });
 });

@@ -14,7 +14,7 @@ export const UiSettingsProvider = ({ children }: { children: React.ReactNode }) 
                         focusMode: !!parsed.focusMode,
                         reduceMotion: !!parsed.reduceMotion,
                         snapToGrid: !!parsed.snapToGrid,
-                        simulatorLayout: isSimulatorLayout(parsed.simulatorLayout) ? parsed.simulatorLayout : 'bottom',
+                        simulatorLayout: isSimulatorLayout(parsed.simulatorLayout) ? parsed.simulatorLayout : 'side',
                         inputTokenization: parsed.inputTokenization || 'auto',
                         inputSeparator: typeof parsed.inputSeparator === 'string' ? parsed.inputSeparator : ' '
                     };
@@ -27,7 +27,7 @@ export const UiSettingsProvider = ({ children }: { children: React.ReactNode }) 
             focusMode: false,
             reduceMotion: false,
             snapToGrid: false,
-            simulatorLayout: 'bottom',
+            simulatorLayout: 'side',
             inputTokenization: 'auto',
             inputSeparator: ' '
         };

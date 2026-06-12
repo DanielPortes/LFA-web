@@ -36,6 +36,7 @@ interface UseAutomatonSimulationResult {
     isPlaying: boolean;
     speed: number;
     history: SimulationStep[];
+    currentHistoryIndex: number;
     activeTransitions: string[];
     inputTokens: string[];
     alphabet: string[];
@@ -58,8 +59,17 @@ interface UseAutomatonSimulationResult {
     step: () => { finished: boolean; accepted?: boolean };
     stepBack: () => void;
     goToStart: () => void;
+    goToHistoryStep: (index: number) => void;
     formatPdaConfig: (key: string) => string;
 }
+
+const getSimulationStepTransitionIds = (stepItem: SimulationStep): string[] => {
+    const pdaTransitionIds = stepItem.pdaEdges
+        ?.map((edge) => edge.transitionId)
+        .filter((transitionId): transitionId is string => Boolean(transitionId)) ?? [];
+
+    return stepItem.usedTransitions ?? pdaTransitionIds;
+};
 
 const defaultConfig: SimulationConfig = {
     turingMaxSteps: TURING.MAX_STEPS,
@@ -77,6 +87,7 @@ export function useAutomatonSimulation(
     const [isPlaying, setIsPlaying] = useState(false);
     const [speed, setSpeed] = useState<number>(SIMULATION.DEFAULT_SPEED);
     const [history, setHistory] = useState<SimulationStep[]>([]);
+    const [historyCursor, setHistoryCursor] = useState(-1);
     const [activeTransitions, setActiveTransitions] = useState<string[]>([]);
     const turingSeenRef = useRef<Set<string>>(new Set());
 
@@ -133,6 +144,12 @@ export function useAutomatonSimulation(
     }, [inputTokens, alphabet]);
 
     const hasInvalidInput = invalidSymbols.length > 0;
+
+    const currentHistoryIndex = useMemo(() => {
+        if (history.length === 0) return -1;
+        if (!Number.isInteger(historyCursor)) return history.length - 1;
+        return Math.min(Math.max(historyCursor, 0), history.length - 1);
+    }, [history.length, historyCursor]);
 
     // Helper functions
     const buildInitialPdaConfigs = useCallback(() => {
@@ -191,6 +208,7 @@ export function useAutomatonSimulation(
     const resetSimulation = useCallback((fullReset = false) => {
         setIsPlaying(false);
         setHistory([]);
+        setHistoryCursor(-1);
         setActiveTransitions([]);
         turingSeenRef.current.clear();
 
@@ -213,6 +231,7 @@ export function useAutomatonSimulation(
             };
             setSimulationState(initialStep);
             setHistory([initialStep]);
+            setHistoryCursor(0);
             return;
         }
 
@@ -237,6 +256,7 @@ export function useAutomatonSimulation(
             };
             setSimulationState(initialStep);
             setHistory([initialStep]);
+            setHistoryCursor(0);
             if (initialStates.length > 0) {
                 const key = buildTuringConfigKey(initialStates[0], tape, 0);
                 turingSeenRef.current.add(key);
@@ -274,6 +294,7 @@ export function useAutomatonSimulation(
         };
         setSimulationState(initialStep);
         setHistory([initialStep]);
+        setHistoryCursor(0);
     }, [safeData, inputTokens, isPda, buildInitialPdaConfigs, isMoore, isMealy, isTuring, isAll]);
 
     // Step function
@@ -294,6 +315,24 @@ export function useAutomatonSimulation(
             return { finished: true, accepted: currentState.status === 'accepted' };
         }
 
+        const currentHistoryPrefix = currentHistoryIndex >= 0
+            ? history.slice(0, currentHistoryIndex + 1)
+            : [];
+        const replaceCurrentHistoryStep = (finalStep: SimulationStep) => {
+            const updated = currentHistoryPrefix.length > 0
+                ? [...currentHistoryPrefix]
+                : [finalStep];
+            updated[updated.length - 1] = finalStep;
+            setHistory(updated);
+            setHistoryCursor(updated.length - 1);
+        };
+        const appendHistoryStep = (nextStep: SimulationStep) => {
+            const baseHistory = currentHistoryPrefix.length > 0 ? currentHistoryPrefix : history;
+            const updated = [...baseHistory, nextStep];
+            setHistory(updated);
+            setHistoryCursor(updated.length - 1);
+        };
+
         // Check if input is exhausted
         if (currentState.remainingInput.length === 0 && !isTuring) {
             if (isPda) {
@@ -312,12 +351,7 @@ export function useAutomatonSimulation(
                     status: accepted ? 'accepted' : 'rejected'
                 };
                 setSimulationState(finalStep);
-                setHistory(prev => {
-                    if (prev.length === 0) return [finalStep];
-                    const updated = [...prev];
-                    updated[updated.length - 1] = finalStep;
-                    return updated;
-                });
+                replaceCurrentHistoryStep(finalStep);
                 setIsPlaying(false);
                 setActiveTransitions([]);
                 return { finished: true, accepted };
@@ -331,12 +365,7 @@ export function useAutomatonSimulation(
                 status: hasFinal ? 'accepted' : 'rejected'
             };
             setSimulationState(finalStep);
-            setHistory(prev => {
-                if (prev.length === 0) return [finalStep];
-                const updated = [...prev];
-                updated[updated.length - 1] = finalStep;
-                return updated;
-            });
+            replaceCurrentHistoryStep(finalStep);
             setIsPlaying(false);
             setActiveTransitions([]);
             return { finished: true, accepted: hasFinal };
@@ -346,10 +375,11 @@ export function useAutomatonSimulation(
 
         // Turing Machine Logic
         if (isTuring) {
-            if (config.turingMaxSteps > 0 && history.length >= config.turingMaxSteps) {
+            const activeHistoryLength = currentHistoryPrefix.length || history.length;
+            if (config.turingMaxSteps > 0 && activeHistoryLength >= config.turingMaxSteps) {
                 const finalStep: SimulationStep = { ...currentState, status: 'rejected' };
                 setSimulationState(finalStep);
-                setHistory(prev => [...prev.slice(0, -1), finalStep]);
+                replaceCurrentHistoryStep(finalStep);
                 setIsPlaying(false);
                 return { finished: true, accepted: false };
             }
@@ -374,7 +404,7 @@ export function useAutomatonSimulation(
                     status: hasFinal ? 'accepted' : 'rejected'
                 };
                 setSimulationState(finalStep);
-                setHistory(prev => [...prev.slice(0, -1), finalStep]);
+                replaceCurrentHistoryStep(finalStep);
                 setIsPlaying(false);
                 return { finished: true, accepted: hasFinal ?? false };
             }
@@ -384,7 +414,7 @@ export function useAutomatonSimulation(
                 if (turingSeenRef.current.has(key)) {
                     const finalStep: SimulationStep = { ...currentState, status: 'rejected' };
                     setSimulationState(finalStep);
-                    setHistory(prev => [...prev.slice(0, -1), finalStep]);
+                    replaceCurrentHistoryStep(finalStep);
                     setIsPlaying(false);
                     return { finished: true, accepted: false };
                 }
@@ -401,7 +431,7 @@ export function useAutomatonSimulation(
                 usedTransitions: stepResult.usedTransition ? [stepResult.usedTransition] : []
             };
             setSimulationState(nextStep);
-            setHistory(prev => [...prev, nextStep]);
+            appendHistoryStep(nextStep);
             setActiveTransitions(stepResult.usedTransition ? [stepResult.usedTransition] : []);
             return { finished: false };
         }
@@ -414,7 +444,7 @@ export function useAutomatonSimulation(
             if (result.configs.length === 0) {
                 const finalStep: SimulationStep = { ...currentState, status: 'rejected' };
                 setSimulationState(finalStep);
-                setHistory(prev => [...prev.slice(0, -1), finalStep]);
+                replaceCurrentHistoryStep(finalStep);
                 setIsPlaying(false);
                 setActiveTransitions([]);
                 return { finished: true, accepted: false };
@@ -429,7 +459,7 @@ export function useAutomatonSimulation(
                 pdaEdges: result.edges
             };
             setSimulationState(nextStep);
-            setHistory(prev => [...prev, nextStep]);
+            appendHistoryStep(nextStep);
             setActiveTransitions(result.usedTransitions);
             return { finished: false };
         }
@@ -445,7 +475,7 @@ export function useAutomatonSimulation(
         if (directTargets.size === 0) {
             const finalStep: SimulationStep = { ...currentState, status: 'rejected' };
             setSimulationState(finalStep);
-            setHistory(prev => [...prev.slice(0, -1), finalStep]);
+            replaceCurrentHistoryStep(finalStep);
             setIsPlaying(false);
             setActiveTransitions([]);
             return { finished: true, accepted: false };
@@ -489,12 +519,12 @@ export function useAutomatonSimulation(
             outputStatus: nextOutputStatus
         };
         setSimulationState(nextStep);
-        setHistory(prev => [...prev, nextStep]);
+        appendHistoryStep(nextStep);
         setActiveTransitions(usedTransitions);
         return { finished: false };
     }, [
         simulationState, hasInvalidInput, safeData, isTuring, isAll,
-        isPda, isMoore, isMealy, history, config,
+        isPda, isMoore, isMealy, history, currentHistoryIndex, config,
         findActiveTransitions, getMealyOutput,
         transitionMap, resetSimulation, inputTokens.length
     ]);
@@ -519,24 +549,38 @@ export function useAutomatonSimulation(
 
     // Step back
     const stepBack = useCallback(() => {
-        if (history.length <= 1) return;
+        if (currentHistoryIndex <= 0) return;
         setIsPlaying(false);
-        const newHistory = history.slice(0, -1);
-        setHistory(newHistory);
-        setSimulationState(newHistory[newHistory.length - 1]);
-        setActiveTransitions([]);
-        rebuildTuringSeenFromHistory(newHistory);
-    }, [history, rebuildTuringSeenFromHistory]);
+        const nextIndex = currentHistoryIndex - 1;
+        const targetStep = history[nextIndex];
+        setHistoryCursor(nextIndex);
+        setSimulationState(targetStep);
+        setActiveTransitions(getSimulationStepTransitionIds(targetStep));
+        rebuildTuringSeenFromHistory(history.slice(0, nextIndex + 1));
+    }, [currentHistoryIndex, history, rebuildTuringSeenFromHistory]);
 
     // Go to start
     const goToStart = useCallback(() => {
         if (history.length === 0) return;
         setIsPlaying(false);
         const firstStep = history[0];
-        setHistory([firstStep]);
+        setHistoryCursor(0);
         setSimulationState(firstStep);
-        setActiveTransitions([]);
+        setActiveTransitions(getSimulationStepTransitionIds(firstStep));
         rebuildTuringSeenFromHistory([firstStep]);
+    }, [history, rebuildTuringSeenFromHistory]);
+
+    const goToHistoryStep = useCallback((index: number) => {
+        if (!Number.isInteger(index)) return;
+        if (index < 0 || index >= history.length) return;
+
+        setIsPlaying(false);
+        const targetStep = history[index];
+
+        setHistoryCursor(index);
+        setSimulationState(targetStep);
+        setActiveTransitions(getSimulationStepTransitionIds(targetStep));
+        rebuildTuringSeenFromHistory(history.slice(0, index + 1));
     }, [history, rebuildTuringSeenFromHistory]);
 
     const resetSimulationRef = useRef(resetSimulation);
@@ -554,6 +598,7 @@ export function useAutomatonSimulation(
         isPlaying,
         speed,
         history,
+        currentHistoryIndex,
         activeTransitions,
         inputTokens,
         alphabet,
@@ -572,6 +617,7 @@ export function useAutomatonSimulation(
         step,
         stepBack,
         goToStart,
+        goToHistoryStep,
         formatPdaConfig
     };
 }
