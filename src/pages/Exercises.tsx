@@ -11,6 +11,8 @@ import { useExerciseData } from '../features/exercises/useExerciseData';
 import { useExerciseSelection } from '../features/exercises/useExerciseSelection';
 import { useExerciseVerification } from '../features/exercises/useExerciseVerification';
 import type { TokenizationOptions } from '../utils/symbols';
+import { ExercisesSkeleton, ModalSkeleton } from '../components/ui';
+import { resolveCategoryTheoryRefs } from '../data/learningConnections';
 
 const LazyConversionTool = lazy(async () => {
     const module = await import('../components/ui/ConversionTool');
@@ -202,6 +204,10 @@ const LoadedExercisesSection = ({
     const exercisesProgressPercent = totalExercisesCount === 0
         ? 0
         : Math.round((completedExercisesCount / totalExercisesCount) * 100);
+    const activeCategoryTheoryLinks = useMemo(
+        () => resolveCategoryTheoryRefs(selection.activeCategory),
+        [selection.activeCategory]
+    );
 
     useEffect(() => {
         if (selection.solvingExercise === null) return undefined;
@@ -260,6 +266,8 @@ const LoadedExercisesSection = ({
                 onStartSolving={startSolving}
                 onOpenSidebar={() => selection.setSidebarOpen(true)}
                 onOpenConverter={selection.openConverter}
+                theoryLinks={activeCategoryTheoryLinks}
+                onOpenTheory={onOpenTheory}
                 returnToLessonLabel={returnToLessonLabel}
                 onReturnToLesson={onReturnToLesson}
             />
@@ -316,7 +324,7 @@ const LoadedExercisesSection = ({
                 onReturnToLesson={onReturnToLesson}
             />
 
-            <Suspense fallback={<div className="py-10 text-center text-secondary">Carregando conversor...</div>}>
+            <Suspense fallback={<ModalSkeleton label="Carregando conversor" />}>
                 {selection.showConverter && (
                     <LazyConversionTool
                         isOpen={selection.showConverter}
@@ -351,7 +359,7 @@ export const ExerciciosSection = ({
     const { exerciseDatabase, isLoading, error } = useExerciseData();
 
     if (isLoading) {
-        return <ExerciseDataState message="Carregando banco de exercícios práticos." />;
+        return <ExercisesSkeleton />;
     }
 
     if (error || Object.keys(exerciseDatabase).length === 0) {

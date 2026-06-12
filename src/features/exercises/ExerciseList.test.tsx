@@ -178,6 +178,41 @@ describe('ExerciseList', () => {
         expect(onReturnToLesson).toHaveBeenCalledTimes(1);
     });
 
+    it('mostra referências teóricas da categoria antes da prática', () => {
+        const onOpenTheory = vi.fn();
+
+        render(
+            <ExerciseList
+                activeCategory="afd"
+                activeCategoryLabel="AFDs"
+                exercises={exercises}
+                filteredExercises={exercises}
+                completedInActiveCategory={0}
+                revealedHintCounts={{}}
+                revealedAnswers={{}}
+                isExerciseCompleted={() => false}
+                onToggleHint={vi.fn()}
+                onRevealNextHint={vi.fn()}
+                onToggleAnswer={vi.fn()}
+                onStartSolving={vi.fn()}
+                onOpenSidebar={vi.fn()}
+                onOpenConverter={vi.fn()}
+                theoryLinks={[{
+                    ref: 'Módulo 1 • Definição formal de AFD',
+                    moduleId: 'mod1',
+                    lessonId: 'l1-def',
+                    label: 'Módulo 1 • Autômato Finito Determinístico'
+                }]}
+                onOpenTheory={onOpenTheory}
+            />
+        );
+
+        expect(screen.getByText('Estude antes')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Módulo 1 • Autômato Finito Determinístico' }));
+
+        expect(onOpenTheory).toHaveBeenCalledWith('mod1', 'l1-def');
+    });
+
     it('mostra estado vazio quando o filtro não retorna itens', () => {
         render(
             <ExerciseList

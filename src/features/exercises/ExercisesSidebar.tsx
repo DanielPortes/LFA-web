@@ -53,8 +53,8 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
     const visibleSearchResult = activeSearchResult ?? firstSearchResult;
     const canMoveSearchResult = (searchResultPosition?.total ?? 0) > 1;
     const resultCountLabel = searchResultPosition
-        ? `${searchResultPosition.current}/${searchResultPosition.total}`
-        : '0';
+        ? `Resultado ${searchResultPosition.current} de ${searchResultPosition.total}`
+        : 'Nenhum resultado';
     const searchTargetKey = visibleSearchResult
         ? `${visibleSearchResult.categoryId}-${visibleSearchResult.exerciseId ?? 'categoria'}-${searchResultPosition?.current ?? 0}`
         : `empty-${trimmedSearch}`;
@@ -82,7 +82,7 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
             <div className="sticky top-0 z-10 rounded-t-3xl border-b border-default bg-surface-1 p-6 backdrop-blur-md">
                 <div className="mb-3 flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-ios-green" />
-                    <span className="ui-kicker-xs text-secondary">DCC063 • Prática</span>
+                    <span className="ui-kicker-xs text-secondary">Prática de LFA</span>
                 </div>
                 <div className="flex items-center gap-3 text-2xl font-bold text-primary">
                     <ListFilter size={24} className="text-ios-blue" />
@@ -172,7 +172,7 @@ export const ExercisesSidebar: React.FC<ExercisesSidebarProps> = ({
                             <span className="search-target-copy min-w-0 flex-1 truncate font-medium text-secondary">
                                 {searchTargetLabel}
                             </span>
-                            <span className="search-target-count flex h-6 flex-shrink-0 items-center rounded-lg border border-default bg-surface-1 px-2 font-mono font-bold text-secondary">
+                            <span className="search-target-count flex h-6 flex-shrink-0 items-center rounded-lg border border-default bg-surface-1 px-2 font-bold text-secondary">
                                 {resultCountLabel}
                             </span>
                             <button

@@ -20,6 +20,7 @@ interface ExerciseSupportPanelProps {
     onOpenTheory?: (moduleId: string, lessonId: string) => void;
     lastFailure?: ExerciseFailure | null;
     equivalenceStatus?: ExerciseEquivalenceStatus;
+    defaultOpen?: 'hints' | 'answer';
 }
 
 interface SupportSectionProps {
@@ -98,6 +99,7 @@ export const ExerciseSupportPanel: React.FC<ExerciseSupportPanelProps> = ({
     onOpenTheory,
     lastFailure = null,
     equivalenceStatus = null,
+    defaultOpen,
 }) => {
     const normalizedHints = useMemo<ExerciseHint[]>(() => {
         if (!exercise) return [];
@@ -189,13 +191,13 @@ export const ExerciseSupportPanel: React.FC<ExerciseSupportPanelProps> = ({
 
     useEffect(() => {
         setRevealedHintCount(0);
-        setShowHints(false);
-        setShowStrategy(false);
+        setShowHints(defaultOpen === 'hints');
+        setShowStrategy(defaultOpen === 'hints' && !exercise?.dicas?.length && !exercise?.dica);
         setShowContext(false);
         setShowMistakes(false);
-        setShowGuidedSolution(false);
-        setShowFinalAnswer(false);
-    }, [exercise?.id]);
+        setShowGuidedSolution(defaultOpen === 'answer');
+        setShowFinalAnswer(defaultOpen === 'answer');
+    }, [defaultOpen, exercise?.dica, exercise?.dicas?.length, exercise?.id]);
 
     if (!exercise) {
         return null;

@@ -46,7 +46,7 @@ describe('ExercisesSidebar', () => {
         expect(targetCopy).toBeInTheDocument();
         expect(targetCopy).toHaveClass('search-target-copy');
         expect(targetCopy.closest('.search-target-shell')).toBeInTheDocument();
-        expect(screen.getByText('1/1')).toBeInTheDocument();
+        expect(screen.getByText('Resultado 1 de 1')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Regex/ })).toHaveClass('search-target-row');
         expect(screen.getByText('alvo')).toBeInTheDocument();
 

@@ -111,6 +111,29 @@ describe('ExerciseSolverModal layout', () => {
         expect(screen.getByRole('button', { name: 'Abrir painel de verificação' })).toBeInTheDocument();
     });
 
+    it('alterna a etapa mobile entre resolver e feedback sem comprimir o enunciado', () => {
+        mockAnimationFrames();
+        mockViewport({ width: 390, height: 844 });
+
+        render(
+            <UiSettingsProvider>
+                <ExerciseSolverModal {...baseProps} />
+            </UiSettingsProvider>
+        );
+
+        const prompt = screen.getByText('Construa um AFD para cadeias terminadas em a.');
+        const stage = screen.getByTestId('exercise-solver-stage');
+        const rail = screen.getByTestId('exercise-verification-rail');
+
+        expect(prompt).toHaveClass('exercise-solver-question');
+        expect(rail).toHaveClass('max-[1179px]:hidden');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Feedback' }));
+
+        expect(stage).toHaveClass('max-[1179px]:hidden');
+        expect(screen.getByTestId('exercise-verification-rail')).toHaveClass('max-[1179px]:h-full');
+    });
+
     it('reserva uma coluna propria para o painel de verificação em desktop', () => {
         mockAnimationFrames();
         mockViewport({ width: 1440, height: 900 });
@@ -145,7 +168,8 @@ describe('ExerciseSolverModal layout', () => {
         const dialog = screen.getByRole('dialog');
 
         expect(dialog).toHaveClass('exercise-solver-dialog');
-        expect(dialog).toHaveClass('rounded-[20px]');
+        expect(dialog).toHaveClass('rounded-none');
+        expect(dialog).toHaveClass('sm:rounded-[20px]');
         expect(dialog).not.toHaveClass('rounded-[32px]');
         expect(chrome).toHaveClass('p-0');
         expect(chrome).not.toHaveClass('p-3');

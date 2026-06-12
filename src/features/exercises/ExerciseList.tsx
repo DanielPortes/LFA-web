@@ -11,8 +11,10 @@ import {
     BookOpen
 } from 'lucide-react';
 import type { Exercicio } from '../../types';
+import type { ResolvedTheoryLink } from '../../data/learningConnections';
 import type { ConverterData, ExerciseSolverStartOptions } from './types';
 import { ExerciseSupportPanel } from './ExerciseSupportPanel';
+import { EmptyMotionState } from '../../components/ui';
 
 const exercisePatternLabels: Record<string, string> = {
     construction: 'Construção',
@@ -40,6 +42,8 @@ interface ExerciseListProps {
     onStartSolving: (exerciseId: number, options?: ExerciseSolverStartOptions) => void;
     onOpenSidebar: () => void;
     onOpenConverter: (data: ConverterData) => void;
+    theoryLinks?: ResolvedTheoryLink[];
+    onOpenTheory?: (moduleId: string, lessonId: string) => void;
     returnToLessonLabel?: string | null;
     onReturnToLesson?: () => void;
 }
@@ -59,6 +63,8 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
     onStartSolving,
     onOpenSidebar,
     onOpenConverter,
+    theoryLinks = [],
+    onOpenTheory,
     returnToLessonLabel = null,
     onReturnToLesson,
 }) => (
@@ -104,6 +110,33 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                     )}
                 </div>
             </div>
+            {theoryLinks.length > 0 && (
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-default/60 pt-3">
+                    <span className="ui-kicker-xs text-secondary">Estude antes</span>
+                    {theoryLinks.map((link) => (
+                        onOpenTheory ? (
+                            <button
+                                key={link.ref}
+                                type="button"
+                                onClick={() => onOpenTheory(link.moduleId, link.lessonId)}
+                                className="rounded-full border border-status-info/25 bg-status-info-soft px-3 py-1.5 text-xs font-bold text-status-info transition-colors hover:bg-ios-blue hover:text-white"
+                            >
+                                {link.label}
+                            </button>
+                        ) : (
+                            <span
+                                key={link.ref}
+                                className="rounded-full border border-default bg-surface-muted px-3 py-1.5 text-xs font-bold text-secondary"
+                            >
+                                {link.label}
+                            </span>
+                        )
+                    ))}
+                    <span className="rounded-full border border-status-warning/25 bg-status-warning-soft px-3 py-1.5 text-xs font-bold text-status-warning">
+                        Revise erros frequentes no apoio de cada exercício
+                    </span>
+                </div>
+            )}
         </div>
 
         {filteredExercises.map((exercise, index) => {
@@ -125,7 +158,7 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
                 <div
                     key={exercise.id}
                     data-deferred-render="card"
-                    className="glass-card overflow-hidden group hover:shadow-apple-md animate-slide-in-up opacity-0"
+                    className="glass-card motion-panel-enter overflow-hidden group hover:shadow-apple-md"
                     style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'forwards' }}
                 >
                     <div className="p-5 sm:p-6 lg:p-8">
@@ -253,9 +286,10 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
         })}
 
         {filteredExercises.length === 0 && (
-            <div className="p-6 rounded-2xl border border-dashed border-default text-sm text-secondary">
-                Nenhum exercício encontrado para esta busca.
-            </div>
+            <EmptyMotionState
+                title="Nenhum exercício encontrado para esta busca."
+                description="Ajuste a busca ou selecione outra categoria para continuar praticando."
+            />
         )}
     </div>
 );

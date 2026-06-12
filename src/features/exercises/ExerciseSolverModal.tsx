@@ -82,6 +82,15 @@ const exerciseLevelLabel = {
     dificil: 'Desafio'
 } as const;
 
+const mobileSteps = [
+    { id: 'resolver', label: 'Resolver' },
+    { id: 'feedback', label: 'Feedback' },
+    { id: 'ajuda', label: 'Ajuda' },
+    { id: 'gabarito', label: 'Gabarito' },
+] as const;
+
+type MobileStepId = typeof mobileSteps[number]['id'];
+
 const floatingActionClassName = 'rounded-[14px] p-2 text-secondary transition-colors hover:bg-surface-hover hover:text-primary';
 const stageFieldClassName = 'w-full rounded-[24px] border border-default bg-surface-1/92 px-4 py-3 text-primary shadow-inner outline-none ring-ios-blue/40 focus:ring-2';
 
@@ -138,10 +147,17 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
     const grammarErrorId = useId();
     const [fitRequestToken, setFitRequestToken] = useState<number | undefined>(undefined);
     const [verificationPanelOpen, setVerificationPanelOpen] = useState(true);
+    const [mobileStep, setMobileStep] = useState<MobileStepId>('resolver');
+    const [isNarrowViewport, setIsNarrowViewport] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return window.matchMedia('(max-width: 1179px)').matches;
+    });
     const pendingAnswerFitRef = useRef(false);
     const titleText = `Exercício ${exerciseId}`;
     const isAutomatonMode = solverMode === 'automaton';
     const hasRunnableAutomaton = solverMode === 'automaton' && !!userAutomaton && userAutomaton.estados.length > 0;
+    const hasAutomaticVerification = solverMode !== 'text' || hasTests;
+    const isMobileResolverLayout = isNarrowViewport && mobileStep === 'resolver';
 
     const handleLoadAnswerAutomaton = useCallback((data: AutomatoData) => {
         if (!onLoadAnswerAutomaton) return;
@@ -155,6 +171,18 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
         onRestoreAttempt();
     }, [hasSavedAttempt, onRestoreAttempt]);
 
+    const handleMobileVerify = useCallback(() => {
+        if (!hasAutomaticVerification || verifyDisabledReason || isVerifying) return;
+        setVerificationPanelOpen(true);
+        setMobileStep('feedback');
+        onVerify();
+    }, [hasAutomaticVerification, isVerifying, onVerify, verifyDisabledReason]);
+
+    const openMobileStep = useCallback((step: Exclude<MobileStepId, 'resolver'>) => {
+        setVerificationPanelOpen(true);
+        setMobileStep(step);
+    }, []);
+
     useEffect(() => {
         if (!pendingAnswerFitRef.current || !isAutomatonMode || !userAutomaton) {
             return;
@@ -167,7 +195,18 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
     useEffect(() => {
         if (!isOpen) return;
         setVerificationPanelOpen(true);
+        setMobileStep('resolver');
     }, [exerciseId, isOpen, solverMode]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return undefined;
+        const media = window.matchMedia('(max-width: 1179px)');
+        const handleChange = (event: MediaQueryListEvent) => setIsNarrowViewport(event.matches);
+
+        setIsNarrowViewport(media.matches);
+        media.addEventListener('change', handleChange);
+        return () => media.removeEventListener('change', handleChange);
+    }, []);
 
     if (!exerciseId || !question) return null;
 
@@ -180,11 +219,11 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
             hideHeader={true}
             bodyClassName="overflow-hidden p-0"
             overlayClassName="p-0 sm:p-2 lg:p-3"
-            className="exercise-solver-dialog h-[min(96dvh,1060px)] min-h-[90dvh] w-[min(99vw,1500px)] max-w-none overflow-hidden rounded-[20px]"
+            className="exercise-solver-dialog h-[100dvh] min-h-[100dvh] w-screen max-w-none overflow-hidden rounded-none sm:h-[min(96dvh,1060px)] sm:min-h-[90dvh] sm:w-[min(99vw,1500px)] sm:rounded-[20px]"
         >
             <div data-testid="exercise-solver-chrome" className="flex h-full min-h-0 flex-col bg-app/25 p-0">
-                <div className="flex items-start justify-between gap-4 px-4 py-2.5 sm:px-5 lg:px-6">
-                    <div className="min-w-0 max-w-4xl">
+                <div className="flex flex-col gap-3 px-4 py-2.5 sm:px-5 min-[760px]:flex-row min-[760px]:items-start min-[760px]:justify-between lg:px-6">
+                    <div className="min-w-0 max-w-5xl">
                         <div className="flex items-start gap-3">
                             <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-default/70 bg-ios-green/10 text-ios-green">
                                 <Pencil size={16} />
@@ -203,14 +242,14 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                                 <h3 id={titleId} className="mt-1.5 text-base font-bold text-secondary sm:text-lg">
                                     {titleText}
                                 </h3>
-                                <p id={descriptionId} className="mt-1 max-w-5xl text-base font-semibold leading-snug text-primary sm:text-lg">
+                                <p id={descriptionId} className="exercise-solver-question mt-1 max-w-5xl text-base font-semibold leading-snug text-primary sm:text-lg">
                                     {question}
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                    <div className="flex w-full shrink-0 flex-wrap items-center justify-end gap-2 min-[760px]:w-auto">
                         {returnToLessonLabel && onReturnToLesson && (
                             <button
                                 type="button"
@@ -286,6 +325,34 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                     </div>
                 </div>
 
+                <div className="border-y border-default/60 bg-surface-1/85 px-3 py-2 min-[1180px]:hidden">
+                    <div className="grid grid-cols-4 gap-1 rounded-2xl border border-default bg-surface-muted p-1">
+                        {mobileSteps.map((step) => {
+                            const isActive = mobileStep === step.id;
+                            return (
+                                <button
+                                    key={step.id}
+                                    type="button"
+                                    onClick={() => {
+                                        setMobileStep(step.id);
+                                        if (step.id !== 'resolver') {
+                                            setVerificationPanelOpen(true);
+                                        }
+                                    }}
+                                    className={`min-h-9 rounded-xl px-2 text-[11px] font-black transition-colors ${
+                                        isActive
+                                            ? 'bg-ios-blue text-white shadow-sm'
+                                            : 'text-secondary hover:bg-surface-hover hover:text-primary'
+                                    }`}
+                                    aria-pressed={isActive}
+                                >
+                                    {step.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
                 <div
                     data-testid="exercise-solver-workspace"
                     className="relative h-full min-h-0 overflow-hidden rounded-none bg-canvas/70"
@@ -297,7 +364,11 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                     >
                         {verificationPanelOpen && (
                             <ExerciseVerificationPanel
-                                className="order-2 shrink-0 min-[1180px]:order-1"
+                                className={`order-2 shrink-0 min-[1180px]:order-1 min-[1180px]:w-[420px] ${
+                                    mobileStep === 'resolver'
+                                        ? 'max-[1179px]:hidden'
+                                        : 'max-[1179px]:order-1 max-[1179px]:h-full max-[1179px]:max-h-none max-[1179px]:min-h-0'
+                                }`}
                                 exercise={exercise}
                                 onLoadAnswerAutomaton={solverMode === 'automaton'
                                     ? handleLoadAnswerAutomaton
@@ -318,6 +389,14 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                                 equivalenceStatus={equivalenceStatus}
                                 lastTrace={lastTrace}
                                 formatStateList={formatStateList}
+                                ariaHidden={isMobileResolverLayout}
+                                focusMode={mobileStep === 'feedback'
+                                    ? 'feedback'
+                                    : mobileStep === 'ajuda'
+                                        ? 'help'
+                                        : mobileStep === 'gabarito'
+                                            ? 'answer'
+                                            : undefined}
                             />
                         )}
 
@@ -325,7 +404,9 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                             data-testid="exercise-solver-stage"
                             role="region"
                             aria-label="Área de resolução do exercício"
-                            className="order-1 relative min-h-[52vh] min-w-0 flex-1 overflow-hidden min-[1180px]:order-2 min-[1180px]:min-h-0 min-[1180px]:min-w-0"
+                            className={`order-1 relative min-h-[52vh] min-w-0 flex-1 overflow-hidden min-[1180px]:order-2 min-[1180px]:min-h-0 min-[1180px]:min-w-0 ${
+                                mobileStep === 'resolver' ? '' : 'max-[1179px]:hidden'
+                            }`}
                         >
                             {solverMode === 'automaton' && userAutomaton && (
                                 <div className="absolute inset-0 min-h-0">
@@ -461,6 +542,63 @@ export const ExerciseSolverModal: React.FC<ExerciseSolverModalProps> = ({
                                                     </span>
                                                 )}
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {isMobileResolverLayout && (
+                                <div className="pointer-events-none absolute inset-x-3 bottom-3 z-30 min-[1180px]:hidden">
+                                    <div className="glass-card pointer-events-auto mx-auto max-w-md rounded-[22px] border border-default/80 bg-surface-1/95 p-2 shadow-apple-xl">
+                                        {hasAutomaticVerification ? (
+                                            <div className="space-y-2">
+                                                {verifyDisabledReason && (
+                                                    <p className="px-2 text-xs font-semibold leading-snug text-secondary">
+                                                        {verifyDisabledReason}
+                                                    </p>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={handleMobileVerify}
+                                                    disabled={!!verifyDisabledReason || isVerifying}
+                                                    className="flex min-h-11 w-full items-center justify-center rounded-[18px] bg-ios-blue px-4 text-sm font-black text-white shadow-lg shadow-ios-blue/20 transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-muted disabled:shadow-none"
+                                                >
+                                                    {isVerifying ? 'Verificando...' : 'Verificar solução'}
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openMobileStep('gabarito')}
+                                                    className="min-h-11 rounded-[18px] bg-ios-blue px-3 text-xs font-black text-white shadow-lg shadow-ios-blue/20"
+                                                >
+                                                    Comparar com roteiro
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openMobileStep('ajuda')}
+                                                    className="min-h-11 rounded-[18px] border border-default bg-surface-2 px-3 text-xs font-black text-primary"
+                                                >
+                                                    Ver critérios
+                                                </button>
+                                            </div>
+                                        )}
+                                        <div className="mt-2 grid grid-cols-2 gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => openMobileStep('ajuda')}
+                                                className="min-h-10 rounded-[16px] border border-default bg-surface-2/85 px-3 text-xs font-black text-secondary"
+                                            >
+                                                Pedir pista
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => openMobileStep('gabarito')}
+                                                className="min-h-10 rounded-[16px] border border-default bg-surface-2/85 px-3 text-xs font-black text-secondary"
+                                            >
+                                                Ver roteiro
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
