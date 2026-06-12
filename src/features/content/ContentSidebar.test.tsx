@@ -59,11 +59,11 @@ describe('ContentSidebar', () => {
             />
         );
 
-        const targetCopy = screen.getByText('abre: Pilhas');
+        const targetCopy = screen.getByText('Enter abre esta lição: Pilhas');
         expect(targetCopy).toBeInTheDocument();
         expect(targetCopy).toHaveClass('search-target-copy');
         expect(targetCopy.closest('.search-target-shell')).toBeInTheDocument();
-        expect(screen.getByText('1/1')).toBeInTheDocument();
+        expect(screen.getByText('Resultado 1 de 1')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Pilhas/ })).toHaveClass('search-target-row');
     });
 

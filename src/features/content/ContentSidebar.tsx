@@ -64,8 +64,8 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
     const visibleSearchResult = activeSearchResult ?? firstSearchResult;
     const canMoveSearchResult = (searchResultPosition?.total ?? 0) > 1;
     const resultCountLabel = searchResultPosition
-        ? `${searchResultPosition.current}/${searchResultPosition.total}`
-        : '0';
+        ? `Resultado ${searchResultPosition.current} de ${searchResultPosition.total}`
+        : 'Nenhum resultado';
     const searchTargetKey = visibleSearchResult
         ? `${visibleSearchResult.moduleId}-${visibleSearchResult.lessonId}-${searchResultPosition?.current ?? 0}`
         : `empty-${trimmedSearch}`;
@@ -171,10 +171,10 @@ export const ContentSidebar: React.FC<ContentSidebarProps> = ({
                             </span>
                             <span className="search-target-copy min-w-0 flex-1 truncate font-medium text-secondary">
                                 {visibleSearchResult
-                                    ? `abre: ${visibleSearchResult.lessonTitle}`
+                                    ? `Enter abre esta lição: ${visibleSearchResult.lessonTitle}`
                                     : 'Sem destino para Enter'}
                             </span>
-                            <span className="search-target-count flex h-6 flex-shrink-0 items-center rounded-lg border border-default bg-surface-1 px-2 font-mono font-bold text-secondary">
+                            <span className="search-target-count flex h-6 flex-shrink-0 items-center rounded-lg border border-default bg-surface-1 px-2 font-bold text-secondary">
                                 {resultCountLabel}
                             </span>
                             <button

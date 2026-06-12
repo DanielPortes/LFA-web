@@ -1,4 +1,4 @@
-import { useCallback, useId, useState } from 'react';
+import { useCallback, useId, useMemo, useState } from 'react';
 import { resolveExerciseRefs } from '../data/learningConnections';
 import type { AutomatoData, CourseModule } from '../types';
 import { useProgress } from '../hooks/useProgress';
@@ -11,7 +11,9 @@ import { LessonNavigator } from '../features/content/LessonNavigator';
 import { LessonSupportPanel } from '../features/content/LessonSupportPanel';
 import { useContentSelection } from '../features/content/useContentSelection';
 import { useCourseModulesData } from '../features/content/useCourseModulesData';
+import { ContentSkeleton } from '../components/ui';
 import { cloneAutomaton } from '../utils/cloneAutomaton';
+import { ArrowRight, CheckCircle2, PenTool } from 'lucide-react';
 
 interface ContentProps {
     onOpenFullSimulator?: (data: AutomatoData) => void;
@@ -28,6 +30,10 @@ const ContentDataState = ({ message }: { message: string }) => (
             <p className="mt-2 text-sm text-primary">{message}</p>
         </div>
     </div>
+);
+
+const collectInlineExerciseRefs = (blocks: CourseModule['lessons'][number]['content']) => (
+    new Set(blocks.flatMap((block) => block.exerciseRef ? [block.exerciseRef] : []))
 );
 
 const LoadedContentSection = ({
@@ -82,7 +88,19 @@ const LoadedContentSection = ({
         markLessonVisited,
         onSelectionChange
     });
-    const relatedExercises = resolveExerciseRefs(activeLesson.exerciseRefs);
+    const inlineExerciseRefs = useMemo(
+        () => collectInlineExerciseRefs(activeLesson.content),
+        [activeLesson.content]
+    );
+    const relatedExercises = useMemo(
+        () => resolveExerciseRefs(activeLesson.exerciseRefs),
+        [activeLesson.exerciseRefs]
+    );
+    const supportRelatedExercises = useMemo(
+        () => relatedExercises.filter((exercise) => !inlineExerciseRefs.has(exercise.ref)),
+        [inlineExerciseRefs, relatedExercises]
+    );
+    const firstRelatedExercise = relatedExercises[0] ?? null;
     const handleOpenInlineSimulator = useCallback((data: AutomatoData) => {
         clearSelectedAutomaton();
         setSelectedSimulatorAutomaton(cloneAutomaton(data));
@@ -159,9 +177,59 @@ const LoadedContentSection = ({
                     <LessonSupportPanel
                         summary={activeLesson.summary}
                         commonMistakes={activeLesson.commonMistakes}
-                        relatedExercises={relatedExercises}
+                        relatedExercises={supportRelatedExercises}
                         onOpenExercise={onOpenExercise}
                     />
+
+                    <section className="lesson-next-step mt-12 rounded-[24px] border border-status-info/20 bg-status-info-soft/55 p-5 shadow-apple-sm">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="min-w-0">
+                                <div className="ui-kicker text-status-info">Próximo passo</div>
+                                <h2 className="mt-2 text-xl font-black text-primary">
+                                    Fixe esta lição antes de avançar
+                                </h2>
+                                <p className="mt-2 text-sm leading-relaxed text-secondary">
+                                    Resolva a prática associada, marque a lição como concluída ou siga para a próxima aula quando o conceito estiver claro.
+                                </p>
+                            </div>
+
+                            <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                                {firstRelatedExercise && onOpenExercise && (
+                                    <button
+                                        type="button"
+                                        onClick={() => onOpenExercise(firstRelatedExercise.categoryId, firstRelatedExercise.exerciseId)}
+                                        className="inline-flex items-center justify-center gap-2 rounded-full bg-ios-blue px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-ios-blue/20 transition-colors hover:opacity-90"
+                                    >
+                                        <PenTool size={15} />
+                                        Abrir exercício
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => markLessonCompleted(activeLessonId)}
+                                    disabled={isLessonCompleted(activeLessonId)}
+                                    className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-xs font-bold transition-colors ${
+                                        isLessonCompleted(activeLessonId)
+                                            ? 'cursor-default border border-ios-green/20 bg-ios-green/10 text-ios-green'
+                                            : 'border border-ios-green/25 bg-ios-green text-white hover:bg-green-600'
+                                    }`}
+                                >
+                                    <CheckCircle2 size={15} />
+                                    {isLessonCompleted(activeLessonId) ? 'Concluída' : 'Marcar concluída'}
+                                </button>
+                                {navigationState.next && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleNavigate(navigationState.next!.modId, navigationState.next!.lessonId)}
+                                        className="inline-flex items-center justify-center gap-2 rounded-full border border-default bg-surface-1 px-4 py-2.5 text-xs font-bold text-primary transition-colors hover:bg-surface-hover"
+                                    >
+                                        Próxima lição
+                                        <ArrowRight size={15} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </section>
 
                     <LessonNavigator
                         isCompleted={isLessonCompleted(activeLessonId)}
@@ -197,7 +265,7 @@ export const ConteudoSection = ({
     const { modules, isLoading, error } = useCourseModulesData();
 
     if (isLoading) {
-        return <ContentDataState message="Carregando o roteiro teórico da disciplina." />;
+        return <ContentSkeleton />;
     }
 
     if (error || modules.length === 0) {

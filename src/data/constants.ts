@@ -10,7 +10,7 @@ export const topicos: Topic[] = [
     },
     {
         id: 'afd',
-        title: 'Automatos Finitos (AFD)',
+        title: 'Autômatos Finitos (AFD)',
         desc: 'Definição formal, diagramas e processamento determinístico.',
         icon: Layers
     },
@@ -28,14 +28,14 @@ export const topicos: Topic[] = [
     },
     {
         id: 'afne',
-        title: 'Transicoes Vazias (AFNε)',
+        title: 'Transições Vazias (AFNε)',
         desc: 'O poder do silêncio (ε) e conversões.',
         icon: Filter
     },
     {
         id: 'er',
         title: 'Expressões Regulares',
-        desc: 'Padrões de texto e equivalência com automatos.',
+        desc: 'Padrões de texto e equivalência com autômatos.',
         icon: Code
     },
     {
@@ -52,14 +52,14 @@ export const topicos: Topic[] = [
     },
     {
         id: 'pda',
-        title: 'Automatos de Pilha',
+        title: 'Autômatos de Pilha',
         desc: 'Reconhecimento de linguagens não regulares.',
         icon: Layers
     },
     {
         id: 'chomsky',
         title: 'Hierarquia de Chomsky',
-        desc: 'Classes de linguagens (Tipos 0 a 3). Inclui o Automato Linearmente Limitado (ALL) no Tipo 1.',
+        desc: 'Classes de linguagens (Tipos 0 a 3). Inclui o Autômato Linearmente Limitado (ALL) no Tipo 1.',
         icon: Split
     },
     {
@@ -71,7 +71,7 @@ export const topicos: Topic[] = [
     {
         id: 'moore_mealy',
         title: 'Máquinas de Moore e Mealy',
-        desc: 'Automatos com saída (Transdutores).',
+        desc: 'Autômatos com saída (Transdutores).',
         icon: ArrowRightLeft
     },
     {
@@ -530,12 +530,12 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 5,
             nivel: 'dificil',
             pergunta: 'Dado L1 e L2 finitas, L1.L2 é finita? Prove.',
-            respostaTexto: 'Sim. A concatenação de dois conjuntos finitos é finita, pois ha no máximo |L1|*|L2| palavras.'
+            respostaTexto: 'Sim. A concatenação de dois conjuntos finitos é finita, pois há no máximo |L1|*|L2| palavras.'
         },
         {
             id: 6,
             nivel: 'dificil',
-            pergunta: 'Descreva por propriedade a linguagem dos binários divisiveis por 4.',
+            pergunta: 'Descreva por propriedade a linguagem dos binários divisíveis por 4.',
             respostaTexto: 'L = { w em {0,1}* | w representa número binário com sufixo 00 }.'
         },
         {
@@ -554,7 +554,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 9,
             nivel: 'medio',
             pergunta: 'Explique a diferença entre L* e L+.',
-            respostaTexto: 'L* permite zero ou mais concatenacoes (inclui ε). L+ permite uma ou mais (exclui ε).' 
+            respostaTexto: 'L* permite zero ou mais concatenações (inclui ε). L+ permite uma ou mais (exclui ε).'
         },
         {
             id: 10,
@@ -572,7 +572,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 12,
             nivel: 'dificil',
             pergunta: 'Mostre que se L1 subset L2 então L1* subset L2*.',
-            respostaTexto: 'Qualquer concatenação de palavras de L1 também e concatenação de palavras de L2, pois L1 subset L2.'
+            respostaTexto: 'Qualquer concatenação de palavras de L1 também é concatenação de palavras de L2, pois L1 subset L2.'
         }
     ],
     // ========================================================================
@@ -649,8 +649,8 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 4,
             nivel: 'facil',
             pergunta: 'Construa um AFD para L = { w em {a,b}* | w termina com a }.',
-            dica: 'Dois estados: ultimo foi a ou nao. Estado final quando ultimo = a.',
-            respostaTexto: 'q0 (ultimo nao-a) -a-> q1, -b-> q0; q1 (ultimo a) -a-> q1, -b-> q0.',
+            dica: 'Dois estados: último foi a ou não. Estado final quando último = a.',
+            respostaTexto: 'q0 (último não-a) -a-> q1, -b-> q0; q1 (último a) -a-> q1, -b-> q0.',
             testes: [
                 { input: 'a', expected: 'accept' },
                 { input: 'ba', expected: 'accept' },
@@ -695,7 +695,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             nivel: 'medio',
             pergunta: 'Construa um AFD para L = { w | w tem no máximo dois "b" }.',
             dica: 'Estados contam b: 0, 1, 2, e erro (>=3).',
-            respostaTexto: 'Quatro estados: 0b,1b,2b (finais), erro (nao final).',
+            respostaTexto: 'Quatro estados: 0b,1b,2b (finais), erro (não final).',
             testes: [
                 { input: '', expected: 'accept' },
                 { input: 'b', expected: 'accept' },
@@ -721,8 +721,8 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 9,
             nivel: 'medio',
-            pergunta: 'Construa um AFD para números binários divisiveis por 4.',
-            dica: 'Basta rastrear os dois ultimos bits; aceite quando terminar com 00 (incluindo 0).',
+            pergunta: 'Construa um AFD para números binários divisíveis por 4.',
+            dica: 'Basta rastrear os dois últimos bits; aceite quando terminar com 00 (incluindo 0).',
             respostaTexto: 'Estados representam os sufixos possíveis: q0 (start/0), q1 (1), q2 (10), q3 (00/aceita).',
             testes: [
                 { input: '0', expected: 'accept' },
@@ -735,16 +735,16 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 10,
             nivel: 'dificil',
-            pergunta: 'Construa um AFD para L = { w | w comeca e termina com o mesmo simbolo }.',
-            dica: 'Memorize o primeiro simbolo e acompanhe o ultimo.',
-            respostaTexto: 'Use estados para primeiro=a/primeiro=b e se o ultimo coincide.'
+            pergunta: 'Construa um AFD para L = { w | w começa e termina com o mesmo símbolo }.',
+            dica: 'Memorize o primeiro símbolo e acompanhe o último.',
+            respostaTexto: 'Use estados para primeiro=a/primeiro=b e se o último coincide.'
         },
         {
             id: 11,
             nivel: 'medio',
             pergunta: 'Construa um AFD para L = { w | w não contém a substring "bb" }.',
-            dica: 'Use um estado que lembra se o ultimo simbolo foi b, e um estado de erro.',
-            respostaTexto: 'q0 (ultimo nao-b) -a-> q0, -b-> q1; q1 -a-> q0, -b-> erro; erro loop.',
+            dica: 'Use um estado que lembra se o último símbolo foi b, e um estado de erro.',
+            respostaTexto: 'q0 (último não-b) -a-> q0, -b-> q1; q1 -a-> q0, -b-> erro; erro loop.',
             testes: [
                 { input: '', expected: 'accept' },
                 { input: 'aab', expected: 'accept' },
@@ -884,9 +884,9 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 5,
             nivel: 'facil',
-            pergunta: 'AFN para palavras que contém a substring "ab".',
-            dica: 'Loop em q0 com a,b e chute o inicio do padrao.',
-            respostaTexto: 'q0 loop em a,b; transicao q0 -a-> q1 -b-> q2(final).'
+            pergunta: 'AFN para palavras que contêm a substring "ab".',
+            dica: 'Loop em q0 com a,b e chute o início do padrão.',
+            respostaTexto: 'q0 loop em a,b; transição q0 -a-> q1 -b-> q2(final).'
         },
         {
             id: 6,
@@ -899,22 +899,22 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 7,
             nivel: 'medio',
             pergunta: 'Construa um AFN para L = a* b* (a e depois b).',
-            dica: 'Permita ficar em a e depois mudar para b com uma transicao.',
+            dica: 'Permita ficar em a e depois mudar para b com uma transição.',
             respostaTexto: 'q0 loop em a; q0 -b-> q1; q1 loop em b; q0 e q1 finais.'
         },
         {
             id: 8,
             nivel: 'medio',
             pergunta: 'AFN para L = { w | w inicia com a ou termina com b }.',
-            dica: 'Use uniao de dois AFNs simples.',
+            dica: 'Use união de dois AFNs simples.',
             respostaTexto: 'Um ramo para prefixo a e outro para sufixo b, ambos a partir do inicial.'
         },
         {
             id: 9,
             nivel: 'dificil',
-            pergunta: 'Descreva o processo de conversao de um AFN para AFD.',
+            pergunta: 'Descreva o processo de conversão de um AFN para AFD.',
             dica: 'Use subconjuntos de estados.',
-            respostaTexto: 'Cada estado do AFD representa um conjunto de estados do AFN; estados finais são conjuntos que contém um final.'
+            respostaTexto: 'Cada estado do AFD representa um conjunto de estados do AFN; estados finais são conjuntos que contêm um final.'
         }
     ],
 
@@ -926,7 +926,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 11,
             nivel: 'medio',
             pergunta: 'Construa um AFNε para L = { a } ∪ { bb } ∪ { ccc }.',
-            dica: 'Use um estado inicial com transicoes ε para três caminhos.',
+            dica: 'Use um estado inicial com transições ε para três caminhos.',
             respostaTexto: 'Um ramo para a, outro para bb e outro para ccc, todos a partir do início via ε.',
             respostaAutomato: {
                 tipo: 'AFN',
@@ -968,15 +968,15 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 12,
             nivel: 'medio',
             pergunta: 'Construa um AFN-ε para L = (ab)*.',
-            dica: 'Use ε para ligar repeticao do bloco ab.',
+            dica: 'Use ε para ligar repetição do bloco ab.',
             respostaTexto: 'Bloco a->b com ε de retorno e ε de pulo para aceitar ε.'
         },
         {
             id: 13,
             nivel: 'medio',
             pergunta: 'AFN-ε para L = a? b* (a opcional).',
-            dica: 'Use uma transicao ε para pular o a.',
-            respostaTexto: 'Inicial tem ε para caminho sem a e transicao a para caminho com a; ambos vao para loop de b.'
+            dica: 'Use uma transição ε para pular o a.',
+            respostaTexto: 'Inicial tem ε para caminho sem a e transição a para caminho com a; ambos vão para loop de b.'
         },
         {
             id: 14,
@@ -988,9 +988,9 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 15,
             nivel: 'medio',
-            pergunta: 'Explique como eliminar transicoes ε de um AFN.',
+            pergunta: 'Explique como eliminar transições ε de um AFN.',
             dica: 'Use fecho-ε.',
-            respostaTexto: 'Calcule fecho-ε de cada estado e atualize transicoes; estados finais são aqueles cujo fecho contém final.'
+            respostaTexto: 'Calcule fecho-ε de cada estado e atualize transições; estados finais são aqueles cujo fecho contém final.'
         }
     ],
 
@@ -1052,21 +1052,21 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 8,
             nivel: 'facil',
-            pergunta: 'ER para palavras que contém "ab".',
+            pergunta: 'ER para palavras que contêm "ab".',
             dica: 'Prefixo livre, depois ab, depois sufixo livre.',
             respostaTexto: '(a|b)*ab(a|b)*'
         },
         {
             id: 9,
             nivel: 'medio',
-            pergunta: 'ER para palavras que comecam com a e terminam com b.',
-            dica: 'Um a no inicio e um b no fim.',
+            pergunta: 'ER para palavras que começam com a e terminam com b.',
+            dica: 'Um a no início e um b no fim.',
             respostaTexto: 'a(a|b)*b'
         },
         {
             id: 10,
             nivel: 'medio',
-            pergunta: 'ER para palavras de tamanho multiplo de 3 sobre {a,b}.',
+            pergunta: 'ER para palavras de tamanho múltiplo de 3 sobre {a,b}.',
             dica: 'Agrupe blocos de 3.',
             respostaTexto: '((a|b)(a|b)(a|b))*'
         },
@@ -1080,7 +1080,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 12,
             nivel: 'dificil',
-            pergunta: 'ER para palavras que não contém "bb".',
+            pergunta: 'ER para palavras que não contêm "bb".',
             dica: 'Depois de b deve vir a ou fim.',
             respostaTexto: '(a|ba)*(ε|b)'
         }
@@ -1093,8 +1093,8 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 12,
             nivel: 'facil',
-            pergunta: "Escreva uma gramatica regular para L = { w | w termina em 'ab' }.",
-            dica: 'Pense em um nao-terminal que garante o sufixo.',
+            pergunta: "Escreva uma gramática regular para L = { w | w termina em 'ab' }.",
+            dica: 'Pense em um não-terminal que garante o sufixo.',
             respostaTexto: 'S -> a A | b S\nA -> b | a A',
             mode: 'grammar',
             testes: [
@@ -1111,8 +1111,8 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 13,
             nivel: 'medio',
-            pergunta: "Gramatica regular para L = { w | w tem numero par de 'a' }.",
-            dica: 'Dois estados: par e impar; b faz loop.',
+            pergunta: "Gramática regular para L = { w | w tem número par de 'a' }.",
+            dica: 'Dois estados: par e ímpar; b faz loop.',
             respostaTexto: 'S -> b S | a A | eps\nA -> b A | a S',
             mode: 'grammar',
             testes: [
@@ -1127,7 +1127,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 14,
             nivel: 'facil',
-            pergunta: 'Gramatica regular para L = (ab)*.',
+            pergunta: 'Gramática regular para L = (ab)*.',
             dica: 'Alterna entre produzir a e b.',
             respostaTexto: 'S -> a A | eps\nA -> b S',
             mode: 'grammar',
@@ -1143,7 +1143,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 15,
             nivel: 'facil',
-            pergunta: 'Gramatica regular para L = 0*1*.',
+            pergunta: 'Gramática regular para L = 0*1*.',
             dica: 'Fase de 0s e depois fase de 1s.',
             respostaTexto: 'S -> 0 S | A\nA -> 1 A | eps',
             mode: 'grammar',
@@ -1159,7 +1159,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 16,
             nivel: 'medio',
-            pergunta: 'Gramatica regular para palavras que terminam em 01.',
+            pergunta: 'Gramática regular para palavras que terminam em 01.',
             dica: 'Garanta o sufixo 01.',
             respostaTexto: 'S -> 0 S | 1 S | 0 A\nA -> 1',
             mode: 'grammar',
@@ -1175,8 +1175,8 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 17,
             nivel: 'medio',
-            pergunta: 'Gramatica regular para palavras com numero par de b.',
-            dica: 'Use dois nao-terminais para contar b par/impar.',
+            pergunta: 'Gramática regular para palavras com número par de b.',
+            dica: 'Use dois não-terminais para contar b par/ímpar.',
             respostaTexto: 'S -> a S | b A | eps\nA -> a A | b S',
             mode: 'grammar',
             testes: [
@@ -1190,7 +1190,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 18,
             nivel: 'dificil',
-            pergunta: 'Gramatica regular para palavras de tamanho multiplo de 3 sobre {a,b}.',
+            pergunta: 'Gramática regular para palavras de tamanho múltiplo de 3 sobre {a,b}.',
             dica: 'Ciclo de 3 producoes.',
             respostaTexto: 'S -> a A | b A | eps\nA -> a B | b B\nB -> a S | b S',
             mode: 'grammar',
@@ -1218,39 +1218,39 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 8,
             nivel: 'medio',
-            pergunta: "Minimize o automato: q0->q1(a), q1->q0(a). Ambos finais.",
+            pergunta: "Minimize o autômato: q0->q1(a), q1->q0(a). Ambos finais.",
             dica: 'Se q0 e q1 são finais e reagem igual, eles viram um só.',
             respostaTexto: "Estado único {q0, q1} com loop em 'a'."
         },
         {
             id: 9,
             nivel: 'facil',
-            pergunta: 'Quando dois estados são distinguiveis?',
-            respostaTexto: 'Quando existe uma palavra w que leva um a final e outro a nao-final.'
+            pergunta: 'Quando dois estados são distinguíveis?',
+            respostaTexto: 'Quando existe uma palavra w que leva um a final e outro a não-final.'
         },
         {
             id: 10,
             nivel: 'medio',
-            pergunta: 'Explique por que estados inalcancaveis podem ser removidos antes da minimizacao.',
+            pergunta: 'Explique por que estados inalcançáveis podem ser removidos antes da minimização.',
             respostaTexto: 'Eles nunca são visitados a partir do inicial, logo não afetam a linguagem.'
         },
         {
             id: 11,
             nivel: 'medio',
             pergunta: 'Qual a primeira etapa do algoritmo de tabela?',
-            respostaTexto: 'Marcar todos os pares (final, nao-final) como distinguiveis.'
+            respostaTexto: 'Marcar todos os pares (final, não-final) como distinguíveis.'
         },
         {
             id: 12,
             nivel: 'medio',
             pergunta: 'Em um AFD total, o estado de erro pode ser removido?',
-            respostaTexto: 'Nao, pois ele garante transicoes definidas; removendo, o AFD deixa de ser total.'
+            respostaTexto: 'Não, pois ele garante transições definidas; removendo, o AFD deixa de ser total.'
         },
         {
             id: 13,
             nivel: 'dificil',
-            pergunta: 'Explique por que minimizacao não depende da rotulagem dos estados.',
-            respostaTexto: 'A minimizacao depende apenas da equivalência comportamental, não dos nomes.'
+            pergunta: 'Explique por que minimização não depende da rotulagem dos estados.',
+            respostaTexto: 'A minimização depende apenas da equivalência comportamental, não dos nomes.'
         }
     ],
 
@@ -1262,31 +1262,31 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 14,
             nivel: 'facil',
             pergunta: 'Explique a diferença entre máquinas de Moore e Mealy.',
-            respostaTexto: 'Moore produz saída por estado; Mealy produz saída por transicao. Em Moore a saída muda quando o estado muda, em Mealy a saída pode mudar no mesmo simbolo.'
+            respostaTexto: 'Moore produz saída por estado; Mealy produz saída por transição. Em Moore a saída muda quando o estado muda, em Mealy a saída pode mudar no mesmo símbolo.'
         },
         {
             id: 15,
             nivel: 'medio',
-            pergunta: 'Como converter uma maquina de Mealy em Moore?',
-            respostaTexto: 'Divida estados quando saidas diferentes ocorrem em transicoes que entram no mesmo estado.'
+            pergunta: 'Como converter uma máquina de Mealy em Moore?',
+            respostaTexto: 'Divida estados quando saídas diferentes ocorrem em transições que entram no mesmo estado.'
         },
         {
             id: 16,
             nivel: 'medio',
-            pergunta: 'Em Moore, a saida depende de que?',
+            pergunta: 'Em Moore, a saída depende de quê?',
             respostaTexto: 'Somente do estado atual.'
         },
         {
             id: 17,
             nivel: 'medio',
-            pergunta: 'Em Mealy, a saida pode mudar quando?',
-            respostaTexto: 'No momento da transicao, lendo o simbolo.'
+            pergunta: 'Em Mealy, a saída pode mudar quando?',
+            respostaTexto: 'No momento da transição, lendo o símbolo.'
         },
         {
             id: 18,
             nivel: 'dificil',
             pergunta: 'Explique por que Mealy pode usar menos estados que Moore.',
-            respostaTexto: 'Como a saida depende da transicao, não e necessario duplicar estados para representar saidas diferentes.'
+            respostaTexto: 'Como a saída depende da transição, não é necessário duplicar estados para representar saídas diferentes.'
         }
     ],
 
@@ -1307,7 +1307,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             nivel: 'medio',
             pergunta: 'Use o lema para mostrar que L = { 0^n 1^n | n >= 0 } não é regular.',
             dica: 'Bombeie dentro do bloco de 0s.',
-            respostaTexto: 'Escolha w = 0^p 1^p e bombeie os 0s; a quantidade de 0s muda e a de 1s nao.'
+            respostaTexto: 'Escolha w = 0^p 1^p e bombeie os 0s; a quantidade de 0s muda e a de 1s não.'
         },
         {
             id: 17,
@@ -1320,7 +1320,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 18,
             nivel: 'dificil',
             pergunta: 'Mostre que L = { ww | w em {0,1}* } não é regular.',
-            dica: 'Use w = 0^p 1^p 0^p 1^p ou argumento de divisao.',
+            dica: 'Use w = 0^p 1^p 0^p 1^p ou argumento de divisão.',
             respostaTexto: 'Bombeando dentro do primeiro bloco, a metade esquerda muda sem alterar a direita.'
         },
         {
@@ -1334,7 +1334,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 20,
             nivel: 'medio',
             pergunta: 'Explique por que o lema não serve para provar que uma linguagem é regular.',
-            respostaTexto: 'Porque o lema só da uma condição necessaria; linguagens nao-regulares também podem satisfazer.'
+            respostaTexto: 'Porque o lema só dá uma condição necessária; linguagens não-regulares também podem satisfazer.'
         }
     ],
 
@@ -1346,7 +1346,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
             id: 1,
             nivel: 'facil',
             pergunta: 'Escreva uma GLC para L = { a^n b^n | n >= 0 }.',
-            dica: 'Use uma producao recursiva que empilha a e desempilha b.',
+            dica: 'Use uma produção recursiva que empilha a e desempilha b.',
             respostaTexto: 'S -> a S b | eps',
             mode: 'grammar',
             testes: [
@@ -1361,7 +1361,7 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 2,
             nivel: 'medio',
-            pergunta: 'Dada a gramatica S -> a S b | eps, derive aabb.',
+            pergunta: 'Dada a gramática S -> a S b | eps, derive aabb.',
             ...pedagogicalExerciseData.cfg_2,
             respostaTexto: 'S => a S b => a a S b b => a a b b.',
             mode: 'text'
@@ -1465,30 +1465,30 @@ export const exerciciosDB: Record<string, Exercicio[]> = {
         {
             id: 1,
             nivel: 'medio',
-            pergunta: 'O problema da parada e decidivel? Explique.',
-            respostaTexto: 'Nao. O problema da parada e indecidivel para maquinas de Turing.',
+            pergunta: 'O problema da parada é decidível? Explique.',
+            respostaTexto: 'Não. O problema da parada é indecidível para máquinas de Turing.',
             mode: 'text'
         },
         {
             id: 2,
             nivel: 'medio',
-            pergunta: 'Qual a diferenca entre decidivel e semi-decidivel?',
-            respostaTexto: 'Decidivel sempre termina com sim/nao; semi-decidivel pode nao terminar em instancias negativas.',
+            pergunta: 'Qual a diferença entre decidível e semidecidível?',
+            respostaTexto: 'Decidível sempre termina com sim/não; semidecidível pode não terminar em instâncias negativas.',
             mode: 'text'
         },
         {
             id: 3,
             nivel: 'dificil',
-            pergunta: 'Explique por que a equivalencia de maquinas de Turing e indecidivel.',
-            respostaTexto: 'Reduz-se do problema da parada: se fosse decidivel, resolveriamos a parada por reducao.',
+            pergunta: 'Explique por que a equivalência de máquinas de Turing é indecidível.',
+            respostaTexto: 'Reduz-se do problema da parada: se fosse decidível, resolveríamos a parada por redução.',
             mode: 'text'
         },
         {
             id: 4,
             nivel: 'facil',
-            pergunta: 'Construa uma MT que aceita palavras binarias que terminam em 1.',
-            dica: 'Use uma transicao START -> START, R no estado inicial. Varra a entrada ate BLANK e aceite se o ultimo simbolo lido for 1.',
-            respostaTexto: 'Uma MT que varre ate o fim e aceita se o ultimo simbolo for 1.',
+            pergunta: 'Construa uma MT que aceita palavras binárias que terminam em 1.',
+            dica: 'Use uma transição START -> START, R no estado inicial. Varra a entrada até BLANK e aceite se o último símbolo lido for 1.',
+            respostaTexto: 'Uma MT que varre até o fim e aceita se o último símbolo for 1.',
             mode: 'automaton',
             tipo: 'MT',
             testes: [

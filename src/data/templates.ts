@@ -24,7 +24,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
     },
     {
         id: 'single-state',
-        name: 'Estado Único',
+        name: 'Estado único',
         description: 'Um único estado inicial e final',
         category: 'basic',
         data: {
@@ -38,7 +38,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
     },
     {
         id: 'two-states',
-        name: 'Dois Estados',
+        name: 'Dois estados',
         description: 'Template básico com dois estados',
         category: 'basic',
         data: {
@@ -73,7 +73,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
     },
     {
         id: 'basic-sink',
-        name: 'Estado de Erro d',
+        name: 'Estado de erro d',
         description: 'Template com estado de erro (d)',
         category: 'basic',
         data: {
@@ -92,7 +92,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
     },
     {
         id: 'basic-chain-3',
-        name: 'Cadeia 3 Estados',
+        name: 'Cadeia de 3 estados',
         description: 'Template linear com três estados',
         category: 'basic',
         data: {
@@ -113,7 +113,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
     // Binary Language Templates
     {
         id: 'even-zeros',
-        name: 'Número Par de 0s',
+        name: 'Número par de 0s',
         description: 'Aceita strings binárias com número par de zeros',
         category: 'binary',
         data: {
@@ -182,7 +182,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
     {
         id: 'even-ones',
         name: 'Par de 1s',
-        description: 'Numero par de 1s em strings binarias',
+        description: 'Número par de 1s em strings binárias',
         category: 'binary',
         data: {
             tipo: 'AFD',
@@ -202,7 +202,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
     {
         id: 'ends-00',
         name: 'Termina em 00',
-        description: 'Strings binarias que terminam em 00',
+        description: 'Strings binárias que terminam em 00',
         category: 'binary',
         data: {
             tipo: 'AFD',
@@ -224,8 +224,8 @@ export const automatonTemplates: AutomatonTemplate[] = [
     },
     {
         id: 'length-even',
-        name: 'Comprimento Par',
-        description: 'Strings binarias com tamanho par',
+        name: 'Comprimento par',
+        description: 'Strings binárias com tamanho par',
         category: 'binary',
         data: {
             tipo: 'AFD',
@@ -242,8 +242,8 @@ export const automatonTemplates: AutomatonTemplate[] = [
     },
     {
         id: 'contains-11',
-        name: 'Contem 11',
-        description: 'Strings binarias que contém a substring 11',
+        name: 'Contém 11',
+        description: 'Strings binárias que contêm a substring 11',
         category: 'binary',
         data: {
             tipo: 'AFD',
@@ -264,8 +264,8 @@ export const automatonTemplates: AutomatonTemplate[] = [
     },
     {
         id: 'div-by-4',
-        name: 'Divisivel por 4',
-        description: 'Numero binário divisivel por 4',
+        name: 'Divisível por 4',
+        description: 'Número binário divisível por 4',
         category: 'binary',
         data: {
             tipo: 'AFD',
@@ -379,8 +379,8 @@ export const automatonTemplates: AutomatonTemplate[] = [
     },
     {
         id: 'starts-with-ab',
-        name: 'Comeca com ab',
-        description: 'Strings sobre {a,b} que comecam com ab',
+        name: 'Começa com ab',
+        description: 'Strings sobre {a,b} que começam com ab',
         category: 'string',
         data: {
             tipo: 'AFD',
@@ -398,13 +398,13 @@ export const automatonTemplates: AutomatonTemplate[] = [
                 { id: 't5', de: 'q2', para: 'q2', simbolo: 'a,b', curvatura: -40 },
                 { id: 't6', de: 'qd', para: 'qd', simbolo: 'a,b', curvatura: -40 }
             ],
-            descricao: 'L = { w | w comeca com ab }'
+            descricao: 'L = { w | w começa com ab }'
         }
     },
     {
         id: 'contains-abb',
-        name: 'Contem abb',
-        description: 'Strings que contém a substring abb',
+        name: 'Contém abb',
+        description: 'Strings que contêm a substring abb',
         category: 'string',
         data: {
             tipo: 'AFD',
@@ -429,7 +429,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
     {
         id: 'exactly-one-a',
         name: 'Exatamente um a',
-        description: 'Strings com exatamente um simbolo a',
+        description: 'Strings com exatamente um símbolo a',
         category: 'string',
         data: {
             tipo: 'AFD',
@@ -495,7 +495,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
     {
         id: 'afn-epsilon',
         name: 'AFN-eps: União',
-        description: 'AFN com transicoes épsilon (a* | b*)',
+        description: 'AFN com transições épsilon (a* | b*)',
         category: 'advanced',
         data: {
             tipo: 'AFN',
@@ -542,7 +542,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
     },
     {
         id: 'nfa-contains-ab',
-        name: 'AFN: Contem ab',
+        name: 'AFN: Contém ab',
         description: 'AFN para substring ab',
         category: 'advanced',
         data: {
@@ -584,7 +584,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
     {
         id: 'afn-eps-ab-star',
         name: 'AFN-eps: (ab)*',
-        description: 'AFN com eps para repeticao de ab',
+        description: 'AFN com eps para repetição de ab',
         category: 'advanced',
         data: {
             tipo: 'AFN',
@@ -628,7 +628,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
     {
         id: 'pda-anbn',
         name: 'AP: a^n b^n',
-        description: 'Automato de pilha para a^n b^n',
+        description: 'Autômato de pilha para a^n b^n',
         category: 'advanced',
         data: {
             tipo: 'AP',
@@ -753,7 +753,7 @@ export const automatonTemplates: AutomatonTemplate[] = [
                 { id: 't1', de: 'q0', para: 'q0', simbolo: '0', output: '1', curvatura: -30 },
                 { id: 't2', de: 'q0', para: 'q0', simbolo: '1', output: '0', curvatura: 30 }
             ],
-            descricao: 'Transicoes rotuladas como entrada/saída.'
+            descricao: 'Transições rotuladas como entrada/saída.'
         }
     }
 ];
