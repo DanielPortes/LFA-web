@@ -65,6 +65,12 @@ const studySignals = [
     }
 ] as const;
 
+const HERO_EDGE_GUARD_PX = 18;
+const HERO_ROTATE_X_FACTOR = 6;
+const HERO_ROTATE_Y_FACTOR = 8;
+const HERO_DEPTH_X_FACTOR = 12;
+const HERO_DEPTH_Y_FACTOR = 8;
+
 const resetHeroTilt = (element: HTMLElement) => {
     element.classList.remove('home-hero--tilting');
     element.style.setProperty('--hero-rotate-x', '0deg');
@@ -79,12 +85,23 @@ const applyHeroTilt = (element: HTMLElement, clientX: number, clientY: number) =
         return;
     }
 
+    const isInStableArea =
+        clientX >= rect.left + HERO_EDGE_GUARD_PX &&
+        clientX <= rect.right - HERO_EDGE_GUARD_PX &&
+        clientY >= rect.top + HERO_EDGE_GUARD_PX &&
+        clientY <= rect.bottom - HERO_EDGE_GUARD_PX;
+
+    if (!isInStableArea) {
+        resetHeroTilt(element);
+        return;
+    }
+
     const relativeX = (clientX - rect.left) / rect.width - 0.5;
     const relativeY = (clientY - rect.top) / rect.height - 0.5;
-    const rotateX = Math.max(-8, Math.min(8, -relativeY * 16));
-    const rotateY = Math.max(-10, Math.min(10, relativeX * 20));
-    const depthX = Math.max(-14, Math.min(14, relativeX * 32));
-    const depthY = Math.max(-12, Math.min(12, relativeY * 24));
+    const rotateX = Math.max(-3, Math.min(3, -relativeY * HERO_ROTATE_X_FACTOR));
+    const rotateY = Math.max(-4, Math.min(4, relativeX * HERO_ROTATE_Y_FACTOR));
+    const depthX = Math.max(-6, Math.min(6, relativeX * HERO_DEPTH_X_FACTOR));
+    const depthY = Math.max(-4, Math.min(4, relativeY * HERO_DEPTH_Y_FACTOR));
 
     element.classList.add('home-hero--tilting');
     element.style.setProperty('--hero-rotate-x', `${rotateX.toFixed(2)}deg`);
@@ -154,61 +171,63 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) 
             onPointerLeave={handleHeroPointerLeave}
             className="home-hero relative flex min-h-[300px] items-center overflow-hidden rounded-[24px] text-white shadow-apple-xl md:min-h-[340px] md:rounded-[28px]"
         >
-            <div className="home-hero__base absolute inset-0" />
-            <div className="home-hero__grid absolute inset-0" />
-            <div className="home-hero__orb home-hero__orb--a absolute rounded-full" />
-            <div className="home-hero__orb home-hero__orb--b absolute rounded-full" />
+            <div className="home-hero__scene absolute inset-0 flex items-center overflow-hidden rounded-[inherit]">
+                <div className="home-hero__base absolute inset-0" />
+                <div className="home-hero__grid absolute inset-0" />
+                <div className="home-hero__orb home-hero__orb--a absolute rounded-full" />
+                <div className="home-hero__orb home-hero__orb--b absolute rounded-full" />
 
-            <div className="relative z-10 flex w-full flex-col items-start justify-between gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:gap-10 lg:p-9">
-                <div className="max-w-3xl">
-                    <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-blue-200 shadow-sm ui-kicker">
-                        <span className="h-1.5 w-1.5 rounded-full bg-blue-300" />
-                        Plataforma contínua de estudo em LFA
+                <div className="relative z-10 flex w-full flex-col items-start justify-between gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:gap-10 lg:p-9">
+                    <div className="max-w-3xl">
+                        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-blue-200 shadow-sm ui-kicker">
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-300" />
+                            Plataforma contínua de estudo em LFA
+                        </div>
+                        <h1 className="ui-title-hero mb-4 max-w-[12ch] text-white sm:max-w-none">
+                            Aprenda Linguagens Formais e Autômatos
+                            <br />
+                            <span className="bg-gradient-to-r from-blue-200 via-cyan-200 to-indigo-200 bg-clip-text text-transparent">
+                                do conceito à resolução.
+                            </span>
+                        </h1>
+                        <p className="ui-body-lg mb-5 max-w-2xl font-medium text-slate-200">
+                            Estude definições formais, visualize execuções, pratique com feedback e use a trilha como material de consulta antes de prova, monitoria ou projeto.
+                        </p>
+                        <div className="flex flex-wrap gap-3">
+                            <button
+                                onClick={() => onNavigate('conteudo')}
+                                className="flex w-full items-center justify-center gap-3 rounded-full bg-ios-blue px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-600 active:scale-[0.99] sm:w-auto sm:px-7"
+                            >
+                                <BookOpen size={18} />
+                                Começar pela trilha
+                            </button>
+                            <button
+                                onClick={() => onNavigate('exercicios')}
+                                className="flex w-full items-center justify-center gap-3 rounded-full border border-white/15 bg-white/10 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-white/15 active:scale-[0.99] sm:w-auto sm:px-7"
+                            >
+                                <PenTool size={18} />
+                                Resolver exercícios
+                            </button>
+                            <button
+                                onClick={() => onNavigate('simulador')}
+                                className="flex w-full items-center justify-center gap-3 rounded-full border border-cyan-200/25 bg-cyan-200/12 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-cyan-200/18 active:scale-[0.99] sm:w-auto sm:px-7"
+                            >
+                                <Play size={18} fill="currentColor" />
+                                Abrir simulador
+                            </button>
+                        </div>
+                        <blockquote className="mt-5 hidden max-w-2xl border-l-4 border-blue-300/60 pl-4 text-slate-300 ui-body-sm italic md:block">
+                            "Teoria das Linguagens Formais foi originariamente desenvolvida na década de 1950 com o objetivo de desenvolver teorias relacionadas com as linguagens naturais."
+                            <br />
+                            <span className="text-xs font-bold not-italic text-slate-400">- Paulo Blauth Menezes</span>
+                        </blockquote>
                     </div>
-                    <h1 className="ui-title-hero mb-4 max-w-[12ch] text-white sm:max-w-none">
-                        Aprenda Linguagens Formais e Autômatos
-                        <br />
-                        <span className="bg-gradient-to-r from-blue-200 via-cyan-200 to-indigo-200 bg-clip-text text-transparent">
-                            do conceito à resolução.
-                        </span>
-                    </h1>
-                    <p className="ui-body-lg mb-5 max-w-2xl font-medium text-slate-200">
-                        Estude definições formais, visualize execuções, pratique com feedback e use a trilha como material de consulta antes de prova, monitoria ou projeto.
-                    </p>
-                    <div className="flex flex-wrap gap-3">
-                        <button
-                            onClick={() => onNavigate('conteudo')}
-                            className="flex w-full items-center justify-center gap-3 rounded-full bg-ios-blue px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-600 active:scale-[0.99] sm:w-auto sm:px-7"
-                        >
-                            <BookOpen size={18} />
-                            Começar pela trilha
-                        </button>
-                        <button
-                            onClick={() => onNavigate('exercicios')}
-                            className="flex w-full items-center justify-center gap-3 rounded-full border border-white/15 bg-white/10 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-white/15 active:scale-[0.99] sm:w-auto sm:px-7"
-                        >
-                            <PenTool size={18} />
-                            Resolver exercícios
-                        </button>
-                        <button
-                            onClick={() => onNavigate('simulador')}
-                            className="flex w-full items-center justify-center gap-3 rounded-full border border-cyan-200/25 bg-cyan-200/12 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-cyan-200/18 active:scale-[0.99] sm:w-auto sm:px-7"
-                        >
-                            <Play size={18} fill="currentColor" />
-                            Abrir simulador
-                        </button>
-                    </div>
-                    <blockquote className="mt-5 hidden max-w-2xl border-l-4 border-blue-300/60 pl-4 text-slate-300 ui-body-sm italic md:block">
-                        "Teoria das Linguagens Formais foi originariamente desenvolvida na década de 1950 com o objetivo de desenvolver teorias relacionadas com as linguagens naturais."
-                        <br />
-                        <span className="text-xs font-bold not-italic text-slate-400">- Paulo Blauth Menezes</span>
-                    </blockquote>
-                </div>
 
-                <div className="hidden h-56 w-56 items-center justify-center lg:flex">
-                    <div className="home-lab-card z-20 flex h-40 w-40 flex-col items-center justify-center rounded-[28px] border">
-                        <Code className="text-blue-200" size={38} />
-                        <span className="mt-3 text-sm font-semibold text-slate-200">Laboratório visual</span>
+                    <div className="hidden h-56 w-56 items-center justify-center lg:flex">
+                        <div className="home-lab-card z-20 flex h-40 w-40 flex-col items-center justify-center rounded-[28px] border">
+                            <Code className="text-blue-200" size={38} />
+                            <span className="mt-3 text-sm font-semibold text-slate-200">Laboratório visual</span>
+                        </div>
                     </div>
                 </div>
             </div>

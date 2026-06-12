@@ -1732,10 +1732,7 @@ body::after {
     --hero-rotate-y: 0deg;
     border: 1px solid rgba(255, 255, 255, 0.16);
     background: #071422;
-    transform: perspective(1200px) rotateX(0deg) rotateY(0deg);
-    transform-style: preserve-3d;
-    transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
-    will-change: transform;
+    transition: box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .home-hero--tilting {
@@ -1743,7 +1740,17 @@ body::after {
     box-shadow:
         0 34px 86px rgba(8, 47, 73, 0.34),
         0 16px 38px rgba(15, 23, 42, 0.22);
-    transform: perspective(1200px) rotateX(var(--hero-rotate-x)) rotateY(var(--hero-rotate-y));
+}
+
+.home-hero__scene {
+    transform: perspective(1400px) rotateX(0deg) rotateY(0deg);
+    transform-style: preserve-3d;
+    transition: transform 180ms ease;
+    will-change: transform;
+}
+
+.home-hero--tilting .home-hero__scene {
+    transform: perspective(1400px) rotateX(var(--hero-rotate-x)) rotateY(var(--hero-rotate-y));
 }
 
 .home-hero__base {
@@ -1756,7 +1763,7 @@ body::after {
 }
 
 .home-hero--tilting .home-hero__base {
-    transform: translate3d(calc(var(--hero-depth-x) * -0.35), calc(var(--hero-depth-y) * -0.35), -24px) scale(1.04);
+    transform: translate3d(calc(var(--hero-depth-x) * -0.2), calc(var(--hero-depth-y) * -0.2), -24px) scale(1.04);
 }
 
 .home-hero__grid {
@@ -1771,7 +1778,7 @@ body::after {
 }
 
 .home-hero--tilting .home-hero__grid {
-    transform: translate3d(calc(var(--hero-depth-x) * -0.55), calc(var(--hero-depth-y) * -0.55), -12px) scale(1.03);
+    transform: translate3d(calc(var(--hero-depth-x) * -0.3), calc(var(--hero-depth-y) * -0.3), -12px) scale(1.03);
 }
 
 .home-hero__orb {
@@ -1782,7 +1789,7 @@ body::after {
 }
 
 .home-hero--tilting .home-hero__orb {
-    transform: translate3d(calc(var(--hero-depth-x) * 0.7), calc(var(--hero-depth-y) * 0.7), 16px);
+    transform: translate3d(calc(var(--hero-depth-x) * 0.35), calc(var(--hero-depth-y) * 0.35), 16px);
 }
 
 .home-hero__orb--a {
@@ -1820,7 +1827,7 @@ body::after {
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.055)),
         radial-gradient(circle at 50% 0%, rgba(90, 200, 250, 0.22), transparent 58%);
-    transform: translate3d(calc(var(--hero-depth-x) * 0.9), calc(var(--hero-depth-y) * 0.9), 48px);
+    transform: translate3d(calc(var(--hero-depth-x) * 0.55), calc(var(--hero-depth-y) * 0.55), 48px);
 }
 
 .light .home-hero {
@@ -1859,6 +1866,7 @@ body::after {
 
 @media (prefers-reduced-motion: reduce), (hover: none), (pointer: coarse) {
     .home-hero,
+    .home-hero__scene,
     .home-hero__base,
     .home-hero__grid,
     .home-hero__orb,
