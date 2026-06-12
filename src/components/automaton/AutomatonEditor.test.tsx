@@ -84,6 +84,65 @@ describe('AutomatonEditor', () => {
         expect(screen.getByRole('button', { name: 'Abrir inspetor do editor' })).toBeInTheDocument();
     });
 
+    it('descarta curvas manuais antigas ao organizar o autômato', async () => {
+        const onChange = vi.fn();
+        const automaton: AutomatoData = {
+            tipo: 'AP',
+            estados: [
+                { id: 'q0', label: 'q0', x: 120, y: 120, isInicial: true, isFinal: false },
+                { id: 'q1', label: 'q1', x: 140, y: 130, isInicial: false, isFinal: false },
+                { id: 'qf', label: 'qf', x: 150, y: 140, isInicial: false, isFinal: true },
+            ],
+            transicoes: [
+                {
+                    id: 't1',
+                    de: 'q0',
+                    para: 'q1',
+                    simbolo: 'a, Z -> AZ',
+                    curvatura: 80,
+                    controlPoint: { x: 360, y: -160 },
+                },
+                {
+                    id: 't2',
+                    de: 'q0',
+                    para: 'q1',
+                    simbolo: 'a, A -> AA',
+                    curvatura: 0,
+                },
+            ],
+        };
+
+        await renderEditor({
+            data: automaton,
+            onChange,
+            compact: true,
+            compactVariant: 'workspace',
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Abrir inspetor do editor' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Organizar' }));
+
+        expect(onChange).toHaveBeenCalled();
+        expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
+            transicoes: [
+                expect.objectContaining({
+                    id: 't1',
+                    curvatura: expect.any(Number),
+                    controlPoint: null,
+                }),
+                expect.objectContaining({
+                    id: 't2',
+                    curvatura: expect.any(Number),
+                    controlPoint: null,
+                }),
+            ],
+        }));
+        const organized = onChange.mock.calls.at(-1)?.[0] as AutomatoData;
+        expect(organized.transicoes[0].curvatura).not.toBe(80);
+        expect(organized.transicoes[0].curvatura).not.toBe(0);
+        expect(organized.transicoes[1].curvatura).not.toBe(0);
+    });
+
     it('usa rail reduzido no preset de solver', async () => {
         await renderEditor({ compact: true, compactVariant: 'solver' });
 

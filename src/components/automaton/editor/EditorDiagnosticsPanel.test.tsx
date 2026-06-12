@@ -57,6 +57,13 @@ const renderPanel = (overrides: Partial<Parameters<typeof EditorDiagnosticsPanel
 };
 
 describe('EditorDiagnosticsPanel', () => {
+    it('nomeia o layout automático como Organizar', () => {
+        renderPanel();
+
+        expect(screen.getByRole('button', { name: 'Organizar' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Magic Layout' })).not.toBeInTheDocument();
+    });
+
     it('mantém ações indisponíveis para AP clicáveis para explicar o motivo ao aluno', () => {
         const onToggleBatchTest = vi.fn();
         const onToggleTable = vi.fn();

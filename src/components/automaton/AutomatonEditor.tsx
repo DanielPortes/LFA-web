@@ -8,7 +8,7 @@ import { useUiSettings } from '../../hooks/useUiSettings';
 import { Minimap } from '../ui/Minimap';
 import { getAlphabet, validateAutomaton } from '../../utils/conversions';
 import { splitSymbolTokens } from '../../utils/symbols';
-import { computeAutoLayout } from '../../utils/layout';
+import { calculateOptimalCurvatures, computeAutoLayout } from '../../utils/layout';
 import { EditorBottomBar } from './editor/EditorBottomBar';
 import { EditorDiagnosticsPanel } from './editor/EditorDiagnosticsPanel';
 import { EditorEmptyState } from './editor/EditorEmptyState';
@@ -258,7 +258,18 @@ export const AutomatonEditor: React.FC<EditorProps> = ({
             return;
         }
 
-        handleChange({ ...data, estados: layouted });
+        const transitionsResetForLayout = data.transicoes.map((transition) => ({
+            ...transition,
+            curvatura: 0,
+            controlPoint: null,
+        }));
+        const autoCurvatures = calculateOptimalCurvatures(transitionsResetForLayout, layouted);
+        const transitionsWithFreshGeometry = transitionsResetForLayout.map((transition) => ({
+            ...transition,
+            curvatura: autoCurvatures.get(transition.id) ?? 0,
+        }));
+
+        handleChange({ ...data, estados: layouted, transicoes: transitionsWithFreshGeometry });
         fitToContent();
         addToast('Layout automático aplicado.', 'success');
     }, [addToast, data, fitToContent, handleChange]);

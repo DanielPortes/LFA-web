@@ -133,7 +133,7 @@ export const EditorDiagnosticsPanel: React.FC<EditorDiagnosticsPanelProps> = ({
                 <div className="glass-panel p-2 rounded-2xl flex flex-wrap gap-2 shadow-apple-md border border-default w-full animate-fade-in-up items-center justify-between" style={{ animationDelay: '0.1s' }}>
                     <div className="flex gap-1">
                         <ToolbarButton icon={Grid3X3} label="Grid" active={snapToGrid} onClick={onToggleSnapToGrid} side="left" />
-                        <ToolbarButton icon={Zap} label="Magic Layout" onClick={onMagicLayout} side="left" />
+                        <ToolbarButton icon={Zap} label="Organizar" onClick={onMagicLayout} side="left" />
                     </div>
 
                     <div className="w-px h-6 bg-border" />

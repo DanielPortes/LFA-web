@@ -77,6 +77,43 @@ describe('useEditorViewport', () => {
         });
     });
 
+    it('não recalcula a câmera automaticamente quando apenas a posição de um estado muda', async () => {
+        vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback: FrameRequestCallback) => {
+            callback(0);
+            return 1;
+        });
+        const canvasRef = createCanvasRef(960, 720);
+        const movedStates: Estado[] = [
+            states[0],
+            { ...states[1], x: 900, y: 420 },
+        ];
+
+        const { result, rerender } = renderHook(
+            ({ currentStates }) => useEditorViewport({
+                canvasRef,
+                states: currentStates,
+            }),
+            {
+                initialProps: { currentStates: states },
+            }
+        );
+
+        act(() => {
+            result.current.fitToContent();
+        });
+
+        const fittedPan = result.current.pan;
+        const fittedZoom = result.current.zoom;
+
+        await act(async () => {
+            rerender({ currentStates: movedStates });
+            await Promise.resolve();
+        });
+
+        expect(result.current.pan).toEqual(fittedPan);
+        expect(result.current.zoom).toBe(fittedZoom);
+    });
+
     it('mantém pan para deltas mínimos e atualiza zoom no modo não controlado', () => {
         const canvasRef = createCanvasRef();
         const { result } = renderHook(() => useEditorViewport({

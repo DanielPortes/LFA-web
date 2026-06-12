@@ -12,12 +12,12 @@ const MIN_LABEL_STATE_SPACING = 15; // Increased from 8
 const MIN_LABEL_LABEL_SPACING = 10; // Increased from 6
 const MAX_LABEL_OFFSET_FROM_CURVE = 72;
 
-// Force-directed layout constants
-const REPULSION_FORCE = 15000; // Increased from 8000
-const ATTRACTION_FORCE = 0.04; // Slightly increased from 0.03
-const DAMPING = 0.85;
-const ITERATIONS = 300; // Increased iterations for stability
-const EDGE_LENGTH = 180; // Increased from 140
+// Layout constants
+const REPULSION_FORCE = 15000;
+const ANCHOR_FORCE = 0.08;
+const DAMPING = 0.82;
+const ITERATIONS = 120;
+const EDGE_LENGTH = 180;
 
 // ============================================================================
 // BOUNDING BOX UTILITIES
@@ -33,6 +33,17 @@ interface BoundingBox {
 interface Point {
     x: number;
     y: number;
+}
+
+interface LayoutBounds {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+    width: number;
+    height: number;
+    cx: number;
+    cy: number;
 }
 
 /**
@@ -451,20 +462,24 @@ export const calculateOptimalCurvatures = (
         const index = group.indexOf(t);
         const count = group.length;
         const hasBidirectional = reverseEdgeExists.get(key) || false;
+        const widestGroupLabel = group.reduce((widest, transition) => (
+            Math.max(widest, calculateLabelWidth(estimateLabelText(transition)))
+        ), calculateLabelWidth(estimateLabelText(t)));
+        const labelAwareStep = clamp(widestGroupLabel * 0.22 + 18, 34, 72);
 
         if (isLoop) {
-            // Loops: Stack upward with increasing size
-            const baseCurve = -50;
-            const step = 35;
+            // Loops: stack with enough room for long AP/MT labels.
+            const baseCurve = -clamp(widestGroupLabel * 0.28 + 42, 56, 110);
+            const step = clamp(widestGroupLabel * 0.18 + 28, 38, 70);
             result.set(t.id, baseCurve - index * step);
         } else if (hasBidirectional) {
-            // Bidirectional: Curve away from straight line
-            const baseCurve = 40;
-            const step = 30;
+            // Bidirectional: curve away from the straight line, keeping parallel labels separated.
+            const baseCurve = clamp(widestGroupLabel * 0.2 + 36, 48, 92);
+            const step = labelAwareStep;
             result.set(t.id, baseCurve + index * step);
         } else if (count > 1) {
-            // Multiple parallel: Fan out symmetrically
-            const spread = 35;
+            // Multiple parallel: fan out symmetrically with label-aware spacing.
+            const spread = labelAwareStep;
             const center = (count - 1) / 2;
             result.set(t.id, (index - center) * spread);
         } else {
@@ -802,8 +817,321 @@ const pushAwayFromCollision = (
 };
 
 // ============================================================================
-// FORCE-DIRECTED LAYOUT
+// AUTO LAYOUT
 // ============================================================================
+
+const clamp = (value: number, min: number, max: number): number => (
+    Math.max(min, Math.min(max, value))
+);
+
+const createLayoutBounds = (width: number, height: number): LayoutBounds => {
+    const safeWidth = Number.isFinite(width) && width > 100 ? width : 800;
+    const safeHeight = Number.isFinite(height) && height > 100 ? height : 600;
+
+    const leftInset = clamp(safeWidth * 0.12, 90, 190);
+    const rightInset = clamp(safeWidth * 0.14, 110, 230);
+    const topInset = clamp(safeHeight * 0.14, 88, 150);
+    const bottomInset = clamp(safeHeight * 0.22, 128, 230);
+
+    let minX = leftInset;
+    let maxX = safeWidth - rightInset;
+    let minY = topInset;
+    let maxY = safeHeight - bottomInset;
+
+    if (maxX - minX < MIN_STATE_SPACING * 2) {
+        const mid = safeWidth / 2;
+        minX = mid - MIN_STATE_SPACING;
+        maxX = mid + MIN_STATE_SPACING;
+    }
+
+    if (maxY - minY < MIN_STATE_SPACING * 2) {
+        const mid = safeHeight / 2;
+        minY = mid - MIN_STATE_SPACING;
+        maxY = mid + MIN_STATE_SPACING;
+    }
+
+    return {
+        minX,
+        maxX,
+        minY,
+        maxY,
+        width: maxX - minX,
+        height: maxY - minY,
+        cx: (minX + maxX) / 2,
+        cy: (minY + maxY) / 2,
+    };
+};
+
+const buildGraphMaps = (states: Estado[], transitions: Transicao[]) => {
+    const stateIds = new Set(states.map((state) => state.id));
+    const incoming = new Map<string, string[]>();
+    const outgoing = new Map<string, string[]>();
+
+    states.forEach((state) => {
+        incoming.set(state.id, []);
+        outgoing.set(state.id, []);
+    });
+
+    transitions.forEach((transition) => {
+        if (transition.de === transition.para) return;
+        if (!stateIds.has(transition.de) || !stateIds.has(transition.para)) return;
+
+        outgoing.get(transition.de)!.push(transition.para);
+        incoming.get(transition.para)!.push(transition.de);
+    });
+
+    return { incoming, outgoing };
+};
+
+const chooseLayoutStarts = (
+    states: Estado[],
+    incoming: Map<string, string[]>
+): string[] => {
+    const initialStates = states.filter((state) => state.isInicial);
+    if (initialStates.length > 0) return initialStates.map((state) => state.id);
+
+    const sourceStates = states.filter((state) => (incoming.get(state.id) || []).length === 0);
+    if (sourceStates.length > 0) return [sourceStates[0].id];
+
+    return [states[0].id];
+};
+
+const computeShortestLayers = (
+    starts: string[],
+    outgoing: Map<string, string[]>
+): Map<string, number> => {
+    const layers = new Map<string, number>();
+    const queue: string[] = [];
+
+    starts.forEach((start) => {
+        layers.set(start, 0);
+        queue.push(start);
+    });
+
+    while (queue.length > 0) {
+        const current = queue.shift()!;
+        const currentLayer = layers.get(current) || 0;
+
+        for (const next of outgoing.get(current) || []) {
+            const nextLayer = currentLayer + 1;
+            const previous = layers.get(next);
+            if (previous !== undefined && previous <= nextLayer) continue;
+
+            layers.set(next, nextLayer);
+            queue.push(next);
+        }
+    }
+
+    return layers;
+};
+
+const deriveLayerIndexes = (
+    states: Estado[],
+    transitions: Transicao[]
+): Map<string, number> => {
+    const { incoming, outgoing } = buildGraphMaps(states, transitions);
+    const starts = chooseLayoutStarts(states, incoming);
+    const shortestLayers = computeShortestLayers(starts, outgoing);
+    const rawLayers = new Map<string, number>();
+    const reachableMaxLayer = Math.max(0, ...shortestLayers.values());
+    let disconnectedOffset = 0;
+
+    states.forEach((state) => {
+        const shortestLayer = shortestLayers.get(state.id);
+        if (shortestLayer !== undefined) {
+            rawLayers.set(state.id, shortestLayer);
+            return;
+        }
+
+        rawLayers.set(state.id, reachableMaxLayer + 1 + disconnectedOffset);
+        disconnectedOffset++;
+    });
+
+    states.forEach((state) => {
+        const outgoingCount = (outgoing.get(state.id) || []).length;
+        const shouldSitAfterPredecessors = state.isFinal || outgoingCount === 0;
+        if (!shouldSitAfterPredecessors) return;
+
+        const predecessorLayers = (incoming.get(state.id) || [])
+            .map((previous) => rawLayers.get(previous))
+            .filter((layer): layer is number => layer !== undefined);
+        if (predecessorLayers.length === 0) return;
+
+        const nextLayer = Math.max(...predecessorLayers) + 1;
+        rawLayers.set(state.id, Math.max(rawLayers.get(state.id) || 0, nextLayer));
+    });
+
+    const uniqueLayers = [...new Set(rawLayers.values())].sort((a, b) => a - b);
+    const compressedLayer = new Map(uniqueLayers.map((layer, index) => [layer, index]));
+
+    return new Map(states.map((state) => [
+        state.id,
+        compressedLayer.get(rawLayers.get(state.id) || 0) || 0,
+    ]));
+};
+
+const computeGridLayout = (states: Estado[], bounds: LayoutBounds): Estado[] => {
+    const columns = Math.max(1, Math.ceil(Math.sqrt(states.length * (bounds.width / Math.max(bounds.height, 1)))));
+    const rows = Math.max(1, Math.ceil(states.length / columns));
+    const cellWidth = bounds.width / columns;
+    const cellHeight = bounds.height / rows;
+
+    return states.map((state, index) => {
+        const row = Math.floor(index / columns);
+        const column = index % columns;
+
+        return {
+            ...state,
+            x: bounds.minX + cellWidth * (column + 0.5),
+            y: bounds.minY + cellHeight * (row + 0.5),
+        };
+    });
+};
+
+const computeLayeredInitialLayout = (
+    states: Estado[],
+    transitions: Transicao[],
+    bounds: LayoutBounds
+): Estado[] => {
+    const hasDirectedEdges = transitions.some((transition) => transition.de !== transition.para);
+    if (!hasDirectedEdges) {
+        return computeGridLayout(states, bounds);
+    }
+
+    const layerIndexes = deriveLayerIndexes(states, transitions);
+    const layers = new Map<number, Estado[]>();
+    states.forEach((state) => {
+        const layer = layerIndexes.get(state.id) || 0;
+        if (!layers.has(layer)) layers.set(layer, []);
+        layers.get(layer)!.push(state);
+    });
+
+    const orderedLayerKeys = [...layers.keys()].sort((a, b) => a - b);
+    if (orderedLayerKeys.length <= 1 && states.length > 1) {
+        return computeGridLayout(states, bounds);
+    }
+
+    const originalIndex = new Map(states.map((state, index) => [state.id, index]));
+
+    return orderedLayerKeys.flatMap((layerKey, layerOrder) => {
+        const layerStates = [...(layers.get(layerKey) || [])].sort((a, b) => (
+            (originalIndex.get(a.id) || 0) - (originalIndex.get(b.id) || 0)
+        ));
+        const x = orderedLayerKeys.length === 1
+            ? bounds.cx
+            : bounds.minX + (bounds.width * layerOrder) / (orderedLayerKeys.length - 1);
+        const verticalGap = layerStates.length <= 1
+            ? 0
+            : Math.min(220, bounds.height / (layerStates.length - 1));
+
+        return layerStates.map((state, rowIndex) => {
+            const centeredRow = rowIndex - (layerStates.length - 1) / 2;
+            const y = bounds.cy + centeredRow * verticalGap;
+
+            return {
+                ...state,
+                x,
+                y: clamp(y, bounds.minY, bounds.maxY),
+            };
+        });
+    });
+};
+
+const relaxAroundAnchors = (
+    states: Estado[],
+    bounds: LayoutBounds,
+    minSpacing: number
+): Estado[] => {
+    const nodes = states.map((state) => ({
+        ...state,
+        targetX: state.x,
+        targetY: state.y,
+        vx: 0,
+        vy: 0,
+    }));
+
+    for (let iteration = 0; iteration < ITERATIONS; iteration++) {
+        const temp = 1 - iteration / ITERATIONS;
+
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                const a = nodes[i];
+                const b = nodes[j];
+                const dx = b.x - a.x;
+                const dy = b.y - a.y;
+                const distSq = Math.max(dx * dx + dy * dy, 0.1);
+                const dist = Math.sqrt(distSq);
+                const closeBoost = dist < minSpacing ? 2.5 : 1;
+                const force = (REPULSION_FORCE * closeBoost * temp) / distSq;
+                const fx = (dx / dist) * force;
+                const fy = (dy / dist) * force;
+
+                if (Number.isFinite(fx) && Number.isFinite(fy)) {
+                    a.vx -= fx;
+                    a.vy -= fy;
+                    b.vx += fx;
+                    b.vy += fy;
+                }
+            }
+        }
+
+        for (const node of nodes) {
+            node.vx += (node.targetX - node.x) * ANCHOR_FORCE * temp;
+            node.vy += (node.targetY - node.y) * ANCHOR_FORCE * temp;
+
+            node.x = clamp(node.x + node.vx, bounds.minX, bounds.maxX);
+            node.y = clamp(node.y + node.vy, bounds.minY, bounds.maxY);
+            node.vx *= DAMPING;
+            node.vy *= DAMPING;
+        }
+    }
+
+    return nodes.map((node) => ({
+        ...node,
+        x: node.x,
+        y: node.y,
+    }));
+};
+
+const resolveCollisionsInsideBounds = (
+    states: Estado[],
+    bounds: LayoutBounds,
+    minSpacing: number
+): Estado[] => {
+    const result = states.map((state) => ({ ...state }));
+    const maxIterations = 80;
+
+    for (let iteration = 0; iteration < maxIterations; iteration++) {
+        let moved = false;
+
+        for (let i = 0; i < result.length; i++) {
+            for (let j = i + 1; j < result.length; j++) {
+                const a = result[i];
+                const b = result[j];
+                const dx = b.x - a.x;
+                const dy = b.y - a.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist >= minSpacing) continue;
+
+                const direction = dist < 0.001
+                    ? EXACT_OVERLAP_DIRECTIONS[(i + j + iteration) % EXACT_OVERLAP_DIRECTIONS.length]
+                    : { x: dx / dist, y: dy / dist };
+                const push = (minSpacing - dist) / 2 + 2;
+
+                a.x = clamp(a.x - direction.x * push, bounds.minX, bounds.maxX);
+                a.y = clamp(a.y - direction.y * push, bounds.minY, bounds.maxY);
+                b.x = clamp(b.x + direction.x * push, bounds.minX, bounds.maxX);
+                b.y = clamp(b.y + direction.y * push, bounds.minY, bounds.maxY);
+                moved = true;
+            }
+        }
+
+        if (!moved) break;
+    }
+
+    return result;
+};
 
 /**
  * Calculate a clean force-directed layout for the automaton
@@ -815,207 +1143,33 @@ export const computeAutoLayout = (
     height: number
 ): Estado[] => {
     if (states.length === 0) return states;
-    
-    // Safety defaults
+
     const safeWidth = Number.isFinite(width) && width > 100 ? width : 800;
     const safeHeight = Number.isFinite(height) && height > 100 ? height : 600;
-    const padding = STATE_RADIUS + 50;
-    
-    // Ensure we don't trap nodes in a tiny box
-    const bounds = {
-        minX: padding,
-        maxX: safeWidth - padding,
-        minY: padding,
-        maxY: safeHeight - padding
-    };
-    
-    if (bounds.maxX < bounds.minX) {
-        const mid = safeWidth / 2;
-        bounds.minX = mid - 100;
-        bounds.maxX = mid + 100;
-    }
-    if (bounds.maxY < bounds.minY) {
-        const mid = safeHeight / 2;
-        bounds.minY = mid - 100;
-        bounds.maxY = mid + 100;
-    }
+    const bounds = createLayoutBounds(safeWidth, safeHeight);
 
     if (states.length === 1) {
-        return [{ ...states[0], x: safeWidth / 2, y: safeHeight / 2 }];
+        return [{
+            ...states[0],
+            x: Math.round(bounds.cx),
+            y: Math.round(bounds.cy),
+        }];
     }
 
-    // Initialize nodes with velocities
-    const nodes = states.map(s => ({
-        ...s,
-        x: Number.isFinite(s.x) ? s.x : safeWidth / 2 + (Math.random() - 0.5) * 100,
-        y: Number.isFinite(s.y) ? s.y : safeHeight / 2 + (Math.random() - 0.5) * 100,
-        vx: 0,
-        vy: 0
+    const minSpacing = Math.max(MIN_STATE_SPACING, Math.min(160, EDGE_LENGTH * 0.75));
+    const initialLayout = computeLayeredInitialLayout(states, transitions, bounds);
+    const relaxed = relaxAroundAnchors(initialLayout, bounds, minSpacing);
+    const resolved = resolveCollisionsInsideBounds(relaxed, bounds, minSpacing);
+
+    return resolved.map(({ id, label, isInicial, isFinal, output, x, y }) => ({
+        id,
+        label,
+        isInicial,
+        isFinal,
+        ...(output === undefined ? {} : { output }),
+        x: Math.round(Number.isFinite(x) ? x : bounds.cx),
+        y: Math.round(Number.isFinite(y) ? y : bounds.cy),
     }));
-
-    // Group transitions by pair to calculate required spacing
-    const pairSpacings = new Map<string, number>();
-    
-    // Sort pair key consistently
-    const getPairKey = (id1: string, id2: string) => 
-        id1 < id2 ? `${id1}:${id2}` : `${id2}:${id1}`;
-
-    transitions.forEach(t => {
-        if (t.de === t.para) return;
-        const key = getPairKey(t.de, t.para);
-        const label = estimateLabelText(t);
-        const width = calculateLabelWidth(label);
-        
-        // We want enough space for the label plus some padding
-        const required = width + 80;
-        const current = pairSpacings.get(key) || 0;
-        if (required > current) {
-            pairSpacings.set(key, required);
-        }
-    });
-
-    // Create a single link per connected pair with the calculated distance
-    const links: { source: string, target: string, distance: number }[] = [];
-    const addedPairs = new Set<string>();
-
-    transitions.forEach(t => {
-        if (t.de === t.para) return;
-        const key = getPairKey(t.de, t.para);
-        if (addedPairs.has(key)) return;
-        
-        addedPairs.add(key);
-        // Distance is the maximum of standard edge length or required label space
-        const dynamicDist = Math.max(EDGE_LENGTH, pairSpacings.get(key) || EDGE_LENGTH);
-        
-        links.push({
-            source: t.de,
-            target: t.para,
-            distance: dynamicDist
-        });
-    });
-
-    const cx = safeWidth / 2;
-    const cy = safeHeight / 2;
-
-    // Check if states are too clustered and need spreading
-    const spread = calculateSpread(nodes);
-    if (spread < EDGE_LENGTH || !Number.isFinite(spread)) {
-        // Arrange in circle initially
-        const angleStep = (2 * Math.PI) / nodes.length;
-        const radius = Math.min(safeWidth, safeHeight) * 0.4; // Increased initial spread
-        nodes.forEach((n, i) => {
-            n.x = cx + Math.cos(i * angleStep - Math.PI / 2) * radius;
-            n.y = cy + Math.sin(i * angleStep - Math.PI / 2) * radius;
-        });
-    }
-
-    // Run simulation
-    for (let k = 0; k < ITERATIONS; k++) {
-        const temp = 1 - k / ITERATIONS; // Cooling
-
-        // Repulsion between all nodes
-        for (let i = 0; i < nodes.length; i++) {
-            for (let j = i + 1; j < nodes.length; j++) {
-                const u = nodes[i];
-                const v = nodes[j];
-                const dx = v.x - u.x;
-                const dy = v.y - u.y;
-                let distSq = dx * dx + dy * dy;
-                if (distSq < 0.1) distSq = 0.1; // Prevent division by zero
-                const dist = Math.sqrt(distSq);
-
-                // Stronger repulsion at close range
-                const force = (REPULSION_FORCE * temp) / distSq;
-                const fx = (dx / dist) * force;
-                const fy = (dy / dist) * force;
-
-                if (Number.isFinite(fx) && Number.isFinite(fy)) {
-                    u.vx -= fx;
-                    u.vy -= fy;
-                    v.vx += fx;
-                    v.vy += fy;
-                }
-            }
-        }
-
-        // Attraction along edges (now unique per pair with dynamic distance)
-        for (const link of links) {
-            const u = nodes.find(n => n.id === link.source);
-            const v = nodes.find(n => n.id === link.target);
-            if (!u || !v) continue;
-
-            const dx = v.x - u.x;
-            const dy = v.y - u.y;
-            let dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 0.1) dist = 0.1;
-
-            // Attract towards the specific dynamic distance
-            const force = (dist - link.distance) * ATTRACTION_FORCE * temp;
-            const fx = (dx / dist) * force;
-            const fy = (dy / dist) * force;
-
-            if (Number.isFinite(fx) && Number.isFinite(fy)) {
-                u.vx += fx;
-                u.vy += fy;
-                v.vx -= fx;
-                v.vy -= fy;
-            }
-        }
-
-        // Gravity toward center (lighter gravity)
-        for (const node of nodes) {
-            const dx = cx - node.x;
-            const dy = cy - node.y;
-            const fx = dx * 0.005 * temp;
-            const fy = dy * 0.005 * temp;
-             if (Number.isFinite(fx) && Number.isFinite(fy)) {
-                node.vx += fx;
-                node.vy += fy;
-             }
-        }
-
-        // Apply velocities and damping
-        for (const node of nodes) {
-            if (!Number.isFinite(node.vx) || !Number.isFinite(node.vy)) {
-                node.vx = 0;
-                node.vy = 0;
-            }
-
-            node.x += node.vx;
-            node.y += node.vy;
-            node.vx *= DAMPING;
-            node.vy *= DAMPING;
-
-            // Keep within bounds
-            node.x = Math.max(bounds.minX, Math.min(bounds.maxX, node.x));
-            node.y = Math.max(bounds.minY, Math.min(bounds.maxY, node.y));
-        }
-    }
-
-    // Final collision resolution
-    const resolved = resolveCollisions(nodes, MIN_STATE_SPACING);
-
-    return resolved.map(n => ({
-        ...n,
-        x: Math.round(Number.isFinite(n.x) ? n.x : cx),
-        y: Math.round(Number.isFinite(n.y) ? n.y : cy)
-    }));
-};
-
-/**
- * Calculate the spread (standard deviation) of node positions
- */
-const calculateSpread = (nodes: { x: number; y: number }[]): number => {
-    if (nodes.length < 2) return Infinity;
-
-    const avgX = nodes.reduce((sum, n) => sum + n.x, 0) / nodes.length;
-    const avgY = nodes.reduce((sum, n) => sum + n.y, 0) / nodes.length;
-
-    const variance = nodes.reduce((sum, n) => {
-        return sum + (n.x - avgX) ** 2 + (n.y - avgY) ** 2;
-    }, 0) / nodes.length;
-
-    return Math.sqrt(variance);
 };
 
 // ============================================================================
@@ -1027,7 +1181,7 @@ const calculateSpread = (nodes: { x: number; y: number }[]): number => {
  */
 export const optimizeLoadedLayout = (
     states: Estado[],
-    _transitions: Transicao[],
+    transitions: Transicao[],
     viewportWidth: number,
     viewportHeight: number
 ): { states: Estado[]; needsReposition: boolean } => {
@@ -1052,9 +1206,8 @@ export const optimizeLoadedLayout = (
 
     let optimizedStates = [...states];
 
-    // Fix overlaps
     if (hasOverlaps || isTooClustered) {
-        optimizedStates = resolveCollisions(optimizedStates, MIN_STATE_SPACING);
+        optimizedStates = computeAutoLayout(optimizedStates, transitions, safeWidth, safeHeight);
     }
 
     // Center and scale if needed

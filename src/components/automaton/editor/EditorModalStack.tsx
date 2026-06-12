@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import type { AutomatoData } from '../../../types';
-import { DeleteConfirmDialog } from '../../ui';
+import { DeleteConfirmDialog, ModalSkeleton } from '../../ui';
 import { SavedAutomataModal } from '../../ui/SavedAutomataModal';
 import { Modal } from '../../ui/Modal';
 import { TransitionTableModal } from '../TransitionTableModal';
@@ -83,9 +83,7 @@ export const EditorModalStack: React.FC<EditorModalStackProps> = ({
 
         <Suspense fallback={(
             <Modal isOpen={showTemplates} onClose={onCloseTemplates} title="Templates" className="max-w-3xl">
-                <div className="flex min-h-40 items-center justify-center text-sm text-secondary">
-                    Carregando catálogo de templates...
-                </div>
+                <ModalSkeleton label="Carregando catálogo de templates" />
             </Modal>
         )}>
             <LazyTemplatesGallery

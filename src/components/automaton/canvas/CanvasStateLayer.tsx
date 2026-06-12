@@ -44,6 +44,13 @@ export const CanvasStateLayer: React.FC<CanvasStateLayerProps> = ({
                         />
                     )}
                     <circle r="28" className="fill-transparent" />
+                    {isActive && (
+                        <circle
+                            r="31"
+                            className="motion-state-halo pointer-events-none fill-ios-green/25 stroke-ios-green/40"
+                            strokeWidth="2"
+                        />
+                    )}
                     <circle
                         r={isSelected || isActive ? 28 : 26}
                         className={`${

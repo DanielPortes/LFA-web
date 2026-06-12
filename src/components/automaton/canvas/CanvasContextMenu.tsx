@@ -33,10 +33,16 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
 }) => {
     if (!contextMenu) return null;
 
+    const menuOffset = contextMenu.type === 'state'
+        ? { x: 48, y: 12 }
+        : contextMenu.type === 'transition'
+            ? { x: 24, y: 20 }
+            : { x: 0, y: 0 };
+
     return (
         <ContextMenu
-            x={contextMenu.x}
-            y={contextMenu.y}
+            x={contextMenu.x + menuOffset.x}
+            y={contextMenu.y + menuOffset.y}
             onClose={onClose}
             options={
                 contextMenu.type === 'state' ? [

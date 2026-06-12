@@ -31,6 +31,8 @@ export const useEditorViewport = ({
 
     const zoomRef = useRef(zoom);
     const panRef = useRef(pan);
+    const statesRef = useRef(states);
+    const viewportRef = useRef(viewport);
     const onViewStateChangeRef = useRef(onViewStateChange);
     const lastFitRequestRef = useRef<number | undefined>(undefined);
     const lastFitTransformRef = useRef<{ zoom: number; pan: { x: number; y: number } } | null>(null);
@@ -42,6 +44,14 @@ export const useEditorViewport = ({
     useEffect(() => {
         panRef.current = pan;
     }, [pan]);
+
+    useEffect(() => {
+        statesRef.current = states;
+    }, [states]);
+
+    useEffect(() => {
+        viewportRef.current = viewport;
+    }, [viewport]);
 
     useEffect(() => {
         onViewStateChangeRef.current = onViewStateChange;
@@ -94,8 +104,9 @@ export const useEditorViewport = ({
         }
 
         const rect = canvasRef.current?.getBoundingClientRect();
-        const viewWidth = Math.max(rect?.width || viewport.width || 800, 320);
-        const viewHeight = Math.max(rect?.height || viewport.height || 600, 240);
+        const currentViewport = viewportRef.current;
+        const viewWidth = Math.max(rect?.width || currentViewport.width || 800, 320);
+        const viewHeight = Math.max(rect?.height || currentViewport.height || 600, 240);
 
         let minX = Infinity;
         let minY = Infinity;
@@ -127,19 +138,20 @@ export const useEditorViewport = ({
                 y: viewHeight / 2 - centerY * nextZoom,
             }
         };
-    }, [canvasRef, viewport.height, viewport.width]);
+    }, [canvasRef]);
 
     const fitToContent = useCallback(() => {
-        if (!canvasRef.current || states.length === 0) {
+        const currentStates = statesRef.current;
+        if (!canvasRef.current || currentStates.length === 0) {
             lastFitTransformRef.current = { zoom: 1, pan: DEFAULT_PAN };
             handleTransformChange(1, DEFAULT_PAN);
             return;
         }
 
-        const { zoom: nextZoom, pan: nextPan } = calculateFitTransform(states);
+        const { zoom: nextZoom, pan: nextPan } = calculateFitTransform(currentStates);
         lastFitTransformRef.current = { zoom: nextZoom, pan: nextPan };
         handleTransformChange(nextZoom, nextPan);
-    }, [calculateFitTransform, canvasRef, handleTransformChange, states]);
+    }, [calculateFitTransform, canvasRef, handleTransformChange]);
 
     useEffect(() => {
         if (fitRequestToken === undefined) return;
@@ -159,7 +171,9 @@ export const useEditorViewport = ({
             if (!canvasRef.current) return;
 
             const rect = canvasRef.current.getBoundingClientRect();
-            setViewport({ x: 0, y: 0, width: rect.width, height: rect.height });
+            const nextViewport = { x: 0, y: 0, width: rect.width, height: rect.height };
+            viewportRef.current = nextViewport;
+            setViewport(nextViewport);
 
             const lastFit = lastFitTransformRef.current;
             if (!lastFit || states.length === 0) return;

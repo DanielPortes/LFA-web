@@ -91,11 +91,18 @@ export const CanvasTransitionLayer: React.FC<CanvasTransitionLayerProps> = ({
                             isSelected
                                 ? 'stroke-ios-blue stroke-[3px] filter drop-shadow-md'
                                 : isActive
-                                    ? 'stroke-ios-green stroke-[3px] animate-pulse'
+                                    ? 'stroke-ios-green stroke-[3px]'
                                     : 'stroke-[var(--stroke-idle)] stroke-2 group-hover/trans:stroke-[var(--stroke-hover)]'
                         }`}
                         markerEnd={`url(#${isSelected ? 'arrow-selected' : (isActive ? 'arrow-active' : 'arrow')})`}
                     />
+                    {isActive && (
+                        <path
+                            d={pathD}
+                            className="motion-flow-path pointer-events-none fill-none stroke-white/80 stroke-[2px]"
+                            markerEnd="url(#arrow-active)"
+                        />
+                    )}
                     <g transform={`translate(${labelPos.x}, ${labelPos.y})`}>
                         {shouldRenderConnector && (
                             <line
