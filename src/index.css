@@ -1731,8 +1731,16 @@ body::after {
     --hero-rotate-x: 0deg;
     --hero-rotate-y: 0deg;
     border: 1px solid rgba(255, 255, 255, 0.16);
-    background: #071422;
+    background: transparent;
     transition: box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.home-hero__backdrop {
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 82% 18%, rgba(56, 214, 255, 0.16), transparent 34%),
+        radial-gradient(circle at 24% 0%, rgba(52, 132, 255, 0.2), transparent 42%),
+        linear-gradient(135deg, #071422 0%, #0a1930 48%, #101827 100%);
 }
 
 .home-hero--settling {
@@ -1856,6 +1864,13 @@ body::after {
         0 32px 76px rgba(35, 91, 153, 0.2),
         0 12px 28px rgba(15, 23, 42, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.light .home-hero__backdrop {
+    background:
+        radial-gradient(circle at 82% 16%, rgba(56, 214, 255, 0.14), transparent 34%),
+        radial-gradient(circle at 18% 0%, rgba(52, 132, 255, 0.14), transparent 42%),
+        linear-gradient(135deg, rgba(11, 33, 64, 0.95) 0%, rgba(14, 48, 91, 0.91) 48%, rgba(25, 41, 83, 0.93) 100%);
 }
 
 .light .home-hero--tilting {

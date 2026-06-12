@@ -209,6 +209,7 @@ export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) 
             onPointerLeave={handleHeroPointerLeave}
             className="home-hero relative flex min-h-[300px] items-center overflow-hidden rounded-[24px] text-white shadow-apple-xl md:min-h-[340px] md:rounded-[28px]"
         >
+            <div className="home-hero__backdrop absolute inset-0 rounded-[inherit]" />
             <div className="home-hero__scene relative flex w-full items-center overflow-hidden rounded-[inherit]">
                 <div className="home-hero__base absolute inset-0" />
                 <div className="home-hero__grid absolute inset-0" />

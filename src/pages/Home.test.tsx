@@ -66,8 +66,11 @@ describe('HomeSection', () => {
     it('mantém a área do hero estática e aplica o 3D em uma cena interna', () => {
         const { container } = render(<HomeSection onNavigate={vi.fn()} />);
         const hero = container.querySelector('.home-hero') as HTMLElement;
+        const backdrop = hero.querySelector('.home-hero__backdrop') as HTMLElement;
         const scene = hero.querySelector('.home-hero__scene') as HTMLElement;
 
+        expect(backdrop).toBeInTheDocument();
+        expect(backdrop.nextElementSibling).toBe(scene);
         expect(scene).toBeInTheDocument();
         expect(scene).not.toHaveClass('absolute');
         expect(scene).not.toHaveClass('inset-0');
