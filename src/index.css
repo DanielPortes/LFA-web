@@ -1726,55 +1726,8 @@ body::after {
 }
 
 .home-hero {
-    --hero-depth-x: 0px;
-    --hero-depth-y: 0px;
-    --hero-rotate-x: 0deg;
-    --hero-rotate-y: 0deg;
     border: 1px solid rgba(255, 255, 255, 0.16);
-    background: transparent;
-    transition: box-shadow 180ms ease, border-color 180ms ease;
-}
-
-.home-hero__backdrop {
-    pointer-events: none;
-    background:
-        radial-gradient(circle at 82% 18%, rgba(56, 214, 255, 0.16), transparent 34%),
-        radial-gradient(circle at 24% 0%, rgba(52, 132, 255, 0.2), transparent 42%),
-        linear-gradient(135deg, #071422 0%, #0a1930 48%, #101827 100%);
-}
-
-.home-hero--settling {
-    transition-duration: 520ms;
-    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.home-hero--tilting {
-    border-color: rgba(125, 211, 252, 0.36);
-    box-shadow:
-        0 34px 86px rgba(8, 47, 73, 0.34),
-        0 16px 38px rgba(15, 23, 42, 0.22);
-}
-
-.home-hero__scene {
-    min-height: inherit;
-    transform: perspective(1400px) rotateX(0deg) rotateY(0deg);
-    transform-style: preserve-3d;
-    transition: transform 180ms ease;
-    will-change: transform;
-}
-
-.home-hero--tilting .home-hero__scene,
-.home-hero--settling .home-hero__scene {
-    transform: perspective(1400px) rotateX(var(--hero-rotate-x)) rotateY(var(--hero-rotate-y));
-}
-
-.home-hero--settling .home-hero__scene,
-.home-hero--settling .home-hero__base,
-.home-hero--settling .home-hero__grid,
-.home-hero--settling .home-hero__orb,
-.home-hero--settling .home-lab-card {
-    transition-duration: 520ms;
-    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    background: #071422;
 }
 
 .home-hero__base {
@@ -1782,13 +1735,6 @@ body::after {
         radial-gradient(circle at 82% 18%, rgba(56, 214, 255, 0.2), transparent 36%),
         radial-gradient(circle at 24% 0%, rgba(52, 132, 255, 0.24), transparent 42%),
         linear-gradient(135deg, #071422 0%, #0a1930 48%, #101827 100%);
-    transform: translate3d(0, 0, -24px) scale(1.04);
-    transition: transform 180ms ease;
-}
-
-.home-hero--tilting .home-hero__base,
-.home-hero--settling .home-hero__base {
-    transform: translate3d(calc(var(--hero-depth-x) * -0.2), calc(var(--hero-depth-y) * -0.2), -24px) scale(1.04);
 }
 
 .home-hero__grid {
@@ -1798,25 +1744,11 @@ body::after {
         linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
     background-size: 36px 36px;
     mask-image: radial-gradient(circle at 50% 42%, black, transparent 72%);
-    transform: translate3d(0, 0, -12px) scale(1.03);
-    transition: transform 180ms ease;
-}
-
-.home-hero--tilting .home-hero__grid,
-.home-hero--settling .home-hero__grid {
-    transform: translate3d(calc(var(--hero-depth-x) * -0.3), calc(var(--hero-depth-y) * -0.3), -12px) scale(1.03);
 }
 
 .home-hero__orb {
     pointer-events: none;
     filter: blur(72px);
-    transform: translate3d(0, 0, 16px);
-    transition: transform 180ms ease;
-}
-
-.home-hero--tilting .home-hero__orb,
-.home-hero--settling .home-hero__orb {
-    transform: translate3d(calc(var(--hero-depth-x) * 0.35), calc(var(--hero-depth-y) * 0.35), 16px);
 }
 
 .home-hero__orb--a {
@@ -1845,43 +1777,9 @@ body::after {
         0 18px 42px rgba(0, 0, 0, 0.18);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    transform: translate3d(0, 0, 48px);
-    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
-}
-
-.home-hero--tilting .home-lab-card,
-.home-hero--settling .home-lab-card {
-    border-color: rgba(191, 219, 254, 0.34);
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.055)),
-        radial-gradient(circle at 50% 0%, rgba(90, 200, 250, 0.22), transparent 58%);
-    transform: translate3d(calc(var(--hero-depth-x) * 0.55), calc(var(--hero-depth-y) * 0.55), 48px);
 }
 
 .light .home-hero {
-    border-color: rgba(255, 255, 255, 0.64);
-    box-shadow:
-        0 32px 76px rgba(35, 91, 153, 0.2),
-        0 12px 28px rgba(15, 23, 42, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.7);
-}
-
-.light .home-hero__backdrop {
-    background:
-        radial-gradient(circle at 82% 16%, rgba(56, 214, 255, 0.14), transparent 34%),
-        radial-gradient(circle at 18% 0%, rgba(52, 132, 255, 0.14), transparent 42%),
-        linear-gradient(135deg, rgba(11, 33, 64, 0.95) 0%, rgba(14, 48, 91, 0.91) 48%, rgba(25, 41, 83, 0.93) 100%);
-}
-
-.light .home-hero--tilting {
-    border-color: rgba(191, 219, 254, 0.78);
-    box-shadow:
-        0 38px 90px rgba(35, 91, 153, 0.24),
-        0 16px 34px rgba(15, 23, 42, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.76);
-}
-
-.light .home-hero--settling {
     border-color: rgba(255, 255, 255, 0.64);
     box-shadow:
         0 32px 76px rgba(35, 91, 153, 0.2),
@@ -1905,19 +1803,6 @@ body::after {
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.07)),
         radial-gradient(circle at 50% 0%, rgba(90, 200, 250, 0.18), transparent 58%);
-}
-
-@media (prefers-reduced-motion: reduce), (hover: none), (pointer: coarse) {
-    .home-hero,
-    .home-hero__scene,
-    .home-hero__base,
-    .home-hero__grid,
-    .home-hero__orb,
-    .home-lab-card {
-        transform: none;
-        transition: none;
-        will-change: auto;
-    }
 }
 
 .render-lite-shell .home-card-grid[data-deferred-render="section"] {
