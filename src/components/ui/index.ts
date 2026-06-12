@@ -7,6 +7,7 @@ export { EquivalentsPanel } from './EquivalentsPanel';
 export { InputTape } from './InputTape';
 export { Minimap } from './Minimap';
 export { Modal } from './Modal';
+export { ContentSkeleton, EmptyMotionState, ExercisesSkeleton, ModalSkeleton, SkeletonBlock } from './MotionSkeleton';
 export { ParseTreeView } from './ParseTreeView';
 export { SavedAutomataModal } from './SavedAutomataModal';
 export { SettingsModal } from './SettingsModal';

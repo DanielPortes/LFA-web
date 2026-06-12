@@ -65,54 +65,61 @@ const studySignals = [
 ] as const;
 
 export const HomeSection = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => (
-    <div className="home-page render-lite-shell animate-fade-in space-y-8 pb-8 md:space-y-10">
-        <div className="home-hero relative flex min-h-[360px] items-center overflow-hidden rounded-[28px] text-white shadow-apple-xl md:min-h-[420px] md:rounded-[32px]">
+    <div className="home-page render-lite-shell animate-fade-in space-y-6 pb-8 md:space-y-8">
+        <div className="home-hero relative flex min-h-[300px] items-center overflow-hidden rounded-[24px] text-white shadow-apple-xl md:min-h-[340px] md:rounded-[28px]">
             <div className="home-hero__base absolute inset-0" />
             <div className="home-hero__grid absolute inset-0" />
             <div className="home-hero__orb home-hero__orb--a absolute rounded-full" />
             <div className="home-hero__orb home-hero__orb--b absolute rounded-full" />
 
-            <div className="relative z-10 flex w-full flex-col items-start justify-between gap-10 p-6 sm:p-8 lg:flex-row lg:items-center lg:gap-12 lg:p-12">
+            <div className="relative z-10 flex w-full flex-col items-start justify-between gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:gap-10 lg:p-9">
                 <div className="max-w-3xl">
-                    <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-blue-200 shadow-sm ui-kicker">
+                    <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-blue-200 shadow-sm ui-kicker">
                         <span className="h-1.5 w-1.5 rounded-full bg-blue-300" />
                         Plataforma contínua de estudo em LFA
                     </div>
-                    <h1 className="ui-title-hero mb-6 text-white">
+                    <h1 className="ui-title-hero mb-4 max-w-[12ch] text-white sm:max-w-none">
                         Aprenda Linguagens Formais e Autômatos
                         <br />
                         <span className="bg-gradient-to-r from-blue-200 via-cyan-200 to-indigo-200 bg-clip-text text-transparent">
                             do conceito à resolução.
                         </span>
                     </h1>
-                    <p className="ui-body-lg mb-7 max-w-2xl font-medium text-slate-200">
+                    <p className="ui-body-lg mb-5 max-w-2xl font-medium text-slate-200">
                         Estude definições formais, visualize execuções, pratique com feedback e use a trilha como material de consulta antes de prova, monitoria ou projeto.
                     </p>
-                    <blockquote className="mb-8 border-l-4 border-blue-300/60 pl-4 text-slate-300 ui-body-sm italic">
-                        "Teoria das Linguagens Formais foi originariamente desenvolvida na década de 1950 com o objetivo de desenvolver teorias relacionadas com as linguagens naturais."
-                        <br />
-                        <span className="text-xs font-bold not-italic text-slate-400">- Paulo Blauth Menezes</span>
-                    </blockquote>
                     <div className="flex flex-wrap gap-3">
                         <button
                             onClick={() => onNavigate('conteudo')}
-                            className="flex w-full items-center justify-center gap-3 rounded-full bg-ios-blue px-8 py-4 text-lg font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-600 active:scale-[0.99] sm:w-auto"
+                            className="flex w-full items-center justify-center gap-3 rounded-full bg-ios-blue px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-600 active:scale-[0.99] sm:w-auto sm:px-7"
                         >
                             <BookOpen size={18} />
                             Começar pela trilha
                         </button>
                         <button
                             onClick={() => onNavigate('exercicios')}
-                            className="flex w-full items-center justify-center gap-3 rounded-full border border-white/15 bg-white/10 px-8 py-4 text-lg font-bold text-white transition-all hover:bg-white/15 active:scale-[0.99] sm:w-auto"
+                            className="flex w-full items-center justify-center gap-3 rounded-full border border-white/15 bg-white/10 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-white/15 active:scale-[0.99] sm:w-auto sm:px-7"
                         >
                             <PenTool size={18} />
                             Resolver exercícios
                         </button>
+                        <button
+                            onClick={() => onNavigate('simulador')}
+                            className="flex w-full items-center justify-center gap-3 rounded-full border border-cyan-200/25 bg-cyan-200/12 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-cyan-200/18 active:scale-[0.99] sm:w-auto sm:px-7"
+                        >
+                            <Play size={18} fill="currentColor" />
+                            Abrir simulador
+                        </button>
                     </div>
+                    <blockquote className="mt-5 hidden max-w-2xl border-l-4 border-blue-300/60 pl-4 text-slate-300 ui-body-sm italic md:block">
+                        "Teoria das Linguagens Formais foi originariamente desenvolvida na década de 1950 com o objetivo de desenvolver teorias relacionadas com as linguagens naturais."
+                        <br />
+                        <span className="text-xs font-bold not-italic text-slate-400">- Paulo Blauth Menezes</span>
+                    </blockquote>
                 </div>
 
-                <div className="hidden h-72 w-72 items-center justify-center lg:flex">
-                    <div className="home-lab-card z-20 flex h-44 w-44 flex-col items-center justify-center rounded-[32px] border">
+                <div className="hidden h-56 w-56 items-center justify-center lg:flex">
+                    <div className="home-lab-card z-20 flex h-40 w-40 flex-col items-center justify-center rounded-[28px] border">
                         <Code className="text-blue-200" size={38} />
                         <span className="mt-3 text-sm font-semibold text-slate-200">Laboratório visual</span>
                     </div>

@@ -5,6 +5,16 @@ import { describe, expect, it, vi } from 'vitest';
 import { HomeSection } from './Home';
 
 describe('HomeSection', () => {
+    it('mantém os três CTAs principais dentro do hero inicial', () => {
+        const { container } = render(<HomeSection onNavigate={vi.fn()} />);
+        const hero = container.querySelector('.home-hero') as HTMLElement;
+
+        expect(hero).toBeInTheDocument();
+        expect(within(hero).getByRole('button', { name: 'Começar pela trilha' })).toBeInTheDocument();
+        expect(within(hero).getByRole('button', { name: 'Resolver exercícios' })).toBeInTheDocument();
+        expect(within(hero).getByRole('button', { name: 'Abrir simulador' })).toBeInTheDocument();
+    });
+
     it('exibe assinatura discreta no final da página com link do GitHub por ícone', () => {
         render(<HomeSection onNavigate={vi.fn()} />);
 

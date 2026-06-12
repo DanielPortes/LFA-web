@@ -1,8 +1,7 @@
 ﻿import React, { useState, useEffect, useId } from 'react';
 import {
-    MousePointer2, Plus, ArrowUpRight, Trash2, Play,
-    ChevronRight, ChevronLeft, X, Keyboard, Move,
-    ZoomIn, Lightbulb
+    AlertTriangle, CheckCircle2, ChevronRight, ChevronLeft, FileText,
+    Keyboard, Lightbulb, PenTool, Play, Route, Search, X
 } from 'lucide-react';
 import { useDialog } from '../../hooks/useDialog';
 import type { ModalBaseProps } from './types';
@@ -16,49 +15,46 @@ interface TutorialStep {
 
 const tutorialSteps: TutorialStep[] = [
     {
-        title: "Criar Estados",
-        description: "Clique duplo no canvas ou use a ferramenta Estado (S) para adicionar novos estados ao autômato.",
-        icon: <Plus size={32} />,
-        shortcut: "S"
+        title: "Comece pela trilha",
+        description: "Abra Trilha para estudar em sequência. Cada lição mostra objetivos, pré-requisitos, resumo, erros comuns e prática associada.",
+        icon: <Route size={32} />
     },
     {
-        title: "Criar Transições",
-        description: "Use a ferramenta Transição (T), clique no estado de origem e depois no destino para criar uma seta.",
-        icon: <ArrowUpRight size={32} />,
-        shortcut: "T"
-    },
-    {
-        title: "Selecionar e Mover",
-        description: "Use a ferramenta Ponteiro (V) para selecionar e arrastar estados. Shift+clique para seleção múltipla.",
-        icon: <MousePointer2 size={32} />,
-        shortcut: "V"
-    },
-    {
-        title: "Editar Propriedades",
-        description: "Clique em um estado para editar seu nome. Clique direito para marcar como Inicial ou Final.",
-        icon: <Move size={32} />
-    },
-    {
-        title: "Apagar Elementos",
-        description: "Use a ferramenta Apagar (D) ou selecione e pressione Delete/Backspace.",
-        icon: <Trash2 size={32} />,
-        shortcut: "Del"
-    },
-    {
-        title: "Navegação",
-        description: "No canvas, segure Espaço + arraste para mover a visão. Use o scroll do mouse ou os botões +/- para zoom.",
-        icon: <ZoomIn size={32} />,
-        shortcut: "Space"
-    },
-    {
-        title: "Simular",
-        description: "Digite uma entrada e pressione Enter ou Play. Fora do canvas, Espaço pausa/continua e as setas avançam passo a passo.",
-        icon: <Play size={32} />,
+        title: "Busque e volte rápido",
+        description: "Use a busca da trilha para encontrar conceito, teorema, algoritmo ou símbolo formal. Enter abre a lição destacada.",
+        icon: <Search size={32} />,
         shortcut: "Enter"
     },
     {
-        title: "Atalhos Úteis",
-        description: "Ctrl+Z para desfazer, Ctrl+Y para refazer, Ctrl+A para selecionar tudo. R para resetar simulação.",
+        title: "Pratique com feedback",
+        description: "Em Exercícios, resolva, verifique, leia o primeiro erro, abra uma pista e tente de novo antes de consultar o gabarito.",
+        icon: <PenTool size={32} />,
+        shortcut: "Ctrl+Enter"
+    },
+    {
+        title: "Use o erro como roteiro",
+        description: "Quando um teste falha, compare entrada, esperado, obtido, motivo e traço de execução. Depois revise a teoria ligada ao exercício.",
+        icon: <AlertTriangle size={32} />
+    },
+    {
+        title: "Teste no simulador",
+        description: "No Simulador, crie um autômato, comece por template ou importe uma regex. Digite uma entrada para ver estados ativos e histórico.",
+        icon: <Play size={32} />,
+        shortcut: "Space"
+    },
+    {
+        title: "Derive gramáticas",
+        description: "Em Gramática, edite regras, escolha um exemplo, digite uma palavra, derive e leia os passos para entender aceitação ou rejeição.",
+        icon: <FileText size={32} />
+    },
+    {
+        title: "Marque revisão",
+        description: "Conclua lições, marque pontos para revisar e use resumos e erros comuns como lista curta antes de refazer exercícios.",
+        icon: <CheckCircle2 size={32} />
+    },
+    {
+        title: "Atalhos do editor",
+        description: "No canvas, use ferramentas de estado e transição, Ctrl+Z para desfazer e scroll para zoom. Espaço pausa ou continua a simulação.",
         icon: <Keyboard size={32} />,
         shortcut: "Ctrl+Z"
     }

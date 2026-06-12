@@ -361,7 +361,7 @@
         background: radial-gradient(circle, rgba(100, 210, 255, 0.05), transparent);
     }
 
-    .reduce-motion * {
+.reduce-motion * {
         animation-duration: 0.001ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
@@ -371,6 +371,15 @@
     .reduce-motion body::before,
     .reduce-motion body::after,
     .reduce-motion .bg-accent-orb {
+        animation: none !important;
+    }
+
+    .reduce-motion .motion-shimmer,
+    .reduce-motion .motion-panel-enter,
+    .reduce-motion .motion-empty-state,
+    .reduce-motion .motion-state-halo,
+    .reduce-motion .motion-flow-path,
+    .reduce-motion .motion-cell-focus {
         animation: none !important;
     }
 
@@ -426,7 +435,9 @@
     .bg-surface-1\/88 { background-color: color-mix(in srgb, var(--color-surface-1) 88%, transparent); }
     .bg-surface-1\/90 { background-color: color-mix(in srgb, var(--color-surface-1) 90%, transparent); }
     .bg-surface-1\/92 { background-color: color-mix(in srgb, var(--color-surface-1) 92%, transparent); }
+    .bg-surface-1\/94 { background-color: color-mix(in srgb, var(--color-surface-1) 94%, transparent); }
     .bg-surface-1\/95 { background-color: color-mix(in srgb, var(--color-surface-1) 95%, transparent); }
+    .bg-surface-1\/98 { background-color: color-mix(in srgb, var(--color-surface-1) 98%, transparent); }
     .bg-surface-2\/30 { background-color: color-mix(in srgb, var(--color-surface-2) 30%, transparent); }
     .bg-surface-2\/40 { background-color: color-mix(in srgb, var(--color-surface-2) 40%, transparent); }
     .bg-surface-2\/50 { background-color: color-mix(in srgb, var(--color-surface-2) 50%, transparent); }
@@ -434,6 +445,7 @@
     .bg-surface-2\/70 { background-color: color-mix(in srgb, var(--color-surface-2) 70%, transparent); }
     .bg-surface-2\/75 { background-color: color-mix(in srgb, var(--color-surface-2) 75%, transparent); }
     .bg-surface-2\/80 { background-color: color-mix(in srgb, var(--color-surface-2) 80%, transparent); }
+    .bg-surface-2\/85 { background-color: color-mix(in srgb, var(--color-surface-2) 85%, transparent); }
     .bg-surface-1-95 { background-color: color-mix(in srgb, var(--color-surface-1) 95%, transparent); }
     .bg-surface-1-90 { background-color: color-mix(in srgb, var(--color-surface-1) 90%, transparent); }
     .bg-surface-muted { background-color: var(--color-surface-muted); }
@@ -1036,6 +1048,102 @@
 
 .animate-fade-in-up {
     animation: fade-in-up 0.3s ease-out forwards;
+}
+
+@keyframes motion-shimmer {
+    0% {
+        background-position: 160% 0;
+    }
+    100% {
+        background-position: -160% 0;
+    }
+}
+
+@keyframes motion-panel-enter {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes motion-empty-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes motion-state-halo {
+    0% {
+        opacity: 0.42;
+        transform: scale(0.94);
+    }
+    70% {
+        opacity: 0.08;
+        transform: scale(1.24);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.32);
+    }
+}
+
+@keyframes motion-flow-dash {
+    to {
+        stroke-dashoffset: -28;
+    }
+}
+
+@keyframes motion-cell-focus {
+    0% {
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-ios-blue) 34%, transparent);
+    }
+    100% {
+        box-shadow: 0 0 0 7px transparent;
+    }
+}
+
+.motion-shimmer {
+    background-image:
+        linear-gradient(
+            110deg,
+            color-mix(in srgb, var(--color-surface-muted) 76%, transparent) 0%,
+            color-mix(in srgb, var(--color-border-highlight) 52%, transparent) 22%,
+            color-mix(in srgb, var(--color-surface-muted) 76%, transparent) 44%
+        );
+    background-size: 240% 100%;
+    animation: motion-shimmer 1.45s linear infinite;
+}
+
+.motion-panel-enter {
+    animation: motion-panel-enter 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-empty-state {
+    animation: motion-empty-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-state-halo {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: motion-state-halo 1.25s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.motion-flow-path {
+    stroke-dasharray: 8 20;
+    animation: motion-flow-dash 0.72s linear infinite;
+}
+
+.motion-cell-focus {
+    animation: motion-cell-focus 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes search-target-shell-in {

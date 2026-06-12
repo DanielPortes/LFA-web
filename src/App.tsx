@@ -1,7 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { ThemeProvider } from './hooks/ThemeContext';
 import type { AutomatoData, Tab } from './types';
-import { SettingsModal, ToastProvider, Tutorial, useTutorial } from './components/ui';
+import { ContentSkeleton, ExercisesSkeleton, SettingsModal, SkeletonBlock, ToastProvider, Tutorial, useTutorial } from './components/ui';
 import { getAutomatonFromUrl } from './utils/sharing';
 import { UiSettingsProvider } from './hooks/UiSettingsContext';
 import { PageAmbientBackground, TopNav } from './components/layout';
@@ -42,126 +42,46 @@ interface SimulatorExerciseReturnTarget {
     label: string;
 }
 
-const skeletonLine = 'animate-pulse rounded-full bg-surface-muted/80';
-const skeletonPanel = 'border border-default bg-surface-1/88 shadow-apple-md';
-
 const RouteLoadingFallback = ({ tab, workspace }: { tab: Tab; workspace: boolean }) => {
     if (workspace) {
         return (
             <div className="flex h-full min-h-[calc(100dvh-5rem)] items-center justify-center px-3 pb-3 pt-20 sm:px-4 lg:px-5">
                 <div className="relative h-[calc(100dvh-7rem)] w-full overflow-hidden rounded-[28px] border border-default bg-canvas shadow-apple-xl">
                     <div className="absolute left-4 top-4 z-10 flex gap-2">
-                        <div className="glass-panel h-10 w-28 animate-pulse rounded-2xl border border-default bg-surface-1/85" />
-                        <div className="glass-panel h-10 w-20 animate-pulse rounded-2xl border border-default bg-surface-1/70 [animation-delay:80ms]" />
+                        <SkeletonBlock className="glass-panel h-10 w-28 rounded-2xl border border-default" />
+                        <SkeletonBlock className="glass-panel h-10 w-20 rounded-2xl border border-default [animation-delay:80ms]" />
                     </div>
-                    <div className="absolute right-4 top-4 z-10 h-12 w-48 animate-pulse rounded-2xl border border-default bg-surface-1/85 shadow-apple-md" />
+                    <SkeletonBlock className="absolute right-4 top-4 z-10 h-12 w-48 rounded-2xl border border-default shadow-apple-md" />
                     <div className="absolute inset-0 flex items-center justify-center">
                         <div className="relative h-56 w-[min(34rem,80vw)]">
-                            <div className="absolute left-2 top-20 h-[4.5rem] w-[4.5rem] animate-pulse rounded-full border-[5px] border-ios-blue/45 bg-surface-1 shadow-apple-md" />
-                            <div className="absolute left-1/2 top-6 h-[4.5rem] w-[4.5rem] -translate-x-1/2 animate-pulse rounded-full border-[5px] border-ios-purple/40 bg-surface-1 shadow-apple-md [animation-delay:90ms]" />
-                            <div className="absolute right-2 top-20 h-[4.5rem] w-[4.5rem] animate-pulse rounded-full border-[5px] border-ios-green/45 bg-surface-1 shadow-apple-md [animation-delay:140ms]" />
-                            <div className="absolute left-[5.2rem] top-[6.4rem] h-1.5 w-[calc(50%-6.5rem)] rotate-[-18deg] animate-pulse rounded-full bg-ios-blue/30" />
-                            <div className="absolute right-[5.2rem] top-[6.4rem] h-1.5 w-[calc(50%-6.5rem)] rotate-[18deg] animate-pulse rounded-full bg-ios-green/30 [animation-delay:120ms]" />
-                            <div className="absolute bottom-0 left-1/2 h-12 w-64 -translate-x-1/2 animate-pulse rounded-[24px] border border-default bg-surface-1/80 shadow-apple-md [animation-delay:180ms]" />
+                            <SkeletonBlock className="absolute left-2 top-20 h-[4.5rem] w-[4.5rem] rounded-full border-[5px] border-ios-blue/45 shadow-apple-md" />
+                            <SkeletonBlock className="absolute left-1/2 top-6 h-[4.5rem] w-[4.5rem] -translate-x-1/2 rounded-full border-[5px] border-ios-purple/40 shadow-apple-md [animation-delay:90ms]" />
+                            <SkeletonBlock className="absolute right-2 top-20 h-[4.5rem] w-[4.5rem] rounded-full border-[5px] border-ios-green/45 shadow-apple-md [animation-delay:140ms]" />
+                            <SkeletonBlock className="absolute left-[5.2rem] top-[6.4rem] h-1.5 w-[calc(50%-6.5rem)] rotate-[-18deg] rounded-full" />
+                            <SkeletonBlock className="absolute right-[5.2rem] top-[6.4rem] h-1.5 w-[calc(50%-6.5rem)] rotate-[18deg] rounded-full [animation-delay:120ms]" />
+                            <SkeletonBlock className="absolute bottom-0 left-1/2 h-12 w-64 -translate-x-1/2 rounded-[24px] border border-default shadow-apple-md [animation-delay:180ms]" />
                         </div>
                     </div>
-                    <div className="absolute inset-x-4 bottom-4 mx-auto h-20 max-w-4xl animate-pulse rounded-[32px] border border-default bg-surface-1/90 shadow-apple-xl" />
+                    <SkeletonBlock className="absolute inset-x-4 bottom-4 mx-auto h-20 max-w-4xl rounded-[32px] border border-default shadow-apple-xl" />
                 </div>
             </div>
         );
     }
 
     if (tab === 'conteudo') {
-        return (
-            <div className="relative flex w-full min-w-0 gap-4 pb-8 md:gap-6">
-                <aside className={`hidden w-[320px] shrink-0 rounded-3xl p-4 md:block ${skeletonPanel}`}>
-                    <div className="mb-5 flex items-center gap-3">
-                        <div className="h-10 w-10 animate-pulse rounded-xl bg-surface-muted" />
-                        <div className="min-w-0 flex-1 space-y-2">
-                            <div className={`${skeletonLine} h-3 w-24`} />
-                            <div className={`${skeletonLine} h-4 w-40`} />
-                        </div>
-                    </div>
-                    <div className="space-y-3">
-                        {[0, 1, 2, 3, 4].map((item) => (
-                            <div key={item} className="rounded-2xl border border-default bg-surface-2/60 p-3">
-                                <div className={`${skeletonLine} mb-2 h-3 w-20`} />
-                                <div className={`${skeletonLine} h-4 w-full`} />
-                            </div>
-                        ))}
-                    </div>
-                </aside>
-                <section className={`min-h-[62vh] flex-1 rounded-2xl p-6 md:rounded-3xl md:p-10 ${skeletonPanel}`}>
-                    <div className="mb-8 flex flex-wrap items-center gap-3">
-                        <div className="h-7 w-20 animate-pulse rounded-full bg-surface-muted" />
-                        <div className="h-7 w-28 animate-pulse rounded-full bg-surface-muted/80" />
-                    </div>
-                    <div className={`${skeletonLine} mb-4 h-10 w-3/4 max-w-3xl`} />
-                    <div className={`${skeletonLine} mb-3 h-4 w-full max-w-4xl`} />
-                    <div className={`${skeletonLine} mb-10 h-4 w-2/3 max-w-3xl`} />
-                    <div className="grid gap-4 lg:grid-cols-2">
-                        {[0, 1, 2, 3].map((item) => (
-                            <div key={item} className="rounded-2xl border border-default bg-surface-2/55 p-5">
-                                <div className={`${skeletonLine} mb-3 h-4 w-36`} />
-                                <div className={`${skeletonLine} mb-2 h-3 w-full`} />
-                                <div className={`${skeletonLine} h-3 w-3/4`} />
-                            </div>
-                        ))}
-                    </div>
-                </section>
-            </div>
-        );
+        return <ContentSkeleton />;
     }
 
     if (tab === 'exercicios') {
-        return (
-            <div className="relative flex w-full min-w-0 gap-4 pb-8 md:gap-6">
-                <aside className={`hidden w-[300px] shrink-0 rounded-3xl p-4 md:block ${skeletonPanel}`}>
-                    <div className={`${skeletonLine} mb-5 h-8 w-40`} />
-                    <div className="space-y-2">
-                        {[0, 1, 2, 3, 4, 5].map((item) => (
-                            <div key={item} className="flex items-center gap-3 rounded-2xl border border-default bg-surface-2/60 p-3">
-                                <div className="h-8 w-8 animate-pulse rounded-xl bg-surface-muted" />
-                                <div className={`${skeletonLine} h-3 flex-1`} />
-                            </div>
-                        ))}
-                    </div>
-                </aside>
-                <section className="flex-1 space-y-4">
-                    <div className={`rounded-[24px] p-6 ${skeletonPanel}`}>
-                        <div className={`${skeletonLine} mb-3 h-8 w-56`} />
-                        <div className="flex gap-2">
-                            <div className="h-6 w-24 animate-pulse rounded-full bg-surface-muted" />
-                            <div className="h-6 w-28 animate-pulse rounded-full bg-surface-muted/80" />
-                        </div>
-                    </div>
-                    {[0, 1, 2].map((item) => (
-                        <div key={item} className={`rounded-[24px] p-6 ${skeletonPanel}`}>
-                            <div className="flex gap-4">
-                                <div className="h-10 w-10 animate-pulse rounded-xl bg-surface-muted" />
-                                <div className="flex-1">
-                                    <div className={`${skeletonLine} mb-3 h-5 w-4/5`} />
-                                    <div className={`${skeletonLine} mb-5 h-4 w-2/3`} />
-                                    <div className="flex flex-wrap gap-2">
-                                        <div className="h-9 w-32 animate-pulse rounded-xl bg-status-success-soft" />
-                                        <div className="h-9 w-24 animate-pulse rounded-xl bg-surface-muted" />
-                                        <div className="h-9 w-36 animate-pulse rounded-xl bg-surface-muted/80" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </section>
-            </div>
-        );
+        return <ExercisesSkeleton />;
     }
 
     return (
         <div className="mx-auto grid min-h-[46vh] w-full max-w-6xl place-items-center px-4">
             <div className="glass-card w-full max-w-3xl p-6">
-                <div className={`${skeletonLine} mb-4 h-8 w-56`} />
-                <div className={`${skeletonLine} mb-2 h-4 w-full`} />
-                <div className={`${skeletonLine} h-4 w-3/4`} />
+                <SkeletonBlock className="mb-4 h-8 w-56" />
+                <SkeletonBlock className="mb-2 h-4 w-full" />
+                <SkeletonBlock className="h-4 w-3/4" />
             </div>
         </div>
     );
